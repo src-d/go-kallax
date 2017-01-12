@@ -1,0 +1,11 @@
+package {{.Name}}
+
+import (
+    "gopkg.in/src-d/storable.v1"
+    "gopkg.in/src-d/storable.v1/operators"
+    "gopkg.in/mgo.v2"
+    "gopkg.in/mgo.v2/bson"
+)
+
+{{template "model" .}}
+{{template "schema" .}}

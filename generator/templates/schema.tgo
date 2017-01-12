@@ -1,0 +1,17 @@
+
+type schema struct {
+{{range .Models}}{{$.GenType . ""}}
+{{end}}
+}
+
+{{range $f := .Fields}}
+type {{.Name}} struct {
+{{range .Fields}}{{$.GenType . $f.Path}}
+{{end}}
+}
+{{end}}
+
+var Schema = schema{
+{{range .Models}}{{$.GenVar . nil}}
+{{end}}
+}
