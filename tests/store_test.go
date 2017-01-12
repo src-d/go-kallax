@@ -3,8 +3,8 @@ package tests
 import (
 	"time"
 
+	"github.com/src-d/go-kallax"
 	. "gopkg.in/check.v1"
-	"gopkg.in/src-d/storable.v1"
 )
 
 func (s *MongoSuite) TestStoreNew(c *C) {
@@ -156,9 +156,9 @@ func (s *MongoSuite) TestMultiKeySort(c *C) {
 	c.Assert(err, IsNil)
 
 	q := store.Query()
-	q.Sort(storable.Sort{
-		storable.FieldSort{Schema.MultiKeySortFixture.End, storable.Desc},
-		storable.FieldSort{Schema.MultiKeySortFixture.Start, storable.Desc},
+	q.Sort(kallax.Sort{
+		kallax.FieldSort{Schema.MultiKeySortFixture.End, kallax.Desc},
+		kallax.FieldSort{Schema.MultiKeySortFixture.Start, kallax.Desc},
 	})
 
 	set, err := store.Find(q)

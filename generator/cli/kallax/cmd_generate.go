@@ -6,12 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/src-d/storable.v1/generator"
+	"github.com/src-d/go-kallax/generator"
 )
 
 type CmdGenerate struct {
 	Input  string `short:"" long:"input" description:"input package directory" default:"."`
-	Output string `short:"" long:"output" description:"output file name" default:"storable.go"`
+	Output string `short:"" long:"output" description:"output file name" default:"kallax.go"`
 }
 
 func (c *CmdGenerate) Execute(args []string) error {

@@ -1,10 +1,10 @@
 package tests
 
-import "gopkg.in/src-d/storable.v1"
+import "github.com/src-d/go-kallax"
 
 type QueryFixture struct {
-	storable.Document `bson:",inline" collection:"query"`
-	Foo               string
+	kallax.Document `bson:",inline" collection:"query"`
+	Foo             string
 }
 
 func newQueryFixture(f string) *QueryFixture {

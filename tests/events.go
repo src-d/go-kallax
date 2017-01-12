@@ -1,12 +1,12 @@
 package tests
 
-import "gopkg.in/src-d/storable.v1"
+import "github.com/src-d/go-kallax"
 
 type EventsFixture struct {
-	storable.Document `bson:",inline" collection:"event"`
-	Checks            map[string]bool
-	MustFailBefore    error
-	MustFailAfter     error
+	kallax.Document `bson:",inline" collection:"event"`
+	Checks          map[string]bool
+	MustFailBefore  error
+	MustFailAfter   error
 }
 
 func newEventsFixture() *EventsFixture {
@@ -52,10 +52,10 @@ func (s *EventsFixtureStore) AfterUpdate(doc *EventsFixture) error {
 }
 
 type EventsSaveFixture struct {
-	storable.Document `bson:",inline" collection:"event"`
-	Checks            map[string]bool
-	MustFailBefore    error
-	MustFailAfter     error
+	kallax.Document `bson:",inline" collection:"event"`
+	Checks          map[string]bool
+	MustFailBefore  error
+	MustFailAfter   error
 }
 
 func newEventsSaveFixture() *EventsSaveFixture {

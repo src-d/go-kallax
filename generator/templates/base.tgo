@@ -1,8 +1,8 @@
 package {{.Name}}
 
 import (
-    "gopkg.in/src-d/storable.v1"
-    "gopkg.in/src-d/storable.v1/operators"
+    "github.com/src-d/go-kallax"
+    "github.com/src-d/go-kallax/operators"
     "gopkg.in/mgo.v2"
     "gopkg.in/mgo.v2/bson"
 )

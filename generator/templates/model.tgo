@@ -2,11 +2,11 @@
 
 {{if not ($.StructIsDefined .StoreName)}}
 type {{.StoreName}} struct {
-	storable.Store
+	kallax.Store
 }
 
 func New{{.StoreName}}(db *mgo.Database) *{{.StoreName}} {
-	return &{{.StoreName}}{*storable.NewStore(db, "{{ .Collection }}")}
+	return &{{.StoreName}}{*kallax.NewStore(db, "{{ .Collection }}")}
 }
 {{end}}
 
@@ -25,7 +25,7 @@ func (s *{{.StoreName}}) New({{.NewArgs}}) {{.NewReturns}} {
 
 // Query return a new instance of {{.QueryName}}.
 func (s *{{.StoreName}}) Query() *{{.QueryName}} {
-    return &{{.QueryName}}{*storable.NewBaseQuery()}
+    return &{{.QueryName}}{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.

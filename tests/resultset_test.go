@@ -3,8 +3,8 @@ package tests
 import (
 	"errors"
 
+	"github.com/src-d/go-kallax"
 	. "gopkg.in/check.v1"
-	"gopkg.in/src-d/storable.v1"
 )
 
 func (s *MongoSuite) TestResultSetAll(c *C) {
@@ -139,7 +139,7 @@ func (s *MongoSuite) TestResultSetForEachStop(c *C) {
 	count := 0
 	err := store.MustFind(store.Query()).ForEach(func(*ResultSetFixture) error {
 		count++
-		return storable.ErrStop
+		return kallax.ErrStop
 	})
 
 	c.Assert(err, IsNil)

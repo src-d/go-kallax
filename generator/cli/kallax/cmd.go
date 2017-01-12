@@ -7,10 +7,10 @@ import (
 )
 
 func main() {
-	parser := flags.NewNamedParser("storable", flags.Default)
+	parser := flags.NewNamedParser("kallax", flags.Default)
 	parser.AddCommand(
 		"gen",
-		"Generate files for types using storable document.",
+		"Generate files for types using kallax document.",
 		"",
 		&CmdGenerate{},
 	)

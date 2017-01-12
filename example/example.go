@@ -5,13 +5,13 @@ import (
 	"log"
 	"time"
 
-	"gopkg.in/src-d/storable.v1"
+	"github.com/src-d/go-kallax"
 )
 
-//go:generate storable gen
+//go:generate kallax gen
 
 type Product struct {
-	storable.Document `bson:",inline" collection:"products"`
+	kallax.Document `bson:",inline" collection:"products"`
 
 	Status    Status
 	CreatedAt time.Time

@@ -1,4 +1,4 @@
-package storable
+package kallax
 
 import (
 	. "gopkg.in/check.v1"

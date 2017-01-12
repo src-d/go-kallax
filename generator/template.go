@@ -62,7 +62,7 @@ func (td *TemplateData) GenType(vi interface{}, path string) string {
 		if v.MethodByName("ContainsMap").Call(nil)[0].Interface().(bool) {
 			k = "Map"
 		}
-		return fmt.Sprintf("%v storable.%v", sv.FieldByName("Name"), k)
+		return fmt.Sprintf("%v kallax.%v", sv.FieldByName("Name"), k)
 	}
 }
 
@@ -113,7 +113,7 @@ func (td *TemplateData) GenVar(vi interface{}, done map[interface{}]bool) string
 		}
 
 		return fmt.Sprintf(
-			`%v: storable.%v("%v", "%v"),`,
+			`%v: kallax.%v("%v", "%v"),`,
 			sv.FieldByName("Name"),
 			k,
 			v.MethodByName("GetPath").Call(nil)[0],
@@ -142,7 +142,7 @@ func (td *TemplateData) StructValue(vi interface{}, done map[interface{}]bool) s
 }
 
 func prettyfy(input []byte, wr io.Writer) error {
-	output, err := imports.Process("storable.go", input, nil)
+	output, err := imports.Process("kallax.go", input, nil)
 	if err != nil {
 		printDocumentWithNumbers(string(input))
 		return err
@@ -159,7 +159,7 @@ func printDocumentWithNumbers(code string) {
 }
 
 func loadTemplateText(filename string) string {
-	filename = filepath.Join(build.Default.GOPATH, "src/gopkg.in/src-d/storable.v1/generator", filename)
+	filename = filepath.Join(build.Default.GOPATH, "src/github.com/src-d/go-kallax/generator", filename)
 	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)

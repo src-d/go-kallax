@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-const BaseDocument = "gopkg.in/src-d/storable.v1.Document"
+const BaseDocument = "github.com/src-d/go-kallax.Document"
 
 type Processor struct {
 	Path       string
@@ -271,7 +271,7 @@ func (p *Processor) isEventPresent(name string, e Event) bool {
 	return false
 }
 
-// Returns which field index is an embedded storable.Document, or -1 if none.
+// Returns which field index is an embedded kallax.Document, or -1 if none.
 func (p *Processor) processFields(s *types.Struct, done []*types.Struct) (base int, fields []*Field) {
 	c := s.NumFields()
 

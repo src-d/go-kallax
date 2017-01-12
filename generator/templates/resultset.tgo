@@ -1,6 +1,6 @@
 
 type {{.ResultSetName}} struct {
-    storable.ResultSet
+    kallax.ResultSet
     last    *{{.Name}}
     lastErr error
 }
@@ -81,7 +81,7 @@ func (r *{{.ResultSetName}}) ForEach(f func(*{{.Name}}) error) error {
 	
 	{{end}} \
         err = f(result)
-        if err == storable.ErrStop {
+        if err == kallax.ErrStop {
             break
         }
 

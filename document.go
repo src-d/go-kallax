@@ -1,4 +1,4 @@
-package storable
+package kallax
 
 import (
 	"gopkg.in/mgo.v2/bson"

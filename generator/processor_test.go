@@ -22,14 +22,14 @@ func (s *ProcessorSuite) TestInit(c *C) {
 	fixtureSrc := `
   package fixture
 
-  import  "gopkg.in/src-d/storable.v1"
+  import  "github.com/src-d/go-kallax"
 
   type InitExample struct {
-    storable.Document
+    kallax.Document
     Foo string
   }
   
-  func (i *InitExample) Init(doc storable.DocumentBase) { }
+  func (i *InitExample) Init(doc kallax.DocumentBase) { }
   `
 
 	pkg := s.processFixture(fixtureSrc)
@@ -40,16 +40,16 @@ func (s *ProcessorSuite) TestInitEmbedded(c *C) {
 	fixtureSrc := `
   package fixture
 
-  import  "gopkg.in/src-d/storable.v1"
+  import  "github.com/src-d/go-kallax"
 
   type InitEmbeddedExample struct {
-    storable.Document
+    kallax.Document
     OtherWithInit
   }
 
   type OtherWithInit struct {}
 
-  func (i *OtherWithInit) Init(doc storable.DocumentBase) error { return nil }
+  func (i *OtherWithInit) Init(doc kallax.DocumentBase) error { return nil }
   `
 
 	pkg := s.processFixture(fixtureSrc)
@@ -61,10 +61,10 @@ func (s *ProcessorSuite) TestInlineStruct(c *C) {
 	fixtureSrc := `
   package fixture
 
-  import  "gopkg.in/src-d/storable.v1"
+  import  "github.com/src-d/go-kallax"
 
   type Recur struct {
-    storable.Document
+    kallax.Document
     Foo string
     R *Recur ` + "`bson:\",inline\"`" + `
   }
@@ -78,10 +78,10 @@ func (s *ProcessorSuite) TestTags(c *C) {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/storable.v1"
+	import 	"github.com/src-d/go-kallax"
 
 	type Foo struct {
-		storable.Document
+		kallax.Document
 		Int int "foo"
 	}
 	`
@@ -94,10 +94,10 @@ func (s *ProcessorSuite) TestRecursiveStruct(c *C) {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/storable.v1"
+	import 	"github.com/src-d/go-kallax"
 
 	type Recur struct {
-		storable.Document
+		kallax.Document
 		Foo string
 		R *Recur
 	}
@@ -119,10 +119,10 @@ func (s *ProcessorSuite) TestDeepRecursiveStruct(c *C) {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/storable.v1"
+	import 	"github.com/src-d/go-kallax"
 
 	type Recur struct {
-		storable.Document
+		kallax.Document
 		Foo string
 		R *Other
 	}

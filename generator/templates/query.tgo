@@ -1,6 +1,6 @@
 
 type {{.QueryName}} struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -9,7 +9,7 @@ func (q *{{.QueryName}}) FindById(ids ...bson.ObjectId) *{{.QueryName}} {
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }

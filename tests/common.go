@@ -1,3 +1,3 @@
 package tests
 
-//go:generate storable gen
+//go:generate kallax gen

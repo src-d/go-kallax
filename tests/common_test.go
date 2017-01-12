@@ -9,7 +9,7 @@ import (
 
 const (
 	testMongoHost = "127.0.0.1:27017"
-	testDatabase  = "storable-test"
+	testDatabase  = "kallax-test"
 )
 
 func Test(t *testing.T) { TestingT(t) }

@@ -1,9 +1,9 @@
-package storable
+package kallax
 
 import (
 	"encoding/json"
 
-	"gopkg.in/src-d/storable.v1/operators"
+	"github.com/src-d/go-kallax/operators"
 
 	"gopkg.in/mgo.v2/bson"
 )
@@ -36,7 +36,7 @@ func NewBaseQuery() *BaseQuery {
 //
 // Use operators package instead of build expresion by hand:
 //
-//  import . "gopkg.in/src-d/storable.v1/operators"
+//  import . "github.com/src-d/go-kallax/operators"
 //
 //  func (q *YourQuery) FindNonZeroRecords() {
 //      // All the Fields are defined on the Schema generated variable

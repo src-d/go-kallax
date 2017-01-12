@@ -1,18 +1,18 @@
 package tests
 
 import (
+	"github.com/src-d/go-kallax"
+	"github.com/src-d/go-kallax/operators"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/src-d/storable.v1"
-	"gopkg.in/src-d/storable.v1/operators"
 )
 
 type EventsFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewEventsFixtureStore(db *mgo.Database) *EventsFixtureStore {
-	return &EventsFixtureStore{*storable.NewStore(db, "event")}
+	return &EventsFixtureStore{*kallax.NewStore(db, "event")}
 }
 
 // New returns a new instance of EventsFixture.
@@ -27,7 +27,7 @@ func (s *EventsFixtureStore) New() (doc *EventsFixture) {
 
 // Query return a new instance of EventsFixtureQuery.
 func (s *EventsFixtureStore) Query() *EventsFixtureQuery {
-	return &EventsFixtureQuery{*storable.NewBaseQuery()}
+	return &EventsFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -132,7 +132,7 @@ func (s *EventsFixtureStore) Save(doc *EventsFixture) (updated bool, err error) 
 }
 
 type EventsFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -141,13 +141,13 @@ func (q *EventsFixtureQuery) FindById(ids ...bson.ObjectId) *EventsFixtureQuery 
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type EventsFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *EventsFixture
 	lastErr error
 }
@@ -195,7 +195,7 @@ func (r *EventsFixtureResultSet) ForEach(f func(*EventsFixture) error) error {
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -208,11 +208,11 @@ func (r *EventsFixtureResultSet) ForEach(f func(*EventsFixture) error) error {
 }
 
 type EventsSaveFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewEventsSaveFixtureStore(db *mgo.Database) *EventsSaveFixtureStore {
-	return &EventsSaveFixtureStore{*storable.NewStore(db, "event")}
+	return &EventsSaveFixtureStore{*kallax.NewStore(db, "event")}
 }
 
 // New returns a new instance of EventsSaveFixture.
@@ -227,7 +227,7 @@ func (s *EventsSaveFixtureStore) New() (doc *EventsSaveFixture) {
 
 // Query return a new instance of EventsSaveFixtureQuery.
 func (s *EventsSaveFixtureStore) Query() *EventsSaveFixtureQuery {
-	return &EventsSaveFixtureQuery{*storable.NewBaseQuery()}
+	return &EventsSaveFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -317,7 +317,7 @@ func (s *EventsSaveFixtureStore) Save(doc *EventsSaveFixture) (updated bool, err
 }
 
 type EventsSaveFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -326,13 +326,13 @@ func (q *EventsSaveFixtureQuery) FindById(ids ...bson.ObjectId) *EventsSaveFixtu
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type EventsSaveFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *EventsSaveFixture
 	lastErr error
 }
@@ -380,7 +380,7 @@ func (r *EventsSaveFixtureResultSet) ForEach(f func(*EventsSaveFixture) error) e
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -393,11 +393,11 @@ func (r *EventsSaveFixtureResultSet) ForEach(f func(*EventsSaveFixture) error) e
 }
 
 type MultiKeySortFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewMultiKeySortFixtureStore(db *mgo.Database) *MultiKeySortFixtureStore {
-	return &MultiKeySortFixtureStore{*storable.NewStore(db, "query")}
+	return &MultiKeySortFixtureStore{*kallax.NewStore(db, "query")}
 }
 
 // New returns a new instance of MultiKeySortFixture.
@@ -412,7 +412,7 @@ func (s *MultiKeySortFixtureStore) New() (doc *MultiKeySortFixture) {
 
 // Query return a new instance of MultiKeySortFixtureQuery.
 func (s *MultiKeySortFixtureStore) Query() *MultiKeySortFixtureQuery {
-	return &MultiKeySortFixtureQuery{*storable.NewBaseQuery()}
+	return &MultiKeySortFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -489,7 +489,7 @@ func (s *MultiKeySortFixtureStore) Save(doc *MultiKeySortFixture) (updated bool,
 }
 
 type MultiKeySortFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -498,13 +498,13 @@ func (q *MultiKeySortFixtureQuery) FindById(ids ...bson.ObjectId) *MultiKeySortF
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type MultiKeySortFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *MultiKeySortFixture
 	lastErr error
 }
@@ -552,7 +552,7 @@ func (r *MultiKeySortFixtureResultSet) ForEach(f func(*MultiKeySortFixture) erro
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -565,11 +565,11 @@ func (r *MultiKeySortFixtureResultSet) ForEach(f func(*MultiKeySortFixture) erro
 }
 
 type QueryFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewQueryFixtureStore(db *mgo.Database) *QueryFixtureStore {
-	return &QueryFixtureStore{*storable.NewStore(db, "query")}
+	return &QueryFixtureStore{*kallax.NewStore(db, "query")}
 }
 
 // New returns a new instance of QueryFixture.
@@ -584,7 +584,7 @@ func (s *QueryFixtureStore) New(f string) (doc *QueryFixture) {
 
 // Query return a new instance of QueryFixtureQuery.
 func (s *QueryFixtureStore) Query() *QueryFixtureQuery {
-	return &QueryFixtureQuery{*storable.NewBaseQuery()}
+	return &QueryFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -661,7 +661,7 @@ func (s *QueryFixtureStore) Save(doc *QueryFixture) (updated bool, err error) {
 }
 
 type QueryFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -670,13 +670,13 @@ func (q *QueryFixtureQuery) FindById(ids ...bson.ObjectId) *QueryFixtureQuery {
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type QueryFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *QueryFixture
 	lastErr error
 }
@@ -724,7 +724,7 @@ func (r *QueryFixtureResultSet) ForEach(f func(*QueryFixture) error) error {
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -737,11 +737,11 @@ func (r *QueryFixtureResultSet) ForEach(f func(*QueryFixture) error) error {
 }
 
 type ResultSetFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewResultSetFixtureStore(db *mgo.Database) *ResultSetFixtureStore {
-	return &ResultSetFixtureStore{*storable.NewStore(db, "resultset")}
+	return &ResultSetFixtureStore{*kallax.NewStore(db, "resultset")}
 }
 
 // New returns a new instance of ResultSetFixture.
@@ -756,7 +756,7 @@ func (s *ResultSetFixtureStore) New(f string) (doc *ResultSetFixture) {
 
 // Query return a new instance of ResultSetFixtureQuery.
 func (s *ResultSetFixtureStore) Query() *ResultSetFixtureQuery {
-	return &ResultSetFixtureQuery{*storable.NewBaseQuery()}
+	return &ResultSetFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -833,7 +833,7 @@ func (s *ResultSetFixtureStore) Save(doc *ResultSetFixture) (updated bool, err e
 }
 
 type ResultSetFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -842,13 +842,13 @@ func (q *ResultSetFixtureQuery) FindById(ids ...bson.ObjectId) *ResultSetFixture
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type ResultSetFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *ResultSetFixture
 	lastErr error
 }
@@ -896,7 +896,7 @@ func (r *ResultSetFixtureResultSet) ForEach(f func(*ResultSetFixture) error) err
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -909,11 +909,11 @@ func (r *ResultSetFixtureResultSet) ForEach(f func(*ResultSetFixture) error) err
 }
 
 type ResultSetInitFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewResultSetInitFixtureStore(db *mgo.Database) *ResultSetInitFixtureStore {
-	return &ResultSetInitFixtureStore{*storable.NewStore(db, "resultset")}
+	return &ResultSetInitFixtureStore{*kallax.NewStore(db, "resultset")}
 }
 
 // New returns a new instance of ResultSetInitFixture.
@@ -928,7 +928,7 @@ func (s *ResultSetInitFixtureStore) New() (doc *ResultSetInitFixture) {
 
 // Query return a new instance of ResultSetInitFixtureQuery.
 func (s *ResultSetInitFixtureStore) Query() *ResultSetInitFixtureQuery {
-	return &ResultSetInitFixtureQuery{*storable.NewBaseQuery()}
+	return &ResultSetInitFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -1005,7 +1005,7 @@ func (s *ResultSetInitFixtureStore) Save(doc *ResultSetInitFixture) (updated boo
 }
 
 type ResultSetInitFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -1014,13 +1014,13 @@ func (q *ResultSetInitFixtureQuery) FindById(ids ...bson.ObjectId) *ResultSetIni
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type ResultSetInitFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *ResultSetInitFixture
 	lastErr error
 }
@@ -1092,7 +1092,7 @@ func (r *ResultSetInitFixtureResultSet) ForEach(f func(*ResultSetInitFixture) er
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -1105,11 +1105,11 @@ func (r *ResultSetInitFixtureResultSet) ForEach(f func(*ResultSetInitFixture) er
 }
 
 type SchemaFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewSchemaFixtureStore(db *mgo.Database) *SchemaFixtureStore {
-	return &SchemaFixtureStore{*storable.NewStore(db, "schema")}
+	return &SchemaFixtureStore{*kallax.NewStore(db, "schema")}
 }
 
 // New returns a new instance of SchemaFixture.
@@ -1124,7 +1124,7 @@ func (s *SchemaFixtureStore) New() (doc *SchemaFixture) {
 
 // Query return a new instance of SchemaFixtureQuery.
 func (s *SchemaFixtureStore) Query() *SchemaFixtureQuery {
-	return &SchemaFixtureQuery{*storable.NewBaseQuery()}
+	return &SchemaFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -1201,7 +1201,7 @@ func (s *SchemaFixtureStore) Save(doc *SchemaFixture) (updated bool, err error) 
 }
 
 type SchemaFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -1210,13 +1210,13 @@ func (q *SchemaFixtureQuery) FindById(ids ...bson.ObjectId) *SchemaFixtureQuery 
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type SchemaFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *SchemaFixture
 	lastErr error
 }
@@ -1264,7 +1264,7 @@ func (r *SchemaFixtureResultSet) ForEach(f func(*SchemaFixture) error) error {
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -1277,11 +1277,11 @@ func (r *SchemaFixtureResultSet) ForEach(f func(*SchemaFixture) error) error {
 }
 
 type StoreFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewStoreFixtureStore(db *mgo.Database) *StoreFixtureStore {
-	return &StoreFixtureStore{*storable.NewStore(db, "store")}
+	return &StoreFixtureStore{*kallax.NewStore(db, "store")}
 }
 
 // New returns a new instance of StoreFixture.
@@ -1296,7 +1296,7 @@ func (s *StoreFixtureStore) New() (doc *StoreFixture) {
 
 // Query return a new instance of StoreFixtureQuery.
 func (s *StoreFixtureStore) Query() *StoreFixtureQuery {
-	return &StoreFixtureQuery{*storable.NewBaseQuery()}
+	return &StoreFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -1373,7 +1373,7 @@ func (s *StoreFixtureStore) Save(doc *StoreFixture) (updated bool, err error) {
 }
 
 type StoreFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -1382,13 +1382,13 @@ func (q *StoreFixtureQuery) FindById(ids ...bson.ObjectId) *StoreFixtureQuery {
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type StoreFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *StoreFixture
 	lastErr error
 }
@@ -1436,7 +1436,7 @@ func (r *StoreFixtureResultSet) ForEach(f func(*StoreFixture) error) error {
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -1449,11 +1449,11 @@ func (r *StoreFixtureResultSet) ForEach(f func(*StoreFixture) error) error {
 }
 
 type StoreWithConstructFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewStoreWithConstructFixtureStore(db *mgo.Database) *StoreWithConstructFixtureStore {
-	return &StoreWithConstructFixtureStore{*storable.NewStore(db, "store_construct")}
+	return &StoreWithConstructFixtureStore{*kallax.NewStore(db, "store_construct")}
 }
 
 // New returns a new instance of StoreWithConstructFixture.
@@ -1468,7 +1468,7 @@ func (s *StoreWithConstructFixtureStore) New(f string) (doc *StoreWithConstructF
 
 // Query return a new instance of StoreWithConstructFixtureQuery.
 func (s *StoreWithConstructFixtureStore) Query() *StoreWithConstructFixtureQuery {
-	return &StoreWithConstructFixtureQuery{*storable.NewBaseQuery()}
+	return &StoreWithConstructFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -1545,7 +1545,7 @@ func (s *StoreWithConstructFixtureStore) Save(doc *StoreWithConstructFixture) (u
 }
 
 type StoreWithConstructFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -1554,13 +1554,13 @@ func (q *StoreWithConstructFixtureQuery) FindById(ids ...bson.ObjectId) *StoreWi
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type StoreWithConstructFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *StoreWithConstructFixture
 	lastErr error
 }
@@ -1608,7 +1608,7 @@ func (r *StoreWithConstructFixtureResultSet) ForEach(f func(*StoreWithConstructF
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -1621,16 +1621,16 @@ func (r *StoreWithConstructFixtureResultSet) ForEach(f func(*StoreWithConstructF
 }
 
 type StoreWithNewFixtureStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewStoreWithNewFixtureStore(db *mgo.Database) *StoreWithNewFixtureStore {
-	return &StoreWithNewFixtureStore{*storable.NewStore(db, "store_new")}
+	return &StoreWithNewFixtureStore{*kallax.NewStore(db, "store_new")}
 }
 
 // Query return a new instance of StoreWithNewFixtureQuery.
 func (s *StoreWithNewFixtureStore) Query() *StoreWithNewFixtureQuery {
-	return &StoreWithNewFixtureQuery{*storable.NewBaseQuery()}
+	return &StoreWithNewFixtureQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -1707,7 +1707,7 @@ func (s *StoreWithNewFixtureStore) Save(doc *StoreWithNewFixture) (updated bool,
 }
 
 type StoreWithNewFixtureQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -1716,13 +1716,13 @@ func (q *StoreWithNewFixtureQuery) FindById(ids ...bson.ObjectId) *StoreWithNewF
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type StoreWithNewFixtureResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *StoreWithNewFixture
 	lastErr error
 }
@@ -1770,7 +1770,7 @@ func (r *StoreWithNewFixtureResultSet) ForEach(f func(*StoreWithNewFixture) erro
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -1796,137 +1796,137 @@ type schema struct {
 }
 
 type schemaEventsFixture struct {
-	Checks storable.Map
+	Checks kallax.Map
 }
 
 type schemaEventsSaveFixture struct {
-	Checks storable.Map
+	Checks kallax.Map
 }
 
 type schemaMultiKeySortFixture struct {
-	Name  storable.Field
-	Start storable.Field
-	End   storable.Field
+	Name  kallax.Field
+	Start kallax.Field
+	End   kallax.Field
 }
 
 type schemaQueryFixture struct {
-	Foo storable.Field
+	Foo kallax.Field
 }
 
 type schemaResultSetFixture struct {
-	Foo storable.Field
+	Foo kallax.Field
 }
 
 type schemaResultSetInitFixture struct {
-	Foo storable.Field
+	Foo kallax.Field
 }
 
 type schemaSchemaFixture struct {
-	String         storable.Field
-	Int            storable.Field
+	String         kallax.Field
+	Int            kallax.Field
 	Nested         *schemaSchemaFixtureNested
 	Inline         *schemaSchemaFixtureInline
-	MapOfString    storable.Map
-	MapOfInterface storable.Map
+	MapOfString    kallax.Map
+	MapOfInterface kallax.Map
 	MapOfSomeType  *schemaSchemaFixtureMapOfSomeType
 }
 
 type schemaStoreFixture struct {
-	Foo storable.Field
+	Foo kallax.Field
 }
 
 type schemaStoreWithConstructFixture struct {
-	Foo storable.Field
+	Foo kallax.Field
 }
 
 type schemaStoreWithNewFixture struct {
-	Foo storable.Field
-	Bar storable.Field
+	Foo kallax.Field
+	Bar kallax.Field
 }
 
 type schemaSchemaFixtureNested struct {
-	String         storable.Field
-	Int            storable.Field
+	String         kallax.Field
+	Int            kallax.Field
 	Nested         *schemaSchemaFixtureNestedNested
 	Inline         *schemaSchemaFixtureNestedInline
-	MapOfString    storable.Map
-	MapOfInterface storable.Map
+	MapOfString    kallax.Map
+	MapOfInterface kallax.Map
 	MapOfSomeType  *schemaSchemaFixtureNestedMapOfSomeType
 }
 
 type schemaSchemaFixtureInline struct {
-	Inline storable.Field
+	Inline kallax.Field
 }
 
 type schemaSchemaFixtureMapOfSomeType struct {
-	Foo storable.Map
+	Foo kallax.Map
 }
 
 type schemaSchemaFixtureNestedNested struct {
 }
 
 type schemaSchemaFixtureNestedInline struct {
-	Inline storable.Field
+	Inline kallax.Field
 }
 
 type schemaSchemaFixtureNestedMapOfSomeType struct {
-	Foo storable.Map
+	Foo kallax.Map
 }
 
 var Schema = schema{
 	EventsFixture: &schemaEventsFixture{
-		Checks: storable.NewMap("checks.[map]", "bool"),
+		Checks: kallax.NewMap("checks.[map]", "bool"),
 	},
 	EventsSaveFixture: &schemaEventsSaveFixture{
-		Checks: storable.NewMap("checks.[map]", "bool"),
+		Checks: kallax.NewMap("checks.[map]", "bool"),
 	},
 	MultiKeySortFixture: &schemaMultiKeySortFixture{
-		Name:  storable.NewField("name", "string"),
-		Start: storable.NewField("start", "time.Time"),
-		End:   storable.NewField("end", "time.Time"),
+		Name:  kallax.NewField("name", "string"),
+		Start: kallax.NewField("start", "time.Time"),
+		End:   kallax.NewField("end", "time.Time"),
 	},
 	QueryFixture: &schemaQueryFixture{
-		Foo: storable.NewField("foo", "string"),
+		Foo: kallax.NewField("foo", "string"),
 	},
 	ResultSetFixture: &schemaResultSetFixture{
-		Foo: storable.NewField("foo", "string"),
+		Foo: kallax.NewField("foo", "string"),
 	},
 	ResultSetInitFixture: &schemaResultSetInitFixture{
-		Foo: storable.NewField("foo", "string"),
+		Foo: kallax.NewField("foo", "string"),
 	},
 	SchemaFixture: &schemaSchemaFixture{
-		String: storable.NewField("string", "string"),
-		Int:    storable.NewField("foo", "int"),
+		String: kallax.NewField("string", "string"),
+		Int:    kallax.NewField("foo", "int"),
 		Nested: &schemaSchemaFixtureNested{
-			String: storable.NewField("nested.string", "string"),
-			Int:    storable.NewField("nested.foo", "int"),
+			String: kallax.NewField("nested.string", "string"),
+			Int:    kallax.NewField("nested.foo", "int"),
 			Nested: &schemaSchemaFixtureNestedNested{},
 			Inline: &schemaSchemaFixtureNestedInline{
-				Inline: storable.NewField("nested.inline", "string"),
+				Inline: kallax.NewField("nested.inline", "string"),
 			},
-			MapOfString:    storable.NewMap("nested.mapofstring.[map]", "string"),
-			MapOfInterface: storable.NewMap("nested.mapofinterface.[map]", "interface{}"),
+			MapOfString:    kallax.NewMap("nested.mapofstring.[map]", "string"),
+			MapOfInterface: kallax.NewMap("nested.mapofinterface.[map]", "interface{}"),
 			MapOfSomeType: &schemaSchemaFixtureNestedMapOfSomeType{
-				Foo: storable.NewMap("nested.mapofsometype.[map].foo", "string"),
+				Foo: kallax.NewMap("nested.mapofsometype.[map].foo", "string"),
 			},
 		},
 		Inline: &schemaSchemaFixtureInline{
-			Inline: storable.NewField("inline", "string"),
+			Inline: kallax.NewField("inline", "string"),
 		},
-		MapOfString:    storable.NewMap("mapofstring.[map]", "string"),
-		MapOfInterface: storable.NewMap("mapofinterface.[map]", "interface{}"),
+		MapOfString:    kallax.NewMap("mapofstring.[map]", "string"),
+		MapOfInterface: kallax.NewMap("mapofinterface.[map]", "interface{}"),
 		MapOfSomeType: &schemaSchemaFixtureMapOfSomeType{
-			Foo: storable.NewMap("mapofsometype.[map].foo", "string"),
+			Foo: kallax.NewMap("mapofsometype.[map].foo", "string"),
 		},
 	},
 	StoreFixture: &schemaStoreFixture{
-		Foo: storable.NewField("foo", "string"),
+		Foo: kallax.NewField("foo", "string"),
 	},
 	StoreWithConstructFixture: &schemaStoreWithConstructFixture{
-		Foo: storable.NewField("foo", "string"),
+		Foo: kallax.NewField("foo", "string"),
 	},
 	StoreWithNewFixture: &schemaStoreWithNewFixture{
-		Foo: storable.NewField("foo", "string"),
-		Bar: storable.NewField("bar", "string"),
+		Foo: kallax.NewField("foo", "string"),
+		Bar: kallax.NewField("bar", "string"),
 	},
 }

@@ -3,18 +3,18 @@ package tests
 import (
 	"time"
 
+	"github.com/src-d/go-kallax"
 	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/src-d/storable.v1"
 )
 
 type StoreFixture struct {
-	storable.Document `bson:",inline" collection:"store"`
-	Foo               string
+	kallax.Document `bson:",inline" collection:"store"`
+	Foo             string
 }
 
 type StoreWithConstructFixture struct {
-	storable.Document `bson:",inline" collection:"store_construct"`
-	Foo               string
+	kallax.Document `bson:",inline" collection:"store_construct"`
+	Foo             string
 }
 
 func newStoreWithConstructFixture(f string) *StoreWithConstructFixture {
@@ -25,9 +25,9 @@ func newStoreWithConstructFixture(f string) *StoreWithConstructFixture {
 }
 
 type StoreWithNewFixture struct {
-	storable.Document `bson:",inline" collection:"store_new"`
-	Foo               string
-	Bar               string
+	kallax.Document `bson:",inline" collection:"store_new"`
+	Foo             string
+	Bar             string
 }
 
 func (s *StoreWithNewFixtureStore) New(f, b string) *StoreWithNewFixture {
@@ -40,8 +40,8 @@ func (s *StoreWithNewFixtureStore) New(f, b string) *StoreWithNewFixture {
 }
 
 type MultiKeySortFixture struct {
-	storable.Document `bson:",inline" collection:"query"`
-	Name              string
-	Start             time.Time
-	End               time.Time
+	kallax.Document `bson:",inline" collection:"query"`
+	Name            string
+	Start           time.Time
+	End             time.Time
 }

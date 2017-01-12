@@ -3,18 +3,18 @@ package example
 import (
 	"time"
 
+	"github.com/src-d/go-kallax"
+	"github.com/src-d/go-kallax/operators"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/src-d/storable.v1"
-	"gopkg.in/src-d/storable.v1/operators"
 )
 
 type ProductStore struct {
-	storable.Store
+	kallax.Store
 }
 
 func NewProductStore(db *mgo.Database) *ProductStore {
-	return &ProductStore{*storable.NewStore(db, "products")}
+	return &ProductStore{*kallax.NewStore(db, "products")}
 }
 
 // New returns a new instance of Product.
@@ -29,7 +29,7 @@ func (s *ProductStore) New(name string, price Price, createdAt time.Time) (doc *
 
 // Query return a new instance of ProductQuery.
 func (s *ProductStore) Query() *ProductQuery {
-	return &ProductQuery{*storable.NewBaseQuery()}
+	return &ProductQuery{*kallax.NewBaseQuery()}
 }
 
 // Find performs a find on the collection using the given query.
@@ -106,7 +106,7 @@ func (s *ProductStore) Save(doc *Product) (updated bool, err error) {
 }
 
 type ProductQuery struct {
-	storable.BaseQuery
+	kallax.BaseQuery
 }
 
 // FindById add a new criteria to the query searching by _id
@@ -115,13 +115,13 @@ func (q *ProductQuery) FindById(ids ...bson.ObjectId) *ProductQuery {
 	for _, id := range ids {
 		vs = append(vs, id)
 	}
-	q.AddCriteria(operators.In(storable.IdField, vs...))
+	q.AddCriteria(operators.In(kallax.IdField, vs...))
 
 	return q
 }
 
 type ProductResultSet struct {
-	storable.ResultSet
+	kallax.ResultSet
 	last    *Product
 	lastErr error
 }
@@ -169,7 +169,7 @@ func (r *ProductResultSet) ForEach(f func(*Product) error) error {
 		}
 
 		err = f(result)
-		if err == storable.ErrStop {
+		if err == kallax.ErrStop {
 			break
 		}
 
@@ -186,33 +186,33 @@ type schema struct {
 }
 
 type schemaProduct struct {
-	Status    storable.Field
-	CreatedAt storable.Field
-	UpdatedAt storable.Field
-	Name      storable.Field
+	Status    kallax.Field
+	CreatedAt kallax.Field
+	UpdatedAt kallax.Field
+	Name      kallax.Field
 	Price     *schemaProductPrice
-	Discount  storable.Field
-	Url       storable.Field
-	Tags      storable.Field
+	Discount  kallax.Field
+	Url       kallax.Field
+	Tags      kallax.Field
 }
 
 type schemaProductPrice struct {
-	Amount   storable.Field
-	Discount storable.Field
+	Amount   kallax.Field
+	Discount kallax.Field
 }
 
 var Schema = schema{
 	Product: &schemaProduct{
-		Status:    storable.NewField("status", "int"),
-		CreatedAt: storable.NewField("createdat", "time.Time"),
-		UpdatedAt: storable.NewField("updatedat", "time.Time"),
-		Name:      storable.NewField("name", "string"),
+		Status:    kallax.NewField("status", "int"),
+		CreatedAt: kallax.NewField("createdat", "time.Time"),
+		UpdatedAt: kallax.NewField("updatedat", "time.Time"),
+		Name:      kallax.NewField("name", "string"),
 		Price: &schemaProductPrice{
-			Amount:   storable.NewField("price.amount", "float64"),
-			Discount: storable.NewField("price.discount", "float64"),
+			Amount:   kallax.NewField("price.amount", "float64"),
+			Discount: kallax.NewField("price.discount", "float64"),
 		},
-		Discount: storable.NewField("discount", "float64"),
-		Url:      storable.NewField("url", "string"),
-		Tags:     storable.NewField("tags", "string"),
+		Discount: kallax.NewField("discount", "float64"),
+		Url:      kallax.NewField("url", "string"),
+		Tags:     kallax.NewField("tags", "string"),
 	},
 }

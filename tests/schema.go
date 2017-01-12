@@ -1,9 +1,9 @@
 package tests
 
-import "gopkg.in/src-d/storable.v1"
+import "github.com/src-d/go-kallax"
 
 type SchemaFixture struct {
-	storable.Document `bson:",inline" collection:"schema"`
+	kallax.Document `bson:",inline" collection:"schema"`
 
 	String string
 	Int    int `bson:"foo"`

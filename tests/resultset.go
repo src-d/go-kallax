@@ -1,10 +1,10 @@
 package tests
 
-import "gopkg.in/src-d/storable.v1"
+import "github.com/src-d/go-kallax"
 
 type ResultSetFixture struct {
-	storable.Document `bson:",inline" collection:"resultset"`
-	Foo               string
+	kallax.Document `bson:",inline" collection:"resultset"`
+	Foo             string
 }
 
 func newResultSetFixture(f string) *ResultSetFixture {
@@ -12,11 +12,11 @@ func newResultSetFixture(f string) *ResultSetFixture {
 }
 
 type ResultSetInitFixture struct {
-	storable.Document `bson:",inline" collection:"resultset"`
-	Foo               string
+	kallax.Document `bson:",inline" collection:"resultset"`
+	Foo             string
 }
 
-func (r *ResultSetInitFixture) Init(doc storable.DocumentBase) error {
+func (r *ResultSetInitFixture) Init(doc kallax.DocumentBase) error {
 	r.Foo = "foo"
 	return nil
 }
