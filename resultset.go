@@ -1,87 +1,54 @@
 package kallax
 
 import (
-	"errors"
-
-	"gopkg.in/mgo.v2"
+	"database/sql"
+	"fmt"
 )
 
-var (
-	//ErrResultSetClosed is throwed when you are working over a closed ResultSet
-	ErrResultSetClosed = errors.New("closed resultset")
-	//ErrNotFound document not found
-	ErrNotFound = errors.New("document not found")
-	// ErrStop if is used on a callback of a ResultSet.ForEach function the loop
-	// is stopped
-	ErrStop = errors.New("document not found")
-)
+// ErrRawScan is an error returned when a the `Scan` method of `ResultSet`
+// is called with a `ResultSet` created as a result of a `RawQuery`, which is
+// not allowed.
+var ErrRawScan = fmt.Errorf("result set comes from raw query, use RawScan instead")
 
-// ResultSet contains the result of an executed query command.
+// ResultSet is a generic collection of rows.
 type ResultSet struct {
-	IsClosed bool
-	session  *mgo.Session
-	mgoQuery *mgo.Query
-	mgoIter  *mgo.Iter
+	columns []string
+	*sql.Rows
 }
 
-// Count returns the total number of documents in the ResultSet. Count DON'T
-// close the ResultSet after be called.
-func (r *ResultSet) Count() (int, error) {
-	return r.mgoQuery.Count()
+// NewResultSet creates a new result set with the given rows and columns.
+// It is mandatory that all column names are in the same order and are exactly
+// equal to the ones in the query that produced the rows.
+func NewResultSet(rows *sql.Rows, columns ...string) *ResultSet {
+	return &ResultSet{columns, rows}
 }
 
-// All returns all the documents in the ResultSet and close it. Dont use it
-// with large results.
-func (r *ResultSet) All(result interface{}) error {
-	defer r.Close()
-	return r.mgoQuery.All(result)
-}
+// Scan fills the column fields of the given value with the current row.
+func (rs *ResultSet) Scan(record Record) error {
+	if len(rs.columns) == 0 {
+		return ErrRawScan
+	}
 
-// One return a document from the ResultSet and close it, the following calls
-// to One returns ErrResultSetClosed error. If a document is not returned the
-// error ErrNotFound is retuned.
-func (r *ResultSet) One(doc interface{}) error {
-	defer r.Close()
-	found, err := r.Next(doc)
-	if err != nil {
+	var pointers = make([]interface{}, len(rs.columns))
+	for i, col := range rs.columns {
+		ptr, err := record.ColumnAddress(col)
+		if err != nil {
+			return err
+		}
+		pointers[i] = ptr
+	}
+
+	if err := rs.Rows.Scan(pointers...); err != nil {
 		return err
 	}
 
-	if !found {
-		return ErrNotFound
-	}
-
+	record.setPersisted(true)
 	return nil
 }
 
-// Next return a document from the ResultSet, can be called multiple times.
-func (r *ResultSet) Next(doc interface{}) (bool, error) {
-	if r.mgoIter == nil {
-		r.mgoIter = r.mgoQuery.Iter()
-	}
-
-	returned := r.mgoIter.Next(doc)
-	if !returned {
-		r.Close()
-	}
-
-	return returned, r.mgoIter.Err()
-}
-
-// Close close the ResultSet closing the internal iter.
-func (r *ResultSet) Close() error {
-	if r.IsClosed {
-		return ErrResultSetClosed
-	}
-
-	defer func() {
-		r.session.Close()
-		r.IsClosed = true
-	}()
-
-	if r.mgoIter == nil {
-		return nil
-	}
-
-	return r.mgoIter.Close()
+// RowScan copies the columns in the current row into the values pointed at by
+// dest. The number of values in dest must be the same as the number of columns
+// selected in the query.
+func (rs *ResultSet) RawScan(dest ...interface{}) error {
+	return rs.Rows.Scan(dest...)
 }

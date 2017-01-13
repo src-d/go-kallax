@@ -1,283 +1,270 @@
 package kallax
 
 import (
-	. "gopkg.in/check.v1"
-	"gopkg.in/mgo.v2/bson"
+	"database/sql"
+	"fmt"
+	"testing"
+
+	_ "github.com/lib/pq"
+	uuid "github.com/satori/go.uuid"
+	"github.com/stretchr/testify/suite"
 )
 
-func (s *BaseSuite) TestStore_Insert(c *C) {
-	p := NewPerson("foo")
-	st := NewStore(s.db, "test")
-	err := st.Insert(p)
-	c.Assert(err, IsNil)
-	c.Assert(p.IsNew(), Equals, false)
-
-	r, err := st.Find(NewBaseQuery())
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 1)
-	c.Assert(result[0].FirstName, Equals, "foo")
+type StoreSuite struct {
+	suite.Suite
+	db    *sql.DB
+	store *Store
 }
 
-func (s *BaseSuite) TestStore_InsertOld(c *C) {
-	p := NewPerson("foo")
-	st := NewStore(s.db, "test")
-	err := st.Insert(p)
-	c.Assert(err, IsNil)
-
-	err = st.Insert(p)
-	c.Assert(err, Equals, ErrNonNewDocument)
+func (s *StoreSuite) SetupTest() {
+	var err error
+	s.db, err = openTestDB()
+	s.Nil(err)
+	_, err = s.db.Exec(`CREATE TABLE model (
+		id uuid PRIMARY KEY,
+		name varchar(255) not null,
+		email varchar(255) not null,
+		age int not null
+	)`)
+	s.Nil(err)
+	s.store = NewStore(s.db, new(modelSchema))
 }
 
-func (s *BaseSuite) TestStore_Update(c *C) {
-	p := NewPerson("foo")
-
-	st := NewStore(s.db, "test")
-	st.Insert(p)
-	st.Insert(&Person{FirstName: "bar"})
-
-	p.FirstName = "qux"
-	err := st.Update(p)
-	c.Assert(err, IsNil)
-
-	q := NewBaseQuery()
-	q.AddCriteria(bson.M{"firstname": "qux"})
-
-	r, err := st.Find(q)
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 1)
-	c.Assert(result[0].FirstName, Equals, "qux")
+func (s *StoreSuite) TearDownTest() {
+	_, err := s.db.Exec("DROP TABLE model")
+	s.Nil(err)
+	s.Nil(s.db.Close())
 }
 
-func (s *BaseSuite) TestStore_Save(c *C) {
-	p := NewPerson("foo")
-	p.SetId(bson.NewObjectId())
-
-	st := NewStore(s.db, "test")
-	updated, err := st.Save(p)
-	c.Assert(err, IsNil)
-	c.Assert(updated, Equals, false)
-	c.Assert(p.IsNew(), Equals, false)
-
-	p.FirstName = "qux"
-	updated, err = st.Save(p)
-	c.Assert(err, IsNil)
-	c.Assert(updated, Equals, true)
-	c.Assert(p.IsNew(), Equals, false)
-
-	r, err := st.Find(NewBaseQuery())
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 1)
-	c.Assert(result[0].FirstName, Equals, "qux")
+func (s *StoreSuite) TestInsert() {
+	m := newModel("a", "a@a.a", 1)
+	s.Nil(s.store.Insert(m))
+	s.True(m.IsPersisted(), "model should be persisted now")
+	s.assertModel(m)
 }
 
-func (s *BaseSuite) TestStore_UpdateNew(c *C) {
-	p := NewPerson("foo")
-	st := NewStore(s.db, "test")
-
-	err := st.Update(p)
-	c.Assert(err, Equals, ErrNewDocument)
+func (s *StoreSuite) TestInsert_NotNew() {
+	var m model
+	m.setPersisted(true)
+	s.Equal(ErrNonNewDocument, s.store.Insert(&m))
 }
 
-func (s *BaseSuite) TestStore_Delete(c *C) {
-	p := NewPerson("foo")
-	st := NewStore(s.db, "test")
-	st.Insert(p)
-
-	err := st.Delete(p)
-	c.Assert(err, IsNil)
-
-	r, err := st.Find(NewBaseQuery())
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 0)
+func (s *StoreSuite) TestInsert_IDEmpty() {
+	var m = new(model)
+	s.Nil(s.store.Insert(m))
+	s.False(m.ID.IsEmpty())
 }
 
-func (s *BaseSuite) TestStore_FindLimit(c *C) {
-	st := NewStore(s.db, "test")
-	st.Insert(NewPerson("foo"))
-	st.Insert(NewPerson("bar"))
+func (s *StoreSuite) TestUpdate() {
+	var m = newModel("a", "a@a.a", 1)
+	s.Nil(s.store.Insert(m))
 
-	q := NewBaseQuery()
-	q.Limit(1)
-	r, err := st.Find(q)
-	c.Assert(err, IsNil)
+	var newModel = newModel("a", "a@a.a", 1)
+	newModel.SetID(m.ID)
+	_, err := s.store.Update(newModel)
+	s.Equal(ErrNewDocument, err)
 
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 1)
-	c.Assert(result[0].FirstName, Equals, "foo")
+	newModel.setPersisted(true)
+	newModel.SetID(ID(uuid.Nil))
+	_, err = s.store.Update(newModel)
+	s.Equal(ErrEmptyID, err)
+
+	m.Age = 2
+	m.Email = "b@b.b"
+	m.Name = "b"
+	rows, err := s.store.Update(m)
+	s.Nil(err)
+	s.Equal(int64(1), rows, "rows affected")
+	s.assertModel(m)
 }
 
-func (s *BaseSuite) TestStore_FindSkip(c *C) {
-	st := NewStore(s.db, "test")
-	st.Insert(NewPerson("foo"))
-	st.Insert(NewPerson("bar"))
+func (s *StoreSuite) TestSave() {
+	m := newModel("a", "a@a.a", 1)
+	updated, err := s.store.Save(m)
+	s.Nil(err)
+	s.False(updated)
+	s.assertModel(m)
 
-	q := NewBaseQuery()
-	q.Skip(1)
-	r, err := st.Find(q)
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 1)
-	c.Assert(result[0].FirstName, Equals, "bar")
+	m.Age = 5
+	updated, err = s.store.Save(m)
+	s.Nil(err)
+	s.True(updated)
 }
 
-func (s *BaseSuite) TestStore_FindSort(c *C) {
-	st := NewStore(s.db, "test")
-	st.Insert(NewPerson("foo"))
-	st.Insert(NewPerson("bar"))
+func (s *StoreSuite) TestDelete() {
+	m := newModel("a", "a@a.a", 1)
+	s.Nil(s.store.Insert(m))
+	s.assertModel(m)
 
-	q := NewBaseQuery()
-	q.Sort(Sort{{IdField, Desc}})
-	r, err := st.Find(q)
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 2)
-	c.Assert(result[0].FirstName, Equals, "bar")
-	c.Assert(result[1].FirstName, Equals, "foo")
+	s.Nil(s.store.Delete(m))
+	s.assertNotExists(m)
 }
 
-func (s *BaseSuite) TestStore_FindSelect(c *C) {
-	p := NewPerson("foo")
-	p.LastName = "qux"
+func (s *StoreSuite) TestRawQuery() {
+	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
+	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
+	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
-	st := NewStore(s.db, "test")
-	st.Insert(p)
+	rs, err := s.store.RawQuery("SELECT name FROM model WHERE age > $1", 1)
+	s.Nil(err)
 
-	q := NewBaseQuery()
-	q.Select(Select{{NewField("lastname", "string"), Exclude}})
-
-	r, err := st.Find(q)
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 1)
-	c.Assert(result[0].FirstName, Equals, "foo")
-	c.Assert(result[0].LastName, Equals, "")
+	var names []string
+	for rs.Next() {
+		s.Equal(ErrRawScan, rs.Scan(nil))
+		var name string
+		s.Nil(rs.RawScan(&name))
+		names = append(names, name)
+	}
+	s.Equal([]string{"Jane", "Anna"}, names)
 }
 
-func (s *BaseSuite) TestStore_RawUpdate(c *C) {
-	st := NewStore(s.db, "test")
+func (s *StoreSuite) TestRawExec() {
+	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
+	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
+	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
-	p1 := NewPerson("foo")
-	p1.LastName = "bar"
-	st.Insert(p1)
-
-	p2 := NewPerson("bar")
-	p2.LastName = "bar"
-	st.Insert(p2)
-
-	q := NewBaseQuery()
-	q.AddCriteria(bson.M{"lastname": "bar"})
-
-	err := st.RawUpdate(q, bson.M{"lastname": "qux"}, false)
-	c.Assert(err, IsNil)
-
-	q = NewBaseQuery()
-	q.AddCriteria(bson.M{"lastname": "qux"})
-
-	r, err := st.Find(q)
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 1)
-	c.Assert(result[0].FirstName, Equals, "foo")
-	c.Assert(result[0].LastName, Equals, "qux")
+	rows, err := s.store.RawExec("DELETE FROM model WHERE age > $1", 1)
+	s.Nil(err)
+	s.Equal(int64(2), rows)
 }
 
-func (s *BaseSuite) TestStore_RawUpdateMulti(c *C) {
-	st := NewStore(s.db, "test")
+func (s *StoreSuite) TestFind() {
+	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
+	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
+	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
-	p1 := NewPerson("foo")
-	p1.LastName = "bar"
-	st.Insert(p1)
+	q := NewBaseQuery("model")
+	q.Select("name")
+	q.Where(Gt("age", 1))
 
-	p2 := NewPerson("bar")
-	p2.LastName = "bar"
-	st.Insert(p2)
+	rs := s.store.MustFind(q)
 
-	q := NewBaseQuery()
-	q.AddCriteria(bson.M{"lastname": "bar"})
-
-	err := st.RawUpdate(q, bson.M{"lastname": "qux"}, true)
-	c.Assert(err, IsNil)
-
-	q = NewBaseQuery()
-	q.AddCriteria(bson.M{"lastname": "qux"})
-
-	r, err := st.Find(q)
-	c.Assert(err, IsNil)
-
-	var result []*Person
-	c.Assert(r.All(&result), IsNil)
-	c.Assert(result, HasLen, 2)
+	var names []string
+	for rs.Next() {
+		var m = newModel("", "", 0)
+		s.Nil(rs.Scan(m))
+		s.True(m.IsPersisted())
+		names = append(names, m.Name)
+	}
+	s.Equal([]string{"Jane", "Anna"}, names)
 }
 
-func (s *BaseSuite) TestStore_RawUpdateEmpty(c *C) {
-	st := NewStore(s.db, "test")
-	q := NewBaseQuery()
-	err := st.RawUpdate(q, bson.M{"firstname": "qux"}, false)
-	c.Assert(err, Equals, ErrEmptyQueryInRaw)
+func (s *StoreSuite) TestCount() {
+	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
+	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
+	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
+
+	q := NewBaseQuery("model")
+	q.Select("name")
+	q.Where(Gt("age", 1))
+
+	s.Equal(int64(2), s.store.MustCount(q))
 }
 
-func (s *BaseSuite) TestStore_RawDelete(c *C) {
-	st := NewStore(s.db, "test")
-	st.Insert(NewPerson("bar"))
-	st.Insert(NewPerson("bar"))
+func (s *StoreSuite) TestOperators() {
+	cases := []struct {
+		name  string
+		cond  Condition
+		count int64
+	}{
+		{"Eq", Eq("name", "Joe"), 1},
+		{"Gt", Gt("age", 1), 2},
+		{"Lt", Lt("age", 2), 1},
+		{"Neq", Neq("name", "Joe"), 2},
+		{"GtOrEq", GtOrEq("age", 2), 2},
+		{"LtOrEq", LtOrEq("age", 3), 3},
+		{"Not", Not(Eq("name", "Joe")), 2},
+		{"And", And(Neq("name", "Joe"), Gt("age", 1)), 2},
+		{"Or", Or(Neq("name", "Joe"), Eq("age", 1)), 3},
+	}
 
-	q := NewBaseQuery()
-	q.AddCriteria(bson.M{"firstname": "bar"})
+	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
+	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
+	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
-	err := st.RawDelete(q, false)
-	c.Assert(err, IsNil)
+	for _, c := range cases {
+		q := NewBaseQuery("model")
+		q.Where(c.cond)
 
-	q = NewBaseQuery()
-	q.AddCriteria(bson.M{"firstname": "bar"})
-
-	r, _ := st.Find(q)
-	count, _ := r.Count()
-	c.Assert(count, Equals, 1)
+		s.Equal(s.store.MustCount(q), c.count, c.name)
+	}
 }
 
-func (s *BaseSuite) TestStore_RawDeleteMulti(c *C) {
-	st := NewStore(s.db, "test")
-	st.Insert(NewPerson("bar"))
-	st.Insert(NewPerson("bar"))
+func (s *StoreSuite) assertModel(m *model) {
+	var result model
+	err := s.db.QueryRow("SELECT id, name, email, age FROM model WHERE id = $1", m.ID).
+		Scan(&result.ID, &result.Name, &result.Email, &result.Age)
+	s.Nil(err)
 
-	q := NewBaseQuery()
-	q.AddCriteria(bson.M{"firstname": "bar"})
-
-	err := st.RawDelete(q, true)
-	c.Assert(err, IsNil)
-
-	q = NewBaseQuery()
-	q.AddCriteria(bson.M{"firstname": "bar"})
-
-	r, _ := st.Find(q)
-	count, _ := r.Count()
-	c.Assert(count, Equals, 0)
+	if err == nil {
+		s.Equal(m.ID, result.ID)
+		s.Equal(m.Name, result.Name)
+		s.Equal(m.Email, result.Email)
+		s.Equal(m.Age, result.Age)
+	}
 }
 
-func (s *BaseSuite) TestStore_RawDeleteEmpty(c *C) {
-	st := NewStore(s.db, "test")
-	q := NewBaseQuery()
-	err := st.RawDelete(q, false)
-	c.Assert(err, Equals, ErrEmptyQueryInRaw)
+func (s *StoreSuite) assertNotExists(m *model) {
+	var id ID
+	err := s.db.QueryRow("SELECT id FROM model WHERE id = $1", m.ID).Scan(&id)
+	s.Equal(sql.ErrNoRows, err, "record should not exist")
+}
+
+func TestStore(t *testing.T) {
+	suite.Run(t, new(StoreSuite))
+}
+
+type model struct {
+	Model
+	Name  string
+	Email string
+	Age   int
+}
+
+func newModel(name, email string, age int) *model {
+	m := &model{Name: name, Email: email, Age: age}
+	m.SetID(NewID())
+	return m
+}
+
+func (m *model) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return m.ID, nil
+	case "name":
+		return m.Name, nil
+	case "email":
+		return m.Email, nil
+	case "age":
+		return m.Age, nil
+	}
+	return nil, fmt.Errorf("column does not exist: %s", col)
+}
+
+func (m *model) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return &m.ID, nil
+	case "name":
+		return &m.Name, nil
+	case "email":
+		return &m.Email, nil
+	case "age":
+		return &m.Age, nil
+	}
+	return nil, fmt.Errorf("column does not exist: %s", col)
+}
+
+type modelSchema struct{}
+
+func (*modelSchema) Alias() string      { return "model" }
+func (*modelSchema) Table() string      { return "model" }
+func (*modelSchema) Identifier() string { return "id" }
+func (*modelSchema) Columns() []string {
+	return []string{
+		"id",
+		"name",
+		"email",
+		"age",
+	}
 }
