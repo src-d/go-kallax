@@ -30,6 +30,19 @@ func (s *QuerySuite) TestSelectNot() {
 	s.Equal(columnSet{"a", "b", "c"}, s.q.excludedColumns)
 }
 
+func (s *QuerySuite) TestSelectNotSelectSelectNot() {
+	s.q.SelectNot("a", "b")
+	s.q.Select("a", "c")
+	s.q.SelectNot("a")
+	s.Equal([]string{"c"}, s.q.selectedColumns())
+}
+
+func (s *QuerySuite) TestSelectSelectNot() {
+	s.q.Select("a", "c")
+	s.q.SelectNot("a")
+	s.Equal([]string{"c"}, s.q.selectedColumns())
+}
+
 func (s *QuerySuite) TestCopy() {
 	s.q.Select("a", "b", "c")
 	s.q.SelectNot("foo")

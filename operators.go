@@ -89,7 +89,6 @@ func Not(cond Condition) Condition {
 	return not{cond}
 }
 
-// Lt returns a condition that will be true when `col` is lower than `value`.
 func condsToSqlizers(conds []Condition) []squirrel.Sqlizer {
 	var result = make([]squirrel.Sqlizer, len(conds))
 	for i, v := range conds {

@@ -42,6 +42,24 @@ func (cs *columnSet) addCol(col string) {
 	}
 }
 
+func (cs *columnSet) remove(cols ...string) {
+	var newSet = make(columnSet, 0, len(*cs))
+	for _, col := range *cs {
+		var found bool
+		for _, c := range cols {
+			if col == c {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			newSet = append(newSet, col)
+		}
+	}
+	*cs = newSet
+}
+
 func (cs columnSet) copy() []string {
 	var result = make(columnSet, len(cs))
 	for i, col := range cs {
@@ -76,6 +94,7 @@ func NewBaseQuery(table string) *BaseQuery {
 
 // Select adds the given columns to the list of selected columns in the query.
 func (q *BaseQuery) Select(columns ...string) {
+	q.excludedColumns.remove(columns...)
 	q.columns.add(columns...)
 }
 

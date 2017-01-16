@@ -16,6 +16,9 @@ var (
 	ErrNewDocument = errors.New("cannot updated a new document")
 	// ErrEmptyID a document without ID cannot be used with Save method
 	ErrEmptyID = errors.New("a record without id is not allowed")
+	// ErrNoRowUpdate is returned when an update operation does not affect any
+	// rows, meaning the model being updated does not exist.
+	ErrNoRowUpdate = errors.New("update affected no rows")
 )
 
 // Store is a structure capable of retrieving records from a concrete table in
@@ -104,7 +107,16 @@ func (s *Store) Update(record Record, cols ...string) (int64, error) {
 		return 0, err
 	}
 
-	return result.RowsAffected()
+	cnt, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	if cnt == 0 {
+		return 0, ErrNoRowUpdate
+	}
+
+	return cnt, nil
 }
 
 // Save inserts or updates the given record in the table. It requires a record
