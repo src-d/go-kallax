@@ -12,15 +12,16 @@ var ErrRawScan = fmt.Errorf("result set comes from raw query, use RawScan instea
 
 // ResultSet is a generic collection of rows.
 type ResultSet struct {
-	columns []string
+	columns  []string
+	readOnly bool
 	*sql.Rows
 }
 
 // NewResultSet creates a new result set with the given rows and columns.
 // It is mandatory that all column names are in the same order and are exactly
 // equal to the ones in the query that produced the rows.
-func NewResultSet(rows *sql.Rows, columns ...string) *ResultSet {
-	return &ResultSet{columns, rows}
+func NewResultSet(rows *sql.Rows, readOnly bool, columns ...string) *ResultSet {
+	return &ResultSet{columns, readOnly, rows}
 }
 
 // Scan fills the column fields of the given value with the current row.
@@ -42,6 +43,7 @@ func (rs *ResultSet) Scan(record Record) error {
 		return err
 	}
 
+	record.setWritable(!rs.readOnly)
 	record.setPersisted(true)
 	return nil
 }

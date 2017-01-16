@@ -9,6 +9,7 @@ import (
 // Query returns information about some query settings and compiles the query.
 type Query interface {
 	compile() ([]string, squirrel.SelectBuilder)
+	isReadOnly() bool
 	// GetOffset returns the number of skipped rows in the query.
 	GetOffset() uint64
 	// GetLimit returns the max number of rows retrieved by the query.
@@ -67,26 +68,38 @@ type BaseQuery struct {
 	excludedColumns columnSet
 	builder         squirrel.SelectBuilder
 
-	batchSize uint64
-	offset    uint64
-	limit     uint64
+	selectChanged bool
+	batchSize     uint64
+	offset        uint64
+	limit         uint64
 }
 
 var _ Query = (*BaseQuery)(nil)
 
-// NewBaseQuery creates a new BaseQuery for querying the given table.
-func NewBaseQuery(table string) *BaseQuery {
+// NewBaseQuery creates a new BaseQuery for querying the given table
+// and the given selected columns.
+func NewBaseQuery(table string, selectedColumns ...string) *BaseQuery {
 	return &BaseQuery{
 		builder: squirrel.StatementBuilder.
 			PlaceholderFormat(squirrel.Dollar).
 			Select().
 			From(table),
+		columns:   columnSet(selectedColumns),
 		batchSize: 50,
 	}
 }
 
+func (q *BaseQuery) isReadOnly() bool {
+	return q.selectChanged
+}
+
 // Select adds the given columns to the list of selected columns in the query.
 func (q *BaseQuery) Select(columns ...string) {
+	if !q.selectChanged {
+		q.columns = columnSet{}
+		q.selectChanged = true
+	}
+
 	q.excludedColumns.remove(columns...)
 	q.columns.add(columns...)
 }
@@ -103,6 +116,7 @@ func (q *BaseQuery) Copy() *BaseQuery {
 		builder:         q.builder,
 		columns:         q.columns.copy(),
 		excludedColumns: q.excludedColumns.copy(),
+		selectChanged:   q.selectChanged,
 		batchSize:       q.GetBatchSize(),
 		limit:           q.GetLimit(),
 		offset:          q.GetOffset(),
