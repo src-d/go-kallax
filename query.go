@@ -44,16 +44,9 @@ func (cs *columnSet) addCol(col string) {
 
 func (cs *columnSet) remove(cols ...string) {
 	var newSet = make(columnSet, 0, len(*cs))
+	toRemove := columnSet(cols)
 	for _, col := range *cs {
-		var found bool
-		for _, c := range cols {
-			if col == c {
-				found = true
-				break
-			}
-		}
-
-		if !found {
+		if !toRemove.contains(col) {
 			newSet = append(newSet, col)
 		}
 	}
