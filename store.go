@@ -53,9 +53,7 @@ func (s *Store) Insert(record Record) error {
 		return ErrNonNewDocument
 	}
 
-	if record.GetID().IsEmpty() {
-		record.SetID(NewID())
-	}
+	record.Identify()
 
 	cols := s.schema.Columns()
 	values, err := RecordValues(record, cols...)
@@ -72,7 +70,7 @@ func (s *Store) Insert(record Record) error {
 	}
 
 	record.setWritable(true)
-	record.setPersisted(true)
+	record.setPersisted()
 	return nil
 }
 

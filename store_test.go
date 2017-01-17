@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/src-d/go-kallax/common"
 )
 
 type StoreSuite struct {
@@ -45,7 +46,7 @@ func (s *StoreSuite) TestInsert() {
 
 func (s *StoreSuite) TestInsert_NotNew() {
 	var m model
-	m.setPersisted(true)
+	m.setPersisted()
 	s.Equal(ErrNonNewDocument, s.store.Insert(&m))
 }
 
@@ -64,8 +65,8 @@ func (s *StoreSuite) TestUpdate() {
 	_, err := s.store.Update(newModel)
 	s.Equal(ErrNewDocument, err)
 
-	newModel.setPersisted(true)
-	newModel.SetID(ID(uuid.Nil))
+	newModel.setPersisted()
+	newModel.SetID(common.ID{})
 	_, err = s.store.Update(newModel)
 	s.Equal(ErrEmptyID, err)
 
@@ -213,7 +214,7 @@ func (s *StoreSuite) assertModel(m *model) {
 }
 
 func (s *StoreSuite) assertNotExists(m *model) {
-	var id ID
+	var id common.ID
 	err := s.db.QueryRow("SELECT id FROM model WHERE id = $1", m.ID).Scan(&id)
 	s.Equal(sql.ErrNoRows, err, "record should not exist")
 }

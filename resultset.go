@@ -44,7 +44,7 @@ func (rs *ResultSet) Scan(record Record) error {
 	}
 
 	record.setWritable(!rs.readOnly)
-	record.setPersisted(true)
+	record.setPersisted()
 	return nil
 }
 
