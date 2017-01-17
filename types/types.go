@@ -36,6 +36,8 @@ func (u URL) Value() (interface{}, error) {
 }
 
 // ScanJSON scans json v into dst.
+// WARNING: This is here temporarily, might be removed in the future, use
+// `JSON` instead.
 func ScanJSON(v interface{}, dst interface{}) error {
 	switch v := v.(type) {
 	case []byte:
@@ -48,6 +50,8 @@ func ScanJSON(v interface{}, dst interface{}) error {
 }
 
 // JSONValue converts something into json.
+// WARNING: This is here temporarily, might be removed in the future, use
+// `JSON` instead.
 func JSONValue(v interface{}) (driver.Value, error) {
 	bytes, err := json.Marshal(v)
 	if err != nil {
