@@ -31,6 +31,15 @@ func (id ID) IsEmpty() bool {
 type Model struct {
 	ID        ID
 	persisted bool
+	writable  bool
+}
+
+func NewModel() Model {
+	return Model{
+		ID:        NewID(),
+		persisted: false,
+		writable:  true,
+	}
 }
 
 func (m *Model) GetID() ID {
@@ -47,6 +56,14 @@ func (m *Model) IsPersisted() bool {
 
 func (m *Model) setPersisted(isPersisted bool) {
 	m.persisted = isPersisted
+}
+
+func (m *Model) IsWritable() bool {
+	return m.writable
+}
+
+func (m *Model) setWritable(w bool) {
+	m.writable = w
 }
 
 type ColumnAddresser interface {
@@ -81,7 +98,13 @@ type Persistable interface {
 	setPersisted(bool)
 }
 
+type Writable interface {
+	IsWritable() bool
+	setWritable(bool)
+}
+
 type Record interface {
+	Writable
 	Identificable
 	Persistable
 	ColumnAddresser

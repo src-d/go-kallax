@@ -19,6 +19,8 @@ var (
 	// ErrNoRowUpdate is returned when an update operation does not affect any
 	// rows, meaning the model being updated does not exist.
 	ErrNoRowUpdate = errors.New("update affected no rows")
+	// ErrNotWritable is returned when a record is not writable.
+	ErrNotWritable = errors.New("record is not writable")
 )
 
 // Store is a structure capable of retrieving records from a concrete table in
@@ -69,6 +71,7 @@ func (s *Store) Insert(record Record) error {
 		return err
 	}
 
+	record.setWritable(true)
 	record.setPersisted(true)
 	return nil
 }
@@ -78,6 +81,10 @@ func (s *Store) Insert(record Record) error {
 // required to have a non-empty ID and not to be a new record.
 // Returns the number of updated rows and an error, if any.
 func (s *Store) Update(record Record, cols ...string) (int64, error) {
+	if !record.IsWritable() {
+		return 0, ErrNotWritable
+	}
+
 	if !record.IsPersisted() {
 		return 0, ErrNewDocument
 	}
@@ -161,7 +168,7 @@ func (s *Store) RawQuery(sql string, params ...interface{}) (*ResultSet, error) 
 		return nil, err
 	}
 
-	return NewResultSet(rows), nil
+	return NewResultSet(rows, true), nil
 }
 
 // RawExec executes a raw SQL query with the given parameters and returns
@@ -183,7 +190,7 @@ func (s *Store) Find(q Query) (*ResultSet, error) {
 		return nil, err
 	}
 
-	return NewResultSet(rows, columns...), nil
+	return NewResultSet(rows, q.isReadOnly(), columns...), nil
 }
 
 // MustFind performs a query and returns a result set with the results.

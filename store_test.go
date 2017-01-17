@@ -76,6 +76,10 @@ func (s *StoreSuite) TestUpdate() {
 	s.Nil(err)
 	s.Equal(int64(1), rows, "rows affected")
 	s.assertModel(m)
+
+	m.setWritable(false)
+	_, err = s.store.Update(m)
+	s.Equal(ErrNotWritable, err)
 }
 
 func (s *StoreSuite) TestSave() {
@@ -89,6 +93,10 @@ func (s *StoreSuite) TestSave() {
 	updated, err = s.store.Save(m)
 	s.Nil(err)
 	s.True(updated)
+
+	m.setWritable(false)
+	_, err = s.store.Save(m)
+	s.Equal(ErrNotWritable, err)
 }
 
 func (s *StoreSuite) TestDelete() {
@@ -222,8 +230,7 @@ type model struct {
 }
 
 func newModel(name, email string, age int) *model {
-	m := &model{Name: name, Email: email, Age: age}
-	m.SetID(NewID())
+	m := &model{Model: NewModel(), Name: name, Email: email, Age: age}
 	return m
 }
 
