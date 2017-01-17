@@ -2,11 +2,11 @@ package kallax
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"testing"
 
 	_ "github.com/lib/pq"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -45,7 +45,7 @@ func (s *StoreSuite) TestInsert() {
 
 func (s *StoreSuite) TestInsert_NotNew() {
 	var m model
-	m.setPersisted(true)
+	m.setPersisted()
 	s.Equal(ErrNonNewDocument, s.store.Insert(&m))
 }
 
@@ -64,8 +64,8 @@ func (s *StoreSuite) TestUpdate() {
 	_, err := s.store.Update(newModel)
 	s.Equal(ErrNewDocument, err)
 
-	newModel.setPersisted(true)
-	newModel.SetID(ID(uuid.Nil))
+	newModel.setPersisted()
+	newModel.SetID(ID{})
 	_, err = s.store.Update(newModel)
 	s.Equal(ErrEmptyID, err)
 
@@ -234,7 +234,7 @@ func newModel(name, email string, age int) *model {
 	return m
 }
 
-func (m *model) Value(col string) (interface{}, error) {
+func (m *model) Value(col string) (driver.Value, error) {
 	switch col {
 	case "id":
 		return m.ID, nil
