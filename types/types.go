@@ -53,11 +53,7 @@ func ScanJSON(v interface{}, dst interface{}) error {
 // WARNING: This is here temporarily, might be removed in the future, use
 // `JSON` instead.
 func JSONValue(v interface{}) (driver.Value, error) {
-	bytes, err := json.Marshal(v)
-	if err != nil {
-		return nil, err
-	}
-	return bytes, nil
+	return json.Marshal(v)
 }
 
 // SQLType is the common interface a type has to fulfill to be considered a
