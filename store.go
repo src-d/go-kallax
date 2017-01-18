@@ -53,7 +53,9 @@ func (s *Store) Insert(record Record) error {
 		return ErrNonNewDocument
 	}
 
-	record.Identify()
+	if record.GetID().IsEmpty() {
+		record.SetID(NewID())
+	}
 
 	cols := s.schema.Columns()
 	values, err := RecordValues(record, cols...)

@@ -1,4 +1,4 @@
-package behaviours
+package kallax
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ type TimestampableSuite struct {
 }
 
 func (s *TimestampableSuite) TestTimestamp() {
-	item := TimestampDates{}
+	item := Timestamps{}
 	s.True(item.CreatedAt.IsZero())
 	s.True(item.UpdatedAt.IsZero())
 	item.Timestamp()
@@ -29,9 +29,9 @@ func (s *TimestampableSuite) TestTimestamp() {
 }
 
 func (s *TimestampableSuite) TestTimestampBeforePersist() {
-	item := TimestampDates{}
+	item := Timestamps{}
 	error := item.BeforePersist()
 	s.Nil(error)
 	s.False(item.CreatedAt.IsZero())
-	s.False(item.UpdatedAt.IsZero()) 
+	s.False(item.UpdatedAt.IsZero())
 }

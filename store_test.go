@@ -2,13 +2,12 @@ package kallax
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"testing"
 
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/src-d/go-kallax/common"
 )
 
 type StoreSuite struct {
@@ -66,7 +65,7 @@ func (s *StoreSuite) TestUpdate() {
 	s.Equal(ErrNewDocument, err)
 
 	newModel.setPersisted()
-	newModel.SetID(common.ID{})
+	newModel.SetID(ID{})
 	_, err = s.store.Update(newModel)
 	s.Equal(ErrEmptyID, err)
 
@@ -214,7 +213,7 @@ func (s *StoreSuite) assertModel(m *model) {
 }
 
 func (s *StoreSuite) assertNotExists(m *model) {
-	var id common.ID
+	var id ID
 	err := s.db.QueryRow("SELECT id FROM model WHERE id = $1", m.ID).Scan(&id)
 	s.Equal(sql.ErrNoRows, err, "record should not exist")
 }
@@ -235,7 +234,7 @@ func newModel(name, email string, age int) *model {
 	return m
 }
 
-func (m *model) Value(col string) (interface{}, error) {
+func (m *model) Value(col string) (driver.Value, error) {
 	switch col {
 	case "id":
 		return m.ID, nil

@@ -1,14 +1,9 @@
-package behaviours
+package kallax
 
 import "time"
 
-// Timestampable must be implemented by those object that can be timestamped
-type Timestampable interface {
-	Timestamp()
-}
-
 // Timestamp modelates an object that knows about when was created and updated
-type TimestampDates struct {
+type Timestamps struct {
 	// CreatedAt is the time where the object was created
 	CreatedAt time.Time
 	// UpdatedAt is the time where the object was updated
@@ -17,7 +12,7 @@ type TimestampDates struct {
 }
 
 // Timestamp updates the UpdatedAt and creates a new CreatedAt if it does not exist
-func (t *TimestampDates) Timestamp() {
+func (t *Timestamps) Timestamp() {
 	if t.now == nil {
 		t.now = time.Now
 	}
@@ -31,7 +26,7 @@ func (t *TimestampDates) Timestamp() {
 
 // BeforePersist runs all actions that must be performed before the persist
 //  - Timestamp
-func (t *TimestampDates) BeforePersist() error {
+func (t *Timestamps) BeforePersist() error {
 	t.Timestamp()
 	return nil
 }

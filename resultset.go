@@ -10,6 +10,10 @@ import (
 // not allowed.
 var ErrRawScan = fmt.Errorf("result set comes from raw query, use RawScan instead")
 
+// ErrStop is an error returned by a callback to stop the iteration in a
+// Resulset.ForEach iteration
+var ErrStop = fmt.Errorf("STOP")
+
 // ResultSet is a generic collection of rows.
 type ResultSet struct {
 	columns  []string

@@ -1,4 +1,4 @@
-package common
+package kallax
 
 import (
 	"testing"
@@ -6,27 +6,25 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestIdentificator(t *testing.T) {
-	suite.Run(t, new(IdentificatorSuite))
+func TestModel(t *testing.T) {
+	suite.Run(t, new(ModelSuite))
 }
 
-type IdentificatorSuite struct {
+type ModelSuite struct {
 	suite.Suite
 }
 
-func (s *IdentificatorSuite) TestID_IsEmpty() {
+func (s *ModelSuite) TestID_IsEmpty() {
 	var id ID
 	s.True(id.IsEmpty())
-
 	id = NewID()
 	s.False(id.IsEmpty())
 }
 
-func (s *IdentificatorSuite) TestID_ThreeNewIDsAreDifferent() {
+func (s *ModelSuite) TestID_ThreeNewIDsAreDifferent() {
 	id1 := NewID()
 	id2 := NewID()
 	id3 := NewID()
-
 	s.NotEqual(id1, id2)
 	s.NotEqual(id1, id3)
 	s.NotEqual(id2, id3)

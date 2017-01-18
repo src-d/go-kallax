@@ -1,17 +1,4 @@
-package behaviours
-
-// Hookable must be implemented by those entities that attend to all DB Hooks
-type Hookable interface {
-	AfterLoader
-	BeforeSaver
-	AfterSaver
-	BeforeUpdater
-	AfterUpdater
-	BeforeInserter
-	AfterInserter
-	BeforeDeleter
-	AfterDeleter
-}
+package kallax
 
 // AfterLoader must be implemented by those entities listening the AfterLoad event
 type AfterLoader interface {
