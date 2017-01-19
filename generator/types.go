@@ -457,11 +457,17 @@ func (f *Field) fieldVarName() string {
 	return fmt.Sprintf("r.%s", f.fieldName())
 }
 
+// requiresRef returns whether the type requires the use of "&" to access the
+// the field. That is, if the field is not a pointer and is not an array.
+func (f *Field) requiresRef() bool {
+	return !f.IsPtr && f.Kind != Array
+}
+
 // Address returns the string representation of the code used to get the
 // pointer to the field.
 func (f *Field) Address() string {
 	name := f.fieldVarName()
-	if !f.IsPtr && f.Kind != Array {
+	if f.requiresRef() {
 		name = "&" + name
 	}
 
