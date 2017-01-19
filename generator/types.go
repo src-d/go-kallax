@@ -457,11 +457,17 @@ func (f *Field) fieldVarName() string {
 	return fmt.Sprintf("r.%s", f.fieldName())
 }
 
+// requiresRef returns whether the type requires the use of "&" to access the
+// the field. That is, if the field is not a pointer and is not an array.
+func (f *Field) requiresRef() bool {
+	return !f.IsPtr && f.Kind != Array
+}
+
 // Address returns the string representation of the code used to get the
 // pointer to the field.
 func (f *Field) Address() string {
 	name := f.fieldVarName()
-	if !f.IsPtr {
+	if f.requiresRef() {
 		name = "&" + name
 	}
 
@@ -474,11 +480,11 @@ func (f *Field) wrapAddress(ptr string) string {
 	}
 
 	if f.Kind == Slice {
-		return fmt.Sprintf("types.Array(%s), nil", ptr)
+		return fmt.Sprintf("types.Slice(%s), nil", ptr)
 	}
 
 	if f.Kind == Array {
-		return `nil, fmt.Errorf("array types are not supported")`
+		return fmt.Sprintf("types.Array(%s[:]), nil", ptr)
 	}
 
 	return fmt.Sprintf("%s, nil", ptr)
@@ -500,9 +506,9 @@ func (f *Field) Value() string {
 		}
 		return name + ", nil"
 	case Slice:
-		return fmt.Sprintf("types.Array(%s), nil", name)
+		return fmt.Sprintf("types.Slice(%s), nil", name)
 	case Array:
-		return `nil, fmt.Errorf("array go type not supported")`
+		return fmt.Sprintf("types.Array(%s[:]), nil", name)
 	}
 
 	if f.IsJSON {
