@@ -40,6 +40,12 @@ type (
 	not struct {
 		cond Condition
 	}
+	in struct {
+		squirrel.And
+	}
+	notIn struct {
+		squirrel.And
+	}
 )
 
 // Eq returns a condition that will be true when `col` is equal to `value`.
@@ -89,6 +95,18 @@ func Not(cond Condition) Condition {
 	return not{cond}
 }
 
+// In returns a condition that will be true when `col` is equal to any of the
+// passed `values`.
+func In(col string, values []interface{}) Condition {
+	return eq{squirrel.Eq{col: values}}
+}
+
+// NotIn returns a condition that will be true when `col` is distinct to all of the
+// passed `values`.
+func NotIn(col string, values []interface{}) Condition {
+	return neq{squirrel.NotEq{col: values}}
+}
+
 func condsToSqlizers(conds []Condition) []squirrel.Sqlizer {
 	var result = make([]squirrel.Sqlizer, len(conds))
 	for i, v := range conds {
@@ -103,7 +121,7 @@ func (n not) ToSql() (string, []interface{}, error) {
 		return "", nil, err
 	}
 
-	return fmt.Sprintf("NOT %s", sql), args, err
+	return fmt.Sprintf("NOT (%s)", sql), args, err
 }
 
 func (eq) isCondition()     {}
@@ -114,4 +132,6 @@ func (ltOrEq) isCondition() {}
 func (neq) isCondition()    {}
 func (or) isCondition()     {}
 func (and) isCondition()    {}
+func (not) isCondition()    {}
+func (in) isCondition()     {}
 func (not) isCondition()    {}
