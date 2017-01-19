@@ -49,6 +49,7 @@ func (i *Model) GetID() ID {
 
 // SetID overrides the ID.
 // The ID should not be modified once it has been set and stored in the DB
+// WARNING: Not to be used by final users!
 func (i *Model) SetID(id ID) {
 	i.ID = id
 }
@@ -77,7 +78,7 @@ type Writable interface {
 	setWritable(bool)
 }
 
-// ColumnAddresser must be implemented by those values that exposes its properties
+// ColumnAddresser must be implemented by those values that expose their properties
 // under pointers, identified by its property names
 type ColumnAddresser interface {
 	// ColumnAddress returns a pointer to the object property identified by the
@@ -85,7 +86,7 @@ type ColumnAddresser interface {
 	ColumnAddress(string) (interface{}, error)
 }
 
-// Valuer must be implemented by those object that exposes its properties
+// Valuer must be implemented by those object that expose their properties
 // identified by its property names
 type Valuer interface {
 	// Value returns the value under the object property identified by the passed
@@ -134,7 +135,7 @@ func (id ID) Value() (driver.Value, error) {
 	return uuid.UUID(id).Value()
 }
 
-// IsEmpty returns true if the ID is set
+// IsEmpty returns true if the ID is not set
 func (id ID) IsEmpty() bool {
 	return uuid.Equal(uuid.UUID(id), uuid.Nil)
 }
