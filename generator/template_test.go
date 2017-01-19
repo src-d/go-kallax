@@ -49,7 +49,7 @@ return &r.Foo, nil
 case "bar":
 return r.Bar, nil
 case "arr":
-return types.Array(&r.Arr), nil
+return types.Slice(&r.Arr), nil
 case "json":
 return types.JSON(&r.JSON), nil
 `
@@ -95,7 +95,7 @@ return r.Bar, nil
 case "aliased":
 return (string)(r.Aliased), nil
 case "arr":
-return types.Array(r.Arr), nil
+return types.Slice(r.Arr), nil
 case "json":
 return types.JSON(r.JSON), nil
 `

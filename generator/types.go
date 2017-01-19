@@ -461,7 +461,7 @@ func (f *Field) fieldVarName() string {
 // pointer to the field.
 func (f *Field) Address() string {
 	name := f.fieldVarName()
-	if !f.IsPtr {
+	if !f.IsPtr && f.Kind != Array {
 		name = "&" + name
 	}
 
@@ -474,11 +474,11 @@ func (f *Field) wrapAddress(ptr string) string {
 	}
 
 	if f.Kind == Slice {
-		return fmt.Sprintf("types.Array(%s), nil", ptr)
+		return fmt.Sprintf("types.Slice(%s), nil", ptr)
 	}
 
 	if f.Kind == Array {
-		return `nil, fmt.Errorf("array types are not supported")`
+		return fmt.Sprintf("types.Array(%s[:]), nil", ptr)
 	}
 
 	return fmt.Sprintf("%s, nil", ptr)
@@ -500,9 +500,9 @@ func (f *Field) Value() string {
 		}
 		return name + ", nil"
 	case Slice:
-		return fmt.Sprintf("types.Array(%s), nil", name)
+		return fmt.Sprintf("types.Slice(%s), nil", name)
 	case Array:
-		return `nil, fmt.Errorf("array go type not supported")`
+		return fmt.Sprintf("types.Array(%s[:]), nil", name)
 	}
 
 	if f.IsJSON {
