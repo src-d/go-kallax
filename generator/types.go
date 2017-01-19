@@ -112,6 +112,12 @@ var specialTypes = map[string]string{
 	"github.com/src-d/go-kallax.ID": "kallax.ID",
 }
 
+// mappings defines the mapping between specific types and their counterpart
+// in kallax types
+var mappings = map[string]string{
+	"url.URL": "types.URL",
+}
+
 // Package is the representation of a scanned package.
 type Package struct {
 	// Name is the package name.
@@ -457,12 +463,21 @@ func (f *Field) fieldVarName() string {
 	return fmt.Sprintf("r.%s", f.fieldName())
 }
 
-// Address returns the string representation of the code used to get the
-// pointer to the field.
-func (f *Field) Address() string {
+func (f *Field) fieldVarAddress() string {
 	name := f.fieldVarName()
 	if !f.IsPtr {
 		name = "&" + name
+	}
+
+	return name
+}
+
+// Address returns the string representation of the code used to get the
+// pointer to the field.
+func (f *Field) Address() string {
+	name := f.fieldVarAddress()
+	if mapped, ok := mappings[f.Type]; ok {
+		name = fmt.Sprintf("(*%s)(%s)", mapped, name)
 	}
 
 	return f.wrapAddress(name)
@@ -491,6 +506,10 @@ func (f *Field) Value() string {
 
 	switch f.Kind {
 	case Basic:
+		if mapped, ok := mappings[f.Type]; ok {
+			name = fmt.Sprintf("(*%s)(%s)", mapped, f.fieldVarAddress())
+		}
+
 		if f.IsAlias {
 			typ := f.Type
 			if f.IsPtr {
