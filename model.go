@@ -81,7 +81,7 @@ type Writable interface {
 // under pointers, identified by its property names
 type ColumnAddresser interface {
 	// ColumnAddress returns a pointer to the object property identified by the
-	// passed string or an error if that property does not exist
+	// column name or an error if that property does not exist
 	ColumnAddress(string) (interface{}, error)
 }
 
