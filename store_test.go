@@ -27,7 +27,7 @@ func (s *StoreSuite) SetupTest() {
 		age int not null
 	)`)
 	s.Nil(err)
-	s.store = NewStore(s.db, new(modelSchema))
+	s.store = NewStore(s.db, ModelSchema)
 }
 
 func (s *StoreSuite) TearDownTest() {
@@ -141,9 +141,9 @@ func (s *StoreSuite) TestFind() {
 	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
 	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
-	q := NewBaseQuery("model")
-	q.Select("name")
-	q.Where(Gt("age", 1))
+	q := NewBaseQuery(ModelSchema)
+	q.Select(f("name"))
+	q.Where(Gt(f("age"), 1))
 
 	rs := s.store.MustFind(q)
 
@@ -162,9 +162,9 @@ func (s *StoreSuite) TestCount() {
 	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
 	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
-	q := NewBaseQuery("model")
-	q.Select("name")
-	q.Where(Gt("age", 1))
+	q := NewBaseQuery(ModelSchema)
+	q.Select(f("name"))
+	q.Where(Gt(f("age"), 1))
 
 	s.Equal(int64(2), s.store.MustCount(q))
 }
@@ -175,15 +175,17 @@ func (s *StoreSuite) TestOperators() {
 		cond  Condition
 		count int64
 	}{
-		{"Eq", Eq("name", "Joe"), 1},
-		{"Gt", Gt("age", 1), 2},
-		{"Lt", Lt("age", 2), 1},
-		{"Neq", Neq("name", "Joe"), 2},
-		{"GtOrEq", GtOrEq("age", 2), 2},
-		{"LtOrEq", LtOrEq("age", 3), 3},
-		{"Not", Not(Eq("name", "Joe")), 2},
-		{"And", And(Neq("name", "Joe"), Gt("age", 1)), 2},
-		{"Or", Or(Neq("name", "Joe"), Eq("age", 1)), 3},
+		{"Eq", Eq(f("name"), "Joe"), 1},
+		{"Gt", Gt(f("age"), 1), 2},
+		{"Lt", Lt(f("age"), 2), 1},
+		{"Neq", Neq(f("name"), "Joe"), 2},
+		{"GtOrEq", GtOrEq(f("age"), 2), 2},
+		{"LtOrEq", LtOrEq(f("age"), 3), 3},
+		{"Not", Not(Eq(f("name"), "Joe")), 2},
+		{"And", And(Neq(f("name"), "Joe"), Gt(f("age"), 1)), 2},
+		{"Or", Or(Neq(f("name"), "Joe"), Eq(f("age"), 1)), 3},
+		{"In", In(f("name"), "Joe", "Jane"), 2},
+		{"NotIn", NotIn(f("name"), "Joe", "Jane"), 1},
 	}
 
 	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
@@ -191,7 +193,7 @@ func (s *StoreSuite) TestOperators() {
 	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
 	for _, c := range cases {
-		q := NewBaseQuery("model")
+		q := NewBaseQuery(ModelSchema)
 		q.Where(c.cond)
 
 		s.Equal(s.store.MustCount(q), c.count, c.name)
@@ -260,18 +262,4 @@ func (m *model) ColumnAddress(col string) (interface{}, error) {
 		return &m.Age, nil
 	}
 	return nil, fmt.Errorf("column does not exist: %s", col)
-}
-
-type modelSchema struct{}
-
-func (*modelSchema) Alias() string      { return "model" }
-func (*modelSchema) Table() string      { return "model" }
-func (*modelSchema) Identifier() string { return "id" }
-func (*modelSchema) Columns() []string {
-	return []string{
-		"id",
-		"name",
-		"email",
-		"age",
-	}
 }

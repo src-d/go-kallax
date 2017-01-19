@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"text/template"
 
@@ -20,24 +19,18 @@ type Template struct {
 
 type TemplateData struct {
 	*Package
-	Fields    []*TemplateField
-	Processed map[interface{}]string
-}
-
-type TemplateField struct {
-	Name   string
-	Path   string
-	Fields interface{}
-}
-
-func (tf *TemplateField) ValidFields() []*Field {
-	return tf.Fields.([]*Field)
+	Processed  map[interface{}]string
+	subschemas map[string]*Field
 }
 
 func (t *Template) Execute(wr io.Writer, data *Package) error {
 	var buf bytes.Buffer
 
-	td := &TemplateData{data, []*TemplateField{}, map[interface{}]string{}}
+	td := &TemplateData{
+		data,
+		map[interface{}]string{},
+		map[string]*Field{},
+	}
 	err := t.template.Execute(&buf, td)
 	if err != nil {
 		return err
@@ -46,99 +39,156 @@ func (t *Template) Execute(wr io.Writer, data *Package) error {
 	return prettyfy(buf.Bytes(), wr)
 }
 
-func (td *TemplateData) GenType(vi interface{}, path string) string {
-	v := reflect.ValueOf(vi)
-	sv := v
-	if v.Kind() == reflect.Ptr {
-		sv = v.Elem()
-	}
-	if sv.FieldByName("Type").Interface().(string) == "struct" {
-		if v.MethodByName("ValidFields").IsValid() {
-			return td.LinkStruct(path, vi)
+func (td *TemplateData) GenColumnAddresses(model *Model) string {
+	var buf bytes.Buffer
+	td.genFieldsColumnAddresses(&buf, model.Fields)
+	return buf.String()
+}
+
+func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Field) {
+	for _, f := range fields {
+		if f.Kind == Relationship {
+			continue
 		}
-		return ""
-	} else {
-		k := "Field"
-		if v.MethodByName("ContainsMap").Call(nil)[0].Interface().(bool) {
-			k = "Map"
+
+		if f.Inline() {
+			td.genFieldsColumnAddresses(buf, f.Fields)
+		} else {
+			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
+			buf.WriteString(fmt.Sprintf("return %s\n", f.Address()))
 		}
-		return fmt.Sprintf("%v kallax.%v", sv.FieldByName("Name"), k)
 	}
 }
 
-func (td *TemplateData) LinkStruct(path string, vi interface{}) string {
-	v := reflect.ValueOf(vi)
-	name := v.Elem().FieldByName("Name").Interface().(string)
-	schemaName := "schema" + path + name
-
-	if proc, ok := td.Processed[vi]; ok {
-		schemaName = proc
-		return name + " *" + schemaName
-	}
-	td.Processed[vi] = schemaName
-
-	td.Fields = append(td.Fields, &TemplateField{
-		Name:   schemaName,
-		Path:   path + name,
-		Fields: v.MethodByName("ValidFields").Call(nil)[0].Interface(),
-	})
-
-	return name + " *" + schemaName
+func (td *TemplateData) GenColumnValues(model *Model) string {
+	var buf bytes.Buffer
+	td.genFieldsValues(&buf, model.Fields)
+	return buf.String()
 }
 
-func (td *TemplateData) GenVar(vi interface{}, done map[interface{}]bool) string {
-	if done == nil {
-		done = map[interface{}]bool{}
-	}
-
-	v := reflect.ValueOf(vi)
-	sv := v
-	if v.Kind() == reflect.Ptr {
-		sv = v.Elem()
-	}
-
-	if done[vi] {
-		return sv.FieldByName("Name").Interface().(string) + ": nil,"
-	}
-
-	if sv.FieldByName("Type").Interface().(string) == "struct" {
-		if v.MethodByName("ValidFields").IsValid() {
-			return td.StructValue(vi, done)
-		}
-		return ""
-	} else {
-		k := "NewField"
-		if v.MethodByName("ContainsMap").Call(nil)[0].Interface().(bool) {
-			k = "NewMap"
+func (td *TemplateData) genFieldsValues(buf *bytes.Buffer, fields []*Field) {
+	for _, f := range fields {
+		if f.Kind == Relationship {
+			continue
 		}
 
-		return fmt.Sprintf(
-			`%v: kallax.%v("%v", "%v"),`,
-			sv.FieldByName("Name"),
-			k,
-			v.MethodByName("GetPath").Call(nil)[0],
-			v.MethodByName("FindableType").Call(nil)[0],
-		)
+		if f.Inline() {
+			td.genFieldsValues(buf, f.Fields)
+		} else {
+			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
+			buf.WriteString(fmt.Sprintf("return %s\n", f.Value()))
+		}
 	}
 }
 
-func (td *TemplateData) StructValue(vi interface{}, done map[interface{}]bool) string {
-	v := reflect.ValueOf(vi)
-	name := v.Elem().FieldByName("Name").Interface().(string)
+func (td *TemplateData) GenModelColumns(model *Model) string {
+	var buf bytes.Buffer
+	td.genFieldsColumns(&buf, model.Fields)
+	return buf.String()
+}
 
-	ifc := v.Interface()
-	if done[ifc] {
-		return name + ": nil,"
+func (td *TemplateData) genFieldsColumns(buf *bytes.Buffer, fields []*Field) {
+	for _, f := range fields {
+		if f.Kind == Relationship {
+			continue
+		}
+
+		if f.Inline() {
+			td.genFieldsColumns(buf, f.Fields)
+		} else {
+			buf.WriteString(fmt.Sprintf("kallax.NewSchemaField(\"%s\"),\n", f.ColumnName()))
+		}
 	}
-	done[ifc] = true
+}
 
-	ret := name + ": &" + td.Processed[vi] + "{"
-	for _, v := range v.MethodByName("ValidFields").Call(nil)[0].Interface().([]*Field) {
-		ret += "\n" + td.GenVar(v, done)
+func (td *TemplateData) GenModelSchema(model *Model) string {
+	var buf bytes.Buffer
+	td.genFieldsSchema(&buf, model.Name, model.Fields)
+	return buf.String()
+}
+
+func (td *TemplateData) genFieldsSchema(buf *bytes.Buffer, parent string, fields []*Field) {
+	for _, f := range fields {
+		if f.Kind == Relationship {
+			return
+		}
+
+		if f.Inline() {
+			td.genFieldsSchema(buf, parent, f.Fields)
+		} else {
+			buf.WriteString(f.Name + " ")
+
+			if f.IsJSON && len(f.Fields) > 0 {
+				buf.WriteString("*schema" + parent + f.Name)
+				td.findJSONSchemas(parent, f)
+			} else {
+				buf.WriteString("kallax.SchemaField")
+			}
+
+			buf.WriteRune('\n')
+		}
 	}
-	ret += "\n},"
+}
 
-	return ret
+func (td *TemplateData) findJSONSchemas(parent string, f *Field) {
+	n := parent + f.Name
+	if _, ok := td.subschemas[n]; ok {
+		return
+	}
+
+	td.subschemas[n] = f
+
+	for _, f := range f.Fields {
+		if f.IsJSON && len(f.Fields) > 0 {
+			td.findJSONSchemas(n, f)
+		}
+	}
+}
+
+func (td *TemplateData) GenSubSchemas() string {
+	var buf bytes.Buffer
+	for parent, field := range td.subschemas {
+		buf.WriteString("type schema" + parent + " struct {\n")
+		buf.WriteString("*kallax.BaseSchemaField\n")
+		td.genFieldsSchema(&buf, parent, field.Fields)
+		buf.WriteString("}\n\n")
+	}
+	return buf.String()
+}
+
+func (td *TemplateData) GenSchemaInit(model *Model) string {
+	var buf bytes.Buffer
+	td.genFieldsInit(&buf, model.Name, model.Fields, true)
+	return buf.String()
+}
+
+func (td *TemplateData) genFieldsInit(buf *bytes.Buffer, parent string, fields []*Field, root bool) {
+	for _, f := range fields {
+		if f.Kind == Relationship {
+			return
+		}
+
+		if f.Inline() {
+			td.genFieldsInit(buf, parent, f.Fields, true)
+		} else {
+			buf.WriteString(f.Name + ":")
+			var schemaName = f.Name
+			if root {
+				schemaName = f.ColumnName()
+			}
+
+			if f.IsJSON && len(f.Fields) > 0 {
+				buf.WriteString(fmt.Sprintf("&schema%s%s{\n", parent, f.Name))
+				buf.WriteString(fmt.Sprintf(`BaseSchemaField: kallax.NewSchemaField("%s").(*kallax.BaseSchemaField),`+"\n", schemaName))
+				td.genFieldsInit(buf, parent+f.Name, f.Fields, false)
+				buf.WriteString("},")
+			} else {
+				buf.WriteString(fmt.Sprintf(`kallax.NewSchemaField("%s"),`, schemaName))
+			}
+
+			buf.WriteRune('\n')
+		}
+	}
 }
 
 func prettyfy(input []byte, wr io.Writer) error {

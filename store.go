@@ -21,6 +21,8 @@ var (
 	ErrNoRowUpdate = errors.New("update affected no rows")
 	// ErrNotWritable is returned when a record is not writable.
 	ErrNotWritable = errors.New("record is not writable")
+	// ErrStop can be returned inside a ForEach callback to stop iteration.
+	ErrStop = errors.New("stopped ForEach execution")
 )
 
 // Store is a structure capable of retrieving records from a concrete table in
@@ -40,9 +42,9 @@ func NewStore(db *sql.DB, schema Schema) *Store {
 	return &Store{
 		db:       proxy,
 		schema:   schema,
-		inserter: builder.Insert(schema.Table()).RunWith(proxy),
-		updater:  builder.Update(schema.Table()).RunWith(proxy),
-		deleter:  builder.Delete(schema.Table()).RunWith(proxy),
+		inserter: builder.Insert(schema.GetTable()).RunWith(proxy),
+		updater:  builder.Update(schema.GetTable()).RunWith(proxy),
+		deleter:  builder.Delete(schema.GetTable()).RunWith(proxy),
 	}
 }
 
@@ -57,7 +59,7 @@ func (s *Store) Insert(record Record) error {
 		record.SetID(NewID())
 	}
 
-	cols := s.schema.Columns()
+	cols := ColumnNames(s.schema.GetColumns())
 	values, err := RecordValues(record, cols...)
 	if err != nil {
 		return err
@@ -80,7 +82,7 @@ func (s *Store) Insert(record Record) error {
 // updated if no fields are provided. For an update to take place, the record is
 // required to have a non-empty ID and not to be a new record.
 // Returns the number of updated rows and an error, if any.
-func (s *Store) Update(record Record, cols ...string) (int64, error) {
+func (s *Store) Update(record Record, cols ...SchemaField) (int64, error) {
 	if !record.IsWritable() {
 		return 0, ErrNotWritable
 	}
@@ -94,21 +96,25 @@ func (s *Store) Update(record Record, cols ...string) (int64, error) {
 	}
 
 	if len(cols) == 0 {
-		cols = s.schema.Columns()
+		cols = s.schema.GetColumns()
 	}
-	values, err := RecordValues(record, cols...)
+
+	columnNames := ColumnNames(cols)
+	values, err := RecordValues(record, columnNames...)
 	if err != nil {
 		return 0, err
 	}
 
 	var clauses = make(map[string]interface{}, len(cols))
-	for i, col := range cols {
+	for i, col := range columnNames {
 		clauses[col] = values[i]
 	}
 
 	result, err := s.updater.
 		SetMap(clauses).
-		Where(squirrel.Eq{s.schema.Identifier(): record.GetID()}).
+		Where(squirrel.Eq{
+			s.schema.GetID().String(): record.GetID(),
+		}).
 		Exec()
 	if err != nil {
 		return 0, err
@@ -153,7 +159,9 @@ func (s *Store) Delete(record Record) error {
 	}
 
 	_, err := s.deleter.
-		Where(squirrel.Eq{s.schema.Identifier(): record.GetID()}).
+		Where(squirrel.Eq{
+			s.schema.GetID().String(): record.GetID(),
+		}).
 		Exec()
 	return err
 }
@@ -207,7 +215,7 @@ func (s *Store) MustFind(q Query) *ResultSet {
 func (s *Store) Count(q Query) (count int64, err error) {
 	_, queryBuilder := q.compile()
 	builder := builder.Set(queryBuilder, "Columns", nil).(squirrel.SelectBuilder)
-	err = builder.Column(fmt.Sprintf("COUNT(%s)", s.schema.Identifier())).
+	err = builder.Column(fmt.Sprintf("COUNT(%s)", s.schema.GetID())).
 		RunWith(s.db).
 		QueryRow().
 		Scan(&count)

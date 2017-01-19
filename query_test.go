@@ -17,35 +17,35 @@ type QuerySuite struct {
 }
 
 func (s *QuerySuite) SetupTest() {
-	s.q = NewBaseQuery("foo")
+	s.q = NewBaseQuery(ModelSchema)
 }
 
 func (s *QuerySuite) TestSelect() {
-	s.q.Select("a", "b", "c")
-	s.Equal(columnSet{"a", "b", "c"}, s.q.columns)
+	s.q.Select(f("a"), f("b"), f("c"))
+	s.Equal(columnSet{f("a"), f("b"), f("c")}, s.q.columns)
 }
 
 func (s *QuerySuite) TestSelectNot() {
-	s.q.SelectNot("a", "b", "c")
-	s.Equal(columnSet{"a", "b", "c"}, s.q.excludedColumns)
+	s.q.SelectNot(f("a"), f("b"), f("c"))
+	s.Equal(columnSet{f("a"), f("b"), f("c")}, s.q.excludedColumns)
 }
 
 func (s *QuerySuite) TestSelectNotSelectSelectNot() {
-	s.q.SelectNot("a", "b")
-	s.q.Select("a", "c")
-	s.q.SelectNot("a")
-	s.Equal([]string{"c"}, s.q.selectedColumns())
+	s.q.SelectNot(f("a"), f("b"))
+	s.q.Select(f("a"), f("c"))
+	s.q.SelectNot(f("a"))
+	s.Equal([]SchemaField{f("c")}, s.q.selectedColumns())
 }
 
 func (s *QuerySuite) TestSelectSelectNot() {
-	s.q.Select("a", "c")
-	s.q.SelectNot("a")
-	s.Equal([]string{"c"}, s.q.selectedColumns())
+	s.q.Select(f("a"), f("c"))
+	s.q.SelectNot(f("a"))
+	s.Equal([]SchemaField{f("c")}, s.q.selectedColumns())
 }
 
 func (s *QuerySuite) TestCopy() {
-	s.q.Select("a", "b", "c")
-	s.q.SelectNot("foo")
+	s.q.Select(f("a"), f("b"), f("c"))
+	s.q.SelectNot(f("foo"))
 	s.q.BatchSize(30)
 	s.q.Limit(2)
 	s.q.Offset(30)
@@ -56,30 +56,30 @@ func (s *QuerySuite) TestCopy() {
 }
 
 func (s *QuerySuite) TestSelectedColumns() {
-	s.q.Select("a", "b", "c")
-	s.q.SelectNot("b")
-	s.Equal([]string{"a", "c"}, s.q.selectedColumns())
+	s.q.Select(f("a"), f("b"), f("c"))
+	s.q.SelectNot(f("b"))
+	s.Equal([]SchemaField{f("a"), f("c")}, s.q.selectedColumns())
 }
 
 func (s *QuerySuite) TestOrder() {
-	s.q.Select("foo")
-	s.q.Order(Asc("bar"))
-	s.q.Order(Desc("baz"))
+	s.q.Select(f("foo"))
+	s.q.Order(Asc(f("bar")))
+	s.q.Order(Desc(f("baz")))
 
-	s.assertSql("SELECT foo FROM foo ORDER BY bar ASC, baz DESC")
+	s.assertSql("SELECT __model.foo FROM model __model ORDER BY __model.bar ASC, __model.baz DESC")
 }
 
 func (s *QuerySuite) TestWhere() {
-	s.q.Select("foo")
-	s.q.Where(Eq("foo", 5))
-	s.q.Where(Eq("bar", "baz"))
+	s.q.Select(f("foo"))
+	s.q.Where(Eq(f("foo"), 5))
+	s.q.Where(Eq(f("bar"), "baz"))
 
-	s.assertSql("SELECT foo FROM foo WHERE foo = $1 AND bar = $2")
+	s.assertSql("SELECT __model.foo FROM model __model WHERE __model.foo = $1 AND __model.bar = $2")
 }
 
 func (s *QuerySuite) TestString() {
-	s.q.Select("foo")
-	s.Equal("SELECT foo FROM foo", s.q.String())
+	s.q.Select(f("foo"))
+	s.Equal("SELECT __model.foo FROM model __model", s.q.String())
 }
 
 func (s *QuerySuite) assertSql(sql string) {

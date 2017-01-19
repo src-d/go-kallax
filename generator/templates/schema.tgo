@@ -1,17 +1,29 @@
 
 type schema struct {
-{{range .Models}}{{$.GenType . ""}}
+{{range .Models}}{{.Name}} *schema{{.Name}}
 {{end}}
 }
 
-{{range $f := .Fields}}
-type {{.Name}} struct {
-{{range .Fields}}{{$.GenType . $f.Path}}
-{{end}}
+{{range .Models}}
+type schema{{.Name}} struct {
+        *kallax.BaseSchema
+{{$.GenModelSchema .}}
 }
 {{end}}
 
-var Schema = schema{
-{{range .Models}}{{$.GenVar . nil}}
+{{$.GenSubSchemas}}
+
+var Schema = &schema{
+{{range .Models}}{{.Name}}: &schema{{.Name}}{
+        BaseSchema: &kallax.BaseSchema{
+                Alias: "{{.Alias}}",
+                Table: "{{.Table}}",
+                ID: kallax.NewSchemaField("id"),
+                Columns: []kallax.SchemaField{
+                        {{$.GenModelColumns .}}
+                },
+        },
+        {{$.GenSchemaInit .}}
+},
 {{end}}
 }

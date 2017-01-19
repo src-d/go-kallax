@@ -2,10 +2,12 @@ package {{.Name}}
 
 import (
     "github.com/src-d/go-kallax"
-    "github.com/src-d/go-kallax/operators"
-    "gopkg.in/mgo.v2"
-    "gopkg.in/mgo.v2/bson"
+    "github.com/src-d/go-kallax/types"
+    "database/sql"
+    "database/sql/driver"
 )
+
+var _ types.SQLType
 
 {{template "model" .}}
 {{template "schema" .}}

@@ -1,177 +1,131 @@
 {{range .Models}}
 
-{{if not ($.StructIsDefined .StoreName)}}
+// New{{.Name}} returns a new instance of {{.Name}}.
+func New{{.Name}}({{.CtorArgs}}) {{.CtorReturns}} {
+        {{.CtorRetVars}} = {{if .CtorFunc}}{{.CtorFunc.Name}}({{.CtorArgVars}}){{else}}&{{.Name}}{}{{end}}
+        if record != nil {
+                record.SetID(kallax.NewID())
+        }
+        return
+}
+
+
+func (r *{{.Name}}) ColumnAddress(col string) (interface{}, error) {
+        switch col {
+                {{$.GenColumnAddresses .}}
+        default:
+                return nil, fmt.Errorf("invalid column in {{.Name}}: %s", col)
+        }
+}
+
+func (r *{{.Name}}) Value(col string) (interface{}, error) {
+        switch col {
+                {{$.GenColumnValues .}}
+        default:
+                return nil, fmt.Errorf("invalid column in {{.Name}}: %s", col)
+        }
+}
+
+// {{.StoreName}} is the entity to access the records of the type {{.Name}}
+// in the database.
 type {{.StoreName}} struct {
-	kallax.Store
+	*kallax.Store
 }
 
-func New{{.StoreName}}(db *mgo.Database) *{{.StoreName}} {
-	return &{{.StoreName}}{*kallax.NewStore(db, "{{ .Collection }}")}
-}
-{{end}}
-
-{{if not .New}}
-// New returns a new instance of {{.Name}}.
-func (s *{{.StoreName}}) New({{.NewArgs}}) {{.NewReturns}} {
-	{{.NewRetVars}} = {{if .NewFunc}}{{.NewFunc.Name}}({{.NewArgVars}}){{else}}&{{.Name}}{}{{end}}
-    if doc != nil {
-        doc.SetIsNew(true)
-        doc.SetId(bson.NewObjectId())
-    }
-    return
-}
-{{end}}
-
-
-// Query return a new instance of {{.QueryName}}.
-func (s *{{.StoreName}}) Query() *{{.QueryName}} {
-    return &{{.QueryName}}{*kallax.NewBaseQuery()}
+// New{{.StoreName}} creates a new instance of {{.StoreName}}
+// using a SQL database.
+func New{{.StoreName}}(db *sql.DB) *{{.StoreName}} {
+	return &{{.StoreName}}{kallax.NewStore(db, Schema.{{.Name}})}
 }
 
-// Find performs a find on the collection using the given query.
-func (s *{{.StoreName}}) Find(query *{{.QueryName}}) (*{{.ResultSetName}}, error) {
-    resultSet, err := s.Store.Find(query)
-    if err != nil {
-        return nil, err
-    }
-
-    return &{{.ResultSetName}}{ResultSet: *resultSet}, nil
+// Insert inserts a {{.Name}} in the database. A non-persisted object is
+// required for this operation.
+func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
+	return s.Store.Insert(record)
 }
 
-// MustFind like Find but panics on error
-func (s *{{.StoreName}}) MustFind(query *{{.QueryName}}) *{{.ResultSetName}} {
-		resultSet := s.Store.MustFind(query)
-    return &{{.ResultSetName}}{ResultSet: *resultSet}
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (int64, error) {
+	return s.Store.Update(record, cols...)
 }
 
-// FindOne performs a find on the collection using the given query returning
-// the first document from the resultset.
-func (s *{{.StoreName}}) FindOne(query *{{.QueryName}}) (*{{.Name}}, error) {
-    resultSet, err := s.Find(query)
-    if err != nil {
-        return nil, err
-    }
-
-    return resultSet.One()
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *{{.StoreName}}) Save(record *{{.Name}}) (updated bool,  err error) {
+	return s.Store.Save(record)
 }
 
-// MustFindOne like FindOne but panics on error
-func (s *{{.StoreName}}) MustFindOne(query *{{.QueryName}}) *{{.Name}} {
-    doc, err := s.FindOne(query)
-    if err != nil {
-        panic(err)
-    }
-
-    return doc
+// Delete removes the given record from the database.
+func (s *{{.StoreName}}) Delete(record *{{.Name}}) error {
+	return s.Store.Delete(record)
 }
 
-// Insert insert the given document on the collection, trigger BeforeInsert and
-// AfterInsert if any. Throws ErrNonNewDocument if doc is a non-new document.
-func (s *{{.StoreName}}) Insert(doc *{{.Name}}) error {
-		{{if .Events.Has "BeforeInsert"}} \
-		if err := s.BeforeInsert(doc); err != nil {
-				return err
-		}
-		{{else if .Events.Has "BeforeSave"}} \
-		if err := s.BeforeSave(doc); err != nil {
-				return err
-		}
-		{{end}} \
+// Find returns the set of results for the given query.
+func (s *{{.StoreName}}) Find(q *{{.QueryName}}) (*{{.ResultSetName}}, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
 
-    err := s.Store.Insert(doc)
-    if err != nil {
-        return err
-    }
-
-		{{if .Events.Has "AfterInsert"}} \
-		return s.AfterInsert(doc)
-		{{else if .Events.Has "AfterSave"}} \
-		return s.AfterSave(doc)
-		{{else}} \
-    return nil
-		{{end}} \
+	return New{{.ResultSetName}}(rs), nil
 }
 
-// Update update the given document on the collection, trigger BeforeUpdate and
-// AfterUpdate if any. Throws ErrNewDocument if doc is a new document.
-func (s *{{.StoreName}}) Update(doc *{{.Name}}) error {
-		{{if .Events.Has "BeforeUpdate"}} \
-		if err := s.BeforeUpdate(doc); err != nil {
-				return err
-		}
-		{{else if .Events.Has "BeforeSave"}} \
-		if err := s.BeforeSave(doc); err != nil {
-				return err
-		}
-		{{end}} \
-
-    err := s.Store.Update(doc)
-    if err != nil {
-        return err
-    }
-
-		{{if .Events.Has "AfterUpdate"}} \
-		return s.AfterUpdate(doc)
-		{{else if .Events.Has "AfterSave"}} \
-		return s.AfterSave(doc)
-		{{else}} \
-    return nil
-		{{end}} \
+// MustFind returns the set of results for the given query, but panics yf there
+// is any error.
+func (s *{{.StoreName}}) MustFind(q *{{.QueryName}}) *{{.ResultSetName}} {
+	return New{{.ResultSetName}}(s.Store.MustFind(q))
 }
 
-// Save insert or update the given document on the collection using Upsert,
-// trigger BeforeUpdate and AfterUpdate if the document is non-new and
-// BeforeInsert and AfterInset if is new.
-func (s *{{.StoreName}}) Save(doc *{{.Name}}) (updated bool, err error) {
-		{{if or (.Events.Has "BeforeUpdate") (.Events.Has "BeforeInsert")}} \
-		switch doc.IsNew() {
-		{{if .Events.Has "BeforeInsert"}} \
-				case true:
-						if err := s.BeforeInsert(doc); err != nil {
-								return false, err
-						}
-		{{end}} \
-		{{if .Events.Has "BeforeUpdate"}} \
-				case false:
-						if err := s.BeforeUpdate(doc); err != nil {
-								return false, err
-						}
-		{{end}} \
-    }
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *{{.StoreName}}) Count(q *{{.QueryName}}) (int64, error) {
+	return s.Store.Count(q)
+}
 
-		{{else if .Events.Has "BeforeSave"}} \
-		if err := s.BeforeSave(doc); err != nil {
-				return false, err
-		}
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *{{.StoreName}}) MustCount(q *{{.QueryName}}) int64 {
+	return s.Store.MustCount(q)
+}
 
-		{{end}} \
-    updated, err = s.Store.Save(doc)
-    if err != nil {
-        return false, err
-    }
+// FindOne returns the first row returned by the given query.
+// `sql.ErrNoRows` is returned if there are no results.
+func (s *{{.StoreName}}) FindOne(q *{{.QueryName}}) (*{{.Name}}, error) {
+	q.Limit(1)
+        rs, err := s.Find(q)
+        if err != nil {
+                return nil, err
+        }
 
-		{{if or (.Events.Has "AfterUpdate") (.Events.Has "AfterInsert")}} \
-		switch updated {
-		{{if .Events.Has "AfterInsert"}} \
-				case false:
-						if err := s.AfterInsert(doc); err != nil {
-								return false, err
-						}
-		{{end}} \
-		{{if .Events.Has "AfterUpdate"}} \
-				case true:
-						if err := s.AfterUpdate(doc); err != nil {
-								return false, err
-						}
-		{{end}} \
-		}
+        if !rs.Next() {
+                return nil, sql.ErrNoRows
+        }
 
-		{{else if .Events.Has "AfterSave"}} \
-		if err := s.AfterSave(doc); err != nil {
-				return false, err
-		}
-		{{end}} \
-		return
+        record, err := rs.Get()
+        if err != nil {
+                return nil, err
+        }
+
+        if err := rs.Close(); err != nil {
+                return nil, err
+        }
+
+        return record, nil
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *{{.StoreName}}) MustFindOne(q *{{.QueryName}}) *{{.Name}} {
+        record, err := s.FindOne(q)
+        if err != nil {
+                panic(err)
+        }
+        return record
 }
 
 {{template "query" .}}
