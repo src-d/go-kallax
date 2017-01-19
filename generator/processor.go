@@ -200,20 +200,7 @@ func (p *Processor) findEvents(node *types.Named) []Event {
 // isEventPresent checks the given Event is implemented for the given node.
 func (p *Processor) isEventPresent(node *types.Named, e Event) bool {
 	signature := p.getMethodSignature(types.NewPointer(node), string(e))
-	if signature != nil {
-		if signature.Params().Len() > 0 {
-			return false
-		}
-
-		if signature.Results().Len() != 1 ||
-			!isBuiltinError(signature.Results().At(0).Type()) {
-			return false
-		}
-
-		return true
-	}
-
-	return false
+	return signatureMatches(signature, nil, typeCheckers{isBuiltinError})
 }
 
 // processFields returns which field index is an embedded kallax.Model, or -1 if none.
@@ -341,25 +328,38 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 
 func (p *Processor) isSQLType(typ types.Type) bool {
 	scan := p.getMethodSignature(typ, "Scan")
-	if scan == nil ||
-		scan.Results().Len() != 1 ||
-		!isBuiltinError(scan.Results().At(0).Type()) ||
-		scan.Params().Len() != 1 ||
-		!isEmptyInterface(scan.Params().At(0).Type()) {
+	if !signatureMatches(scan, typeCheckers{isEmptyInterface}, typeCheckers{isBuiltinError}) {
 		return false
 	}
 
 	value := p.getMethodSignature(typ, "Value")
-	if value == nil ||
-		value.Params().Len() != 0 ||
-		value.Results().Len() != 2 ||
-		!isDriverValue(value.Results().At(0).Type()) ||
-		!isBuiltinError(value.Results().At(1).Type()) {
+	if !signatureMatches(value, nil, typeCheckers{isDriverValue, isBuiltinError}) {
 		return false
 	}
 
 	return true
 }
+
+func signatureMatches(s *types.Signature, params typeCheckers, results typeCheckers) bool {
+	return s != nil &&
+		s.Params().Len() == len(params) &&
+		s.Results().Len() == len(results) &&
+		params.check(s.Params()) &&
+		results.check(s.Results())
+}
+
+type typeCheckers []typeChecker
+
+func (c typeCheckers) check(tuple *types.Tuple) bool {
+	for i, checker := range c {
+		if !checker(tuple.At(i).Type()) {
+			return false
+		}
+	}
+	return true
+}
+
+type typeChecker func(types.Type) bool
 
 func (p *Processor) getMethodSignature(typ types.Type, name string) *types.Signature {
 	ms := types.NewMethodSet(typ)
