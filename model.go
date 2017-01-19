@@ -48,12 +48,12 @@ func (i *Model) GetID() ID {
 }
 
 // SetID overrides the ID.
-//  The ID should not be modified once it has been set and stored in the DB
+// The ID should not be modified once it has been set and stored in the DB
 func (i *Model) SetID(id ID) {
 	i.ID = id
 }
 
-//Identifiable must be implemented by those values that can be identified by an ID
+// Identifiable must be implemented by those values that can be identified by an ID
 type Identifiable interface {
 	// GetID returns the ID.
 	GetID() ID
@@ -69,7 +69,7 @@ type Persistable interface {
 }
 
 // Writable must be implemented by those values that defines internally
-//  if they can be sent back to the database to be stored with its changes.
+// if they can be sent back to the database to be stored with its changes.
 type Writable interface {
 	// IsWritable returns whether this Model can be sent back to the database
 	// to be stored with its changes.
@@ -78,7 +78,7 @@ type Writable interface {
 }
 
 // ColumnAddresser must be implemented by those values that exposes its properties
-//  under pointers, identified by its property names
+// under pointers, identified by its property names
 type ColumnAddresser interface {
 	// ColumnAddress returns a pointer to the object property identified by the
 	// passed string or an error if that property does not exist
@@ -86,7 +86,7 @@ type ColumnAddresser interface {
 }
 
 // Valuer must be implemented by those object that exposes its properties
-//  identified by its property names
+// identified by its property names
 type Valuer interface {
 	// Value returns the value under the object property identified by the passed
 	// string or an error if that property does not exist

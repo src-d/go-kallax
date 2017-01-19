@@ -9,7 +9,7 @@ type AfterLoader interface {
 // AfterLoader must be implemented by those entities listening the BeforeSave event
 type BeforeSaver interface {
 	// BeforeSave runs before the entitie has being Saved in the DB.
-	//  It will return an error if the Saveing process should be interrupted
+	// It will return an error if the Saveing process should be interrupted
 	BeforeSave() error
 }
 
@@ -22,7 +22,7 @@ type AfterSaver interface {
 // AfterLoader must be implemented by those entities listening the BeforeUpdate event
 type BeforeUpdater interface {
 	// BeforeUpdate runs before the entitie has been updated in the DB
-	//  It will return an error if the update process should be interrupted
+	// It will return an error if the update process should be interrupted
 	BeforeUpdate() error
 }
 
@@ -35,7 +35,7 @@ type AfterUpdater interface {
 // AfterLoader must be implemented by those entities listening the BeforeInsert event
 type BeforeInserter interface {
 	// BeforeInsert runs before the entitie has been inserted in the DB
-	//  It will return an error if the insertion process should be interrupted
+	// It will return an error if the insertion process should be interrupted
 	BeforeInsert() error
 }
 
@@ -48,7 +48,7 @@ type AfterInserter interface {
 // AfterLoader must be implemented by those entities listening the BeforeDelete event
 type BeforeDeleter interface {
 	// BeforeDelete runs before the entitie has been deleted from DB
-	//  It will return an error if the deletion process should be interrupted
+	// It will return an error if the deletion process should be interrupted
 	BeforeDelete() error
 }
 

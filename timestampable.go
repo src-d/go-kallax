@@ -25,7 +25,7 @@ func (t *Timestamps) Timestamp() {
 }
 
 // BeforePersist runs all actions that must be performed before the persist
-//  - Timestamp
+// - Timestamp
 func (t *Timestamps) BeforePersist() error {
 	t.Timestamp()
 	return nil
