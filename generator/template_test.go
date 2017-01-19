@@ -52,12 +52,17 @@ case "arr":
 return types.Slice(&r.Arr), nil
 case "json":
 return types.JSON(&r.JSON), nil
+case "url":
+return (*types.URL)(r.URL), nil
+case "url_no_ptr":
+return (*types.URL)(&r.UrlNoPtr), nil
 `
 
 const baseTpl = `
 	package fixture
 
 	import "github.com/src-d/go-kallax"
+	import "net/url"
 
 	type Rel struct {
 		kallax.Model
@@ -74,6 +79,8 @@ const baseTpl = `
 		Bar *string
 		Arr []string
 		JSON JSON
+		URL *url.URL
+		UrlNoPtr url.URL
 		Rel Rel
 	}
 `
@@ -98,6 +105,10 @@ case "arr":
 return types.Slice(r.Arr), nil
 case "json":
 return types.JSON(r.JSON), nil
+case "url":
+return (*types.URL)(r.URL), nil
+case "url_no_ptr":
+return (*types.URL)(&r.UrlNoPtr), nil
 `
 
 func (s *TemplateSuite) TestGenColumnValues() {
@@ -105,6 +116,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 	package fixture
 
 	import "github.com/src-d/go-kallax"
+	import "net/url"
 
 	type Aliased string
 
@@ -124,6 +136,8 @@ func (s *TemplateSuite) TestGenColumnValues() {
 		Aliased Aliased
 		Arr []string
 		JSON JSON
+		URL *url.URL
+		UrlNoPtr url.URL
 		Rel Rel
 	}
 	`)
@@ -138,6 +152,8 @@ kallax.NewSchemaField("foo"),
 kallax.NewSchemaField("bar"),
 kallax.NewSchemaField("arr"),
 kallax.NewSchemaField("json"),
+kallax.NewSchemaField("url"),
+kallax.NewSchemaField("url_no_ptr"),
 `
 
 func (s *TemplateSuite) TestGenModelColumns() {
@@ -152,6 +168,8 @@ Foo kallax.SchemaField
 Bar kallax.SchemaField
 Arr kallax.SchemaField
 JSON *schemaFooJSON
+URL kallax.SchemaField
+UrlNoPtr kallax.SchemaField
 `
 
 const expectedSubSchemas = `type schemaFooJSON struct {
@@ -177,6 +195,8 @@ JSON:&schemaFooJSON{
 BaseSchemaField: kallax.NewSchemaField("json").(*kallax.BaseSchemaField),
 Foo:kallax.NewSchemaField("Foo"),
 },
+URL:kallax.NewSchemaField("url"),
+UrlNoPtr:kallax.NewSchemaField("url_no_ptr"),
 `
 
 func (s *TemplateSuite) TestGenSchemaInit() {

@@ -112,6 +112,12 @@ var specialTypes = map[string]string{
 	"time.Time":                     "time.Time",
 }
 
+// mappings defines the mapping between specific types and their counterpart
+// in kallax types
+var mappings = map[string]string{
+	"url.URL": "types.URL",
+}
+
 // Package is the representation of a scanned package.
 type Package struct {
 	// Name is the package name.
@@ -457,18 +463,21 @@ func (f *Field) fieldVarName() string {
 	return fmt.Sprintf("r.%s", f.fieldName())
 }
 
-// requiresRef returns whether the type requires the use of "&" to access the
-// the field. That is, if the field is not a pointer and is not an array.
-func (f *Field) requiresRef() bool {
-	return !f.IsPtr && f.Kind != Array
+func (f *Field) fieldVarAddress() string {
+	name := f.fieldVarName()
+	if f.requiresRef() {
+		name = "&" + name
+	}
+
+	return name
 }
 
 // Address returns the string representation of the code used to get the
 // pointer to the field.
 func (f *Field) Address() string {
-	name := f.fieldVarName()
-	if f.requiresRef() {
-		name = "&" + name
+	name := f.fieldVarAddress()
+	if mapped, ok := mappings[f.Type]; ok {
+		name = fmt.Sprintf("(*%s)(%s)", mapped, name)
 	}
 
 	return f.wrapAddress(name)
@@ -497,6 +506,10 @@ func (f *Field) Value() string {
 
 	switch f.Kind {
 	case Basic:
+		if mapped, ok := mappings[f.Type]; ok {
+			name = fmt.Sprintf("(*%s)(%s)", mapped, f.fieldVarAddress())
+		}
+
 		if f.IsAlias {
 			typ := f.Type
 			if f.IsPtr {
