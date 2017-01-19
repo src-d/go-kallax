@@ -198,8 +198,6 @@ func (p *Processor) findEvents(node *types.Named) []Event {
 }
 
 // isEventPresent checks the given Event is implemented for the given node.
-// All Before events are required to have an error return type. All After
-// events are required to have no return types.
 func (p *Processor) isEventPresent(node *types.Named, e Event) bool {
 	ms := types.NewMethodSet(types.NewPointer(node))
 	method := ms.Lookup(p.Package, string(e))
@@ -210,15 +208,8 @@ func (p *Processor) isEventPresent(node *types.Named, e Event) bool {
 			return false
 		}
 
-		if strings.HasPrefix(string(e), "Before") {
-			if signature.Results().Len() != 1 ||
-				!isBuiltinError(signature.Results().At(0).Type()) {
-				return false
-			}
-			return true
-		}
-
-		if signature.Results().Len() > 0 {
+		if signature.Results().Len() != 1 ||
+			!isBuiltinError(signature.Results().At(0).Type()) {
 			return false
 		}
 
