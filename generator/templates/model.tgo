@@ -128,6 +128,12 @@ func (s *{{.StoreName}}) MustFindOne(q *{{.QueryName}}) *{{.Name}} {
         return record
 }
 
+// Reload refreshes the {{.Name}} with the data in the database and
+// makes it writable.
+func (s *{{.StoreName}}) Reload(record *{{.Name}}) error {
+        return s.Store.Reload(record)
+}
+
 {{template "query" .}}
 
 {{template "resultset" .}}

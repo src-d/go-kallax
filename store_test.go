@@ -169,6 +169,27 @@ func (s *StoreSuite) TestCount() {
 	s.Equal(int64(2), s.store.MustCount(q))
 }
 
+func (s *StoreSuite) TestReload() {
+	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
+
+	q := NewBaseQuery(ModelSchema)
+	q.Select(NewSchemaField("name"), ModelSchema.GetID())
+	rs, err := s.store.Find(q)
+	s.Nil(err)
+	s.True(rs.Next())
+
+	var model model
+	s.Nil(rs.Scan(&model))
+
+	s.False(model.IsWritable())
+	s.Equal(0, model.Age)
+
+	s.Nil(s.store.Reload(&model))
+
+	s.True(model.IsWritable())
+	s.Equal(1, model.Age)
+}
+
 func (s *StoreSuite) TestOperators() {
 	cases := []struct {
 		name  string
