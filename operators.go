@@ -121,7 +121,7 @@ func (n not) ToSql() (string, []interface{}, error) {
 		return "", nil, err
 	}
 
-	return fmt.Sprintf("NOT %s", sql), args, err
+	return fmt.Sprintf("NOT (%s)", sql), args, err
 }
 
 func (eq) isCondition()     {}
