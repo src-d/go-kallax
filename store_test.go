@@ -172,6 +172,9 @@ func (s *StoreSuite) TestCount() {
 func (s *StoreSuite) TestReload() {
 	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
 
+	// If we don't select all the fields, the records
+	// retrieved will not be writable, as it could be a potential danger
+	// to the user to save a partial model.
 	q := NewBaseQuery(ModelSchema)
 	q.Select(NewSchemaField("name"), ModelSchema.GetID())
 	rs, err := s.store.Find(q)
@@ -179,13 +182,22 @@ func (s *StoreSuite) TestReload() {
 	s.True(rs.Next())
 
 	var model model
+	// First, we check that an empty model can't be reloaded, because it has
+	// no ID
+	s.Equal(ErrEmptyID, s.store.Reload(&model))
 	s.Nil(rs.Scan(&model))
 
+	// Model is not writable, as we said
 	s.False(model.IsWritable())
 	s.Equal(0, model.Age)
 
+	_, err = s.store.Update(&model)
+	s.Equal(ErrNotWritable, err)
+
+	// Now, the model is reloaded with all the fields
 	s.Nil(s.store.Reload(&model))
 
+	// And so, it becomes writable
 	s.True(model.IsWritable())
 	s.Equal(1, model.Age)
 }
