@@ -16,7 +16,7 @@ type BeforeSaver interface {
 // AfterLoader must be implemented by those entities listening the AfterSave event
 type AfterSaver interface {
 	// AfterSave runs after the entitie has being Saved in the DB.
-	// If an error is returned, the transaction will be rolbacked.
+	// If an error is returned, the transaction will be rollbacked.
 	AfterSave() error
 }
 
@@ -30,7 +30,7 @@ type BeforeUpdater interface {
 // AfterLoader must be implemented by those entities listening the AfterUpdate event
 type AfterUpdater interface {
 	// AfterUpdate runs after the entitie has been updated in the DB
-	// If an error is returned, the transaction will be rolbacked.
+	// If an error is returned, the transaction will be rollbacked.
 	AfterUpdate() error
 }
 
@@ -44,7 +44,7 @@ type BeforeInserter interface {
 // AfterLoader must be implemented by those entities listening the AfterInsert event
 type AfterInserter interface {
 	// AfterInsert runs after the entitie has been inserted in the DB
-	// If an error is returned, the transaction will be rolbacked.
+	// If an error is returned, the transaction will be rollbacked.
 	AfterInsert() error
 }
 
@@ -58,6 +58,6 @@ type BeforeDeleter interface {
 // AfterLoader must be implemented by those entities listening the AfterDelete event
 type AfterDeleter interface {
 	// AfterDelete runs after the entitie has been deleted from DB
-	// If an error is returned, the transaction will be rolbacked.
+	// If an error is returned, the transaction will be rollbacked.
 	AfterDelete() error
 }
