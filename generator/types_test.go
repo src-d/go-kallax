@@ -81,11 +81,11 @@ func (s *FieldSuite) TestAddress() {
 		},
 		{
 			Array, false, false, "Foo", nil,
-			`nil, fmt.Errorf("array types are not supported")`,
+			`types.Array(r.Foo[:]), nil`,
 		},
 		{
 			Slice, false, false, "Foo", nil,
-			"types.Array(&r.Foo), nil",
+			"types.Slice(&r.Foo), nil",
 		},
 		{
 			Basic, false, true, "Foo", nil,
@@ -130,11 +130,11 @@ func (s *FieldSuite) TestValue() {
 		},
 		{
 			withKind(mkField("Foo", ""), Slice),
-			"types.Array(r.Foo), nil",
+			"types.Slice(r.Foo), nil",
 		},
 		{
 			withKind(mkField("Foo", ""), Array),
-			`nil, fmt.Errorf("array go type not supported")`,
+			`types.Array(r.Foo[:]), nil`,
 		},
 		{
 			withJSON(withKind(mkField("Foo", ""), Map)),

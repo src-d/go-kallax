@@ -12,104 +12,104 @@ import (
 
 // https://www.postgresql.org/docs/current/static/sql-keywords-appendix.html
 var reservedKeywords = map[string]struct{}{
-	"references":        struct{}{},
-	"index":             struct{}{},
-	"primary":           struct{}{},
-	"key":               struct{}{},
-	"with":              struct{}{},
-	"window":            struct{}{},
-	"where":             struct{}{},
-	"when":              struct{}{},
-	"verbose":           struct{}{},
-	"variadic":          struct{}{},
-	"using":             struct{}{},
-	"user":              struct{}{},
-	"unique":            struct{}{},
-	"union":             struct{}{},
-	"true":              struct{}{},
-	"false":             struct{}{},
-	"trailing":          struct{}{},
-	"to":                struct{}{},
-	"then":              struct{}{},
-	"table":             struct{}{},
-	"symmetric":         struct{}{},
-	"some":              struct{}{},
-	"select":            struct{}{},
-	"returning":         struct{}{},
-	"placing":           struct{}{},
-	"overlaps":          struct{}{},
-	"or":                struct{}{},
-	"order":             struct{}{},
+	"all":               struct{}{},
+	"analyse":           struct{}{},
+	"analyze":           struct{}{},
 	"and":               struct{}{},
-	"only":              struct{}{},
-	"on":                struct{}{},
-	"offset":            struct{}{},
-	"null":              struct{}{},
-	"not":               struct{}{},
-	"natural":           struct{}{},
+	"any":               struct{}{},
+	"array":             struct{}{},
+	"as":                struct{}{},
+	"asc":               struct{}{},
+	"asymmetric":        struct{}{},
+	"authorization":     struct{}{},
+	"binary":            struct{}{},
+	"both":              struct{}{},
+	"case":              struct{}{},
+	"cast":              struct{}{},
+	"check":             struct{}{},
+	"collate":           struct{}{},
+	"collation":         struct{}{},
+	"columns":           struct{}{},
+	"concurrently":      struct{}{},
+	"constraint":        struct{}{},
+	"create":            struct{}{},
+	"cross":             struct{}{},
+	"current_catalog":   struct{}{},
+	"current_date":      struct{}{},
+	"current_role":      struct{}{},
+	"current_schema":    struct{}{},
+	"current_time":      struct{}{},
+	"current_timestamp": struct{}{},
+	"current_user":      struct{}{},
+	"default":           struct{}{},
+	"deferrable":        struct{}{},
+	"desc":              struct{}{},
+	"distinct":          struct{}{},
+	"do":                struct{}{},
+	"end":               struct{}{},
+	"except":            struct{}{},
+	"false":             struct{}{},
+	"fetch":             struct{}{},
+	"for":               struct{}{},
+	"foreign":           struct{}{},
+	"from":              struct{}{},
+	"grant":             struct{}{},
+	"group":             struct{}{},
+	"having":            struct{}{},
+	"in":                struct{}{},
+	"index":             struct{}{},
+	"initially":         struct{}{},
+	"inner":             struct{}{},
+	"intersect":         struct{}{},
+	"into":              struct{}{},
+	"join":              struct{}{},
+	"key":               struct{}{},
+	"lateral":           struct{}{},
+	"leading":           struct{}{},
+	"left":              struct{}{},
+	"like":              struct{}{},
+	"limit":             struct{}{},
 	"localtime":         struct{}{},
 	"localtimestamp":    struct{}{},
-	"limit":             struct{}{},
-	"like":              struct{}{},
-	"left":              struct{}{},
-	"leading":           struct{}{},
-	"lateral":           struct{}{},
-	"join":              struct{}{},
-	"into":              struct{}{},
-	"intersect":         struct{}{},
-	"inner":             struct{}{},
-	"initially":         struct{}{},
-	"in":                struct{}{},
-	"having":            struct{}{},
-	"group":             struct{}{},
-	"grant":             struct{}{},
-	"from":              struct{}{},
-	"foreign":           struct{}{},
-	"for":               struct{}{},
-	"fetch":             struct{}{},
-	"except":            struct{}{},
-	"end":               struct{}{},
-	"do":                struct{}{},
-	"distinct":          struct{}{},
-	"desc":              struct{}{},
-	"deferrable":        struct{}{},
-	"default":           struct{}{},
-	"current_user":      struct{}{},
-	"current_timestamp": struct{}{},
-	"current_time":      struct{}{},
-	"current_schema":    struct{}{},
-	"current_role":      struct{}{},
-	"current_date":      struct{}{},
-	"current_catalog":   struct{}{},
-	"cross":             struct{}{},
-	"create":            struct{}{},
-	"constraint":        struct{}{},
-	"concurrently":      struct{}{},
-	"columns":           struct{}{},
-	"collation":         struct{}{},
-	"collate":           struct{}{},
-	"check":             struct{}{},
-	"cast":              struct{}{},
-	"case":              struct{}{},
-	"both":              struct{}{},
-	"binary":            struct{}{},
-	"authorization":     struct{}{},
-	"asymmetric":        struct{}{},
-	"asc":               struct{}{},
-	"as":                struct{}{},
-	"array":             struct{}{},
-	"any":               struct{}{},
-	"analyze":           struct{}{},
-	"analyse":           struct{}{},
-	"all":               struct{}{},
+	"natural":           struct{}{},
+	"not":               struct{}{},
+	"null":              struct{}{},
+	"offset":            struct{}{},
+	"on":                struct{}{},
+	"only":              struct{}{},
+	"or":                struct{}{},
+	"order":             struct{}{},
+	"overlaps":          struct{}{},
+	"placing":           struct{}{},
+	"primary":           struct{}{},
+	"references":        struct{}{},
+	"returning":         struct{}{},
+	"select":            struct{}{},
+	"some":              struct{}{},
+	"symmetric":         struct{}{},
+	"table":             struct{}{},
+	"then":              struct{}{},
+	"to":                struct{}{},
+	"trailing":          struct{}{},
+	"true":              struct{}{},
+	"union":             struct{}{},
+	"unique":            struct{}{},
+	"user":              struct{}{},
+	"using":             struct{}{},
+	"variadic":          struct{}{},
+	"verbose":           struct{}{},
+	"when":              struct{}{},
+	"where":             struct{}{},
+	"window":            struct{}{},
+	"with":              struct{}{},
 }
 
 // special types that are not analyzed because SQL already knows
 // how to handle them
 var specialTypes = map[string]string{
-	"time.Time":                     "time.Time",
-	"net/url.URL":                   "url.URL",
 	"github.com/src-d/go-kallax.ID": "kallax.ID",
+	"net/url.URL":                   "url.URL",
+	"time.Time":                     "time.Time",
 }
 
 // mappings defines the mapping between specific types and their counterpart
@@ -465,7 +465,7 @@ func (f *Field) fieldVarName() string {
 
 func (f *Field) fieldVarAddress() string {
 	name := f.fieldVarName()
-	if !f.IsPtr {
+	if f.requiresRef() {
 		name = "&" + name
 	}
 
@@ -489,11 +489,11 @@ func (f *Field) wrapAddress(ptr string) string {
 	}
 
 	if f.Kind == Slice {
-		return fmt.Sprintf("types.Array(%s), nil", ptr)
+		return fmt.Sprintf("types.Slice(%s), nil", ptr)
 	}
 
 	if f.Kind == Array {
-		return `nil, fmt.Errorf("array types are not supported")`
+		return fmt.Sprintf("types.Array(%s[:]), nil", ptr)
 	}
 
 	return fmt.Sprintf("%s, nil", ptr)
@@ -519,9 +519,9 @@ func (f *Field) Value() string {
 		}
 		return name + ", nil"
 	case Slice:
-		return fmt.Sprintf("types.Array(%s), nil", name)
+		return fmt.Sprintf("types.Slice(%s), nil", name)
 	case Array:
-		return `nil, fmt.Errorf("array go type not supported")`
+		return fmt.Sprintf("types.Array(%s[:]), nil", name)
 	}
 
 	if f.IsJSON {
