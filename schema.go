@@ -5,28 +5,39 @@ import "fmt"
 // Schema represents a table schema in the database. Contains some information
 // like the table name, its columns, its identifier and so on.
 type Schema interface {
-	// GetAlias returns the name of the alias used in queries for this schema.
-	GetAlias() string
-	// GetTable returns the table name.
-	GetTable() string
-	// GetID returns the name of the identifier of the table.
-	GetID() SchemaField
-	// GetColumns returns the list of columns in the schema.
-	GetColumns() []SchemaField
+	// Alias returns the name of the alias used in queries for this schema.
+	Alias() string
+	// Table returns the table name.
+	Table() string
+	// ID returns the name of the identifier of the table.
+	ID() SchemaField
+	// Columns returns the list of columns in the schema.
+	Columns() []SchemaField
 }
 
-// BaseSchema is the
+// BaseSchema is the basic implementation of Schema.
 type BaseSchema struct {
-	Alias   string
-	Table   string
-	ID      SchemaField
-	Columns []SchemaField
+	alias   string
+	table   string
+	id      SchemaField
+	columns []SchemaField
 }
 
-func (s *BaseSchema) GetAlias() string          { return s.Alias }
-func (s *BaseSchema) GetTable() string          { return s.Table }
-func (s *BaseSchema) GetID() SchemaField        { return s.ID }
-func (s *BaseSchema) GetColumns() []SchemaField { return s.Columns }
+// NewBaseSchema creates a new schema with the given table, alias, identifier
+// and columns.
+func NewBaseSchema(table, alias string, id SchemaField, columns ...SchemaField) *BaseSchema {
+	return &BaseSchema{
+		alias:   alias,
+		table:   table,
+		id:      id,
+		columns: columns,
+	}
+}
+
+func (s *BaseSchema) Alias() string          { return s.alias }
+func (s *BaseSchema) Table() string          { return s.table }
+func (s *BaseSchema) ID() SchemaField        { return s.id }
+func (s *BaseSchema) Columns() []SchemaField { return s.columns }
 
 // SchemaField is a named field in the table schema.
 type SchemaField interface {
@@ -55,7 +66,7 @@ func (f BaseSchemaField) String() string {
 }
 
 func (f *BaseSchemaField) QualifiedName(schema Schema) string {
-	alias := schema.GetAlias()
+	alias := schema.Alias()
 	if alias != "" {
 		return fmt.Sprintf("%s.%s", alias, f.name)
 	}

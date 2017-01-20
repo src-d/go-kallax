@@ -176,7 +176,7 @@ func (s *StoreSuite) TestReload() {
 	// retrieved will not be writable, as it could be a potential danger
 	// to the user to save a partial model.
 	q := NewBaseQuery(ModelSchema)
-	q.Select(NewSchemaField("name"), ModelSchema.GetID())
+	q.Select(NewSchemaField("name"), ModelSchema.ID())
 	rs, err := s.store.Find(q)
 	s.Nil(err)
 	s.True(rs.Next())

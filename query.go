@@ -84,8 +84,8 @@ func NewBaseQuery(schema Schema) *BaseQuery {
 		builder: squirrel.StatementBuilder.
 			PlaceholderFormat(squirrel.Dollar).
 			Select().
-			From(schema.GetTable() + " " + schema.GetAlias()),
-		columns:   columnSet(schema.GetColumns()),
+			From(schema.Table() + " " + schema.Alias()),
+		columns:   columnSet(schema.Columns()),
 		batchSize: 50,
 		schema:    schema,
 	}

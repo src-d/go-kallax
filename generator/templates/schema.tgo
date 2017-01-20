@@ -15,14 +15,12 @@ type schema{{.Name}} struct {
 
 var Schema = &schema{
 {{range .Models}}{{.Name}}: &schema{{.Name}}{
-        BaseSchema: &kallax.BaseSchema{
-                Alias: "{{.Alias}}",
-                Table: "{{.Table}}",
-                ID: kallax.NewSchemaField("id"),
-                Columns: []kallax.SchemaField{
-                        {{$.GenModelColumns .}}
-                },
-        },
+        BaseSchema: kallax.NewBaseSchema(
+                "{{.Table}}",
+                "{{.Alias}}",
+                kallax.NewSchemaField("id"),
+                {{$.GenModelColumns .}}
+        ),
         {{$.GenSchemaInit .}}
 },
 {{end}}

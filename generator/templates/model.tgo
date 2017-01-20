@@ -35,7 +35,7 @@ type {{.StoreName}} struct {
 // New{{.StoreName}} creates a new instance of {{.StoreName}}
 // using a SQL database.
 func New{{.StoreName}}(db *sql.DB) *{{.StoreName}} {
-	return &{{.StoreName}}{kallax.NewStore(db, Schema.{{.Name}})}
+	return &{{.StoreName}}{kallax.NewStore(db, Schema.{{.Name}}.BaseSchema)}
 }
 
 // Insert inserts a {{.Name}} in the database. A non-persisted object is

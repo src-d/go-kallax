@@ -8,7 +8,7 @@ type {{.QueryName}} struct {
 // New{{.QueryName}} returns a new instance of {{.QueryName}}.
 func New{{.QueryName}}() *{{.QueryName}} {
 	return &{{.QueryName}}{
-		BaseQuery: kallax.NewBaseQuery(Schema.{{.Name}}),
+		BaseQuery: kallax.NewBaseQuery(Schema.{{.Name}}.BaseSchema),
 	}
 }
 

@@ -42,9 +42,9 @@ func NewStore(db *sql.DB, schema Schema) *Store {
 	return &Store{
 		db:       proxy,
 		schema:   schema,
-		inserter: builder.Insert(schema.GetTable()).RunWith(proxy),
-		updater:  builder.Update(schema.GetTable()).RunWith(proxy),
-		deleter:  builder.Delete(schema.GetTable()).RunWith(proxy),
+		inserter: builder.Insert(schema.Table()).RunWith(proxy),
+		updater:  builder.Update(schema.Table()).RunWith(proxy),
+		deleter:  builder.Delete(schema.Table()).RunWith(proxy),
 	}
 }
 
@@ -59,7 +59,7 @@ func (s *Store) Insert(record Record) error {
 		record.SetID(NewID())
 	}
 
-	cols := ColumnNames(s.schema.GetColumns())
+	cols := ColumnNames(s.schema.Columns())
 	values, err := RecordValues(record, cols...)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func (s *Store) Update(record Record, cols ...SchemaField) (int64, error) {
 	}
 
 	if len(cols) == 0 {
-		cols = s.schema.GetColumns()
+		cols = s.schema.Columns()
 	}
 
 	columnNames := ColumnNames(cols)
@@ -113,7 +113,7 @@ func (s *Store) Update(record Record, cols ...SchemaField) (int64, error) {
 	result, err := s.updater.
 		SetMap(clauses).
 		Where(squirrel.Eq{
-			s.schema.GetID().String(): record.GetID(),
+			s.schema.ID().String(): record.GetID(),
 		}).
 		Exec()
 	if err != nil {
@@ -160,7 +160,7 @@ func (s *Store) Delete(record Record) error {
 
 	_, err := s.deleter.
 		Where(squirrel.Eq{
-			s.schema.GetID().String(): record.GetID(),
+			s.schema.ID().String(): record.GetID(),
 		}).
 		Exec()
 	return err
@@ -219,7 +219,7 @@ func (s *Store) Reload(record Record) error {
 	}
 
 	q := NewBaseQuery(s.schema)
-	q.Where(Eq(s.schema.GetID(), record.GetID()))
+	q.Where(Eq(s.schema.ID(), record.GetID()))
 	q.Limit(1)
 	columns, builder := q.compile()
 
@@ -240,7 +240,7 @@ func (s *Store) Reload(record Record) error {
 func (s *Store) Count(q Query) (count int64, err error) {
 	_, queryBuilder := q.compile()
 	builder := builder.Set(queryBuilder, "Columns", nil).(squirrel.SelectBuilder)
-	err = builder.Column(fmt.Sprintf("COUNT(%s)", s.schema.GetID())).
+	err = builder.Column(fmt.Sprintf("COUNT(%s)", s.schema.ID())).
 		RunWith(s.db).
 		QueryRow().
 		Scan(&count)

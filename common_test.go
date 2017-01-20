@@ -10,10 +10,10 @@ var ModelSchema = new(modelSchema)
 
 type modelSchema struct{}
 
-func (*modelSchema) GetAlias() string   { return "__model" }
-func (*modelSchema) GetTable() string   { return "model" }
-func (*modelSchema) GetID() SchemaField { return f("id") }
-func (*modelSchema) GetColumns() []SchemaField {
+func (*modelSchema) Alias() string   { return "__model" }
+func (*modelSchema) Table() string   { return "model" }
+func (*modelSchema) ID() SchemaField { return f("id") }
+func (*modelSchema) Columns() []SchemaField {
 	return []SchemaField{
 		f("id"),
 		f("name"),
