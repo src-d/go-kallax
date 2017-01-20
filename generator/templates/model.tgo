@@ -172,6 +172,20 @@ func (s *{{.StoreName}}) Reload(record *{{.Name}}) error {
         return s.Store.Reload(record)
 }
 
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *{{.StoreName}}) Transaction(callback func(*{{.StoreName}}) error) error {
+        if callback == nil {
+                return kallax.ErrInvalidTxCallback
+        }
+
+        return s.Store.Transaction(func(store *kallax.Store) error {
+                return callback(&{{.StoreName}}{store})
+        })
+}
+
 {{template "query" .}}
 
 {{template "resultset" .}}

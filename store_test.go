@@ -169,6 +169,26 @@ func (s *StoreSuite) TestCount() {
 	s.Equal(int64(2), s.store.MustCount(q))
 }
 
+func (s *StoreSuite) TestTransaction() {
+	err := s.store.Transaction(func(store *Store) error {
+		s.Nil(store.Insert(newModel("Joe", "", 1)))
+		s.Nil(store.Insert(newModel("Anna", "", 1)))
+		return nil
+	})
+	s.Nil(err)
+	s.assertCount(2)
+}
+
+func (s *StoreSuite) TestTransactionRollback() {
+	err := s.store.Transaction(func(store *Store) error {
+		s.Nil(store.Insert(newModel("Joe", "", 1)))
+		s.Nil(store.Insert(newModel("Anna", "", 1)))
+		return fmt.Errorf("we're never ever, ever, getting store together")
+	})
+	s.NotNil(err)
+	s.assertCount(0)
+}
+
 func (s *StoreSuite) TestReload() {
 	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
 
@@ -245,6 +265,12 @@ func (s *StoreSuite) assertModel(m *model) {
 		s.Equal(m.Email, result.Email)
 		s.Equal(m.Age, result.Age)
 	}
+}
+
+func (s *StoreSuite) assertCount(n int64) {
+	var count int64
+	s.Nil(s.db.QueryRow("SELECT COUNT(*) FROM model").Scan(&count))
+	s.Equal(n, count)
 }
 
 func (s *StoreSuite) assertNotExists(m *model) {
