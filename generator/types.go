@@ -465,7 +465,7 @@ func (f *Field) fieldVarName() string {
 
 func (f *Field) fieldVarAddress() string {
 	name := f.fieldVarName()
-	if f.requiresRef() {
+	if !f.IsPtr {
 		name = "&" + name
 	}
 
@@ -493,7 +493,7 @@ func (f *Field) wrapAddress(ptr string) string {
 	}
 
 	if f.Kind == Array {
-		return fmt.Sprintf("types.Array(%s[:]), nil", ptr)
+		return fmt.Sprintf("types.Array(%s), nil", ptr)
 	}
 
 	return fmt.Sprintf("%s, nil", ptr)
@@ -521,7 +521,7 @@ func (f *Field) Value() string {
 	case Slice:
 		return fmt.Sprintf("types.Slice(%s), nil", name)
 	case Array:
-		return fmt.Sprintf("types.Array(%s[:]), nil", name)
+		return fmt.Sprintf("types.Array(%s), nil", f.fieldVarAddress())
 	}
 
 	if f.IsJSON {

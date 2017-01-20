@@ -81,7 +81,7 @@ func (s *FieldSuite) TestAddress() {
 		},
 		{
 			Array, false, false, "Foo", nil,
-			`types.Array(r.Foo[:]), nil`,
+			`types.Array(&r.Foo), nil`,
 		},
 		{
 			Slice, false, false, "Foo", nil,
@@ -134,7 +134,7 @@ func (s *FieldSuite) TestValue() {
 		},
 		{
 			withKind(mkField("Foo", ""), Array),
-			`types.Array(r.Foo[:]), nil`,
+			`types.Array(&r.Foo), nil`,
 		},
 		{
 			withJSON(withKind(mkField("Foo", ""), Map)),
