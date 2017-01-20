@@ -154,8 +154,9 @@ func Array(v interface{}, size int) SQLType {
 }
 
 func (a *array) Scan(v interface{}) error {
-	newSlice := reflect.MakeSlice(a.val.Type(), 0, 0)
-	slicePtr := reflect.New(a.val.Type())
+	sliceTyp := reflect.SliceOf(a.val.Type().Elem().Elem())
+	newSlice := reflect.MakeSlice(sliceTyp, 0, 0)
+	slicePtr := reflect.New(sliceTyp)
 	slicePtr.Elem().Set(newSlice)
 	if err := pq.Array(slicePtr.Interface()).Scan(v); err != nil {
 		return err
@@ -170,19 +171,20 @@ func (a *array) Scan(v interface{}) error {
 	}
 
 	for i := 0; i < a.size; i++ {
-		a.val.Index(i).Set(slicePtr.Elem().Index(i))
+		a.val.Elem().Index(i).Set(slicePtr.Elem().Index(i))
 	}
 
 	return nil
 }
 
 func (a *array) Value() (driver.Value, error) {
-	newSlice := reflect.MakeSlice(a.val.Type(), a.size, a.size)
+	sliceTyp := reflect.SliceOf(a.val.Type().Elem().Elem())
+	newSlice := reflect.MakeSlice(sliceTyp, a.size, a.size)
 	for i := 0; i < a.size; i++ {
-		newSlice.Index(i).Set(a.val.Index(i))
+		newSlice.Index(i).Set(a.val.Elem().Index(i))
 	}
 
-	slicePtr := reflect.New(a.val.Type())
+	slicePtr := reflect.New(sliceTyp)
 	slicePtr.Elem().Set(newSlice)
 	return pq.Array(slicePtr.Interface()).Value()
 }

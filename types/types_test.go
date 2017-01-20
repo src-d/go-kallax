@@ -123,7 +123,7 @@ func TestArray(t *testing.T) {
 
 	var dst [2]int64
 
-	arr := Array(dst[:], 2)
+	arr := Array(&dst, 2)
 	require.Nil(arr.Scan(input))
 	require.Equal(int64(1), dst[0])
 	require.Equal(int64(2), dst[1])
