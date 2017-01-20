@@ -30,7 +30,7 @@ func (q *{{.QueryName}}) SelectNot(columns ...kallax.SchemaField) *{{.QueryName}
 // Copy returns a new identical copy of the query. Remember queries are mutable
 // so make a copy any time you need to reuse them.
 func (q *{{.QueryName}}) Copy() *{{.QueryName}} {
-	return &RepositoryQuery{
+	return &{{.QueryName}}{
 		BaseQuery: q.BaseQuery.Copy(),
 	}
 }
