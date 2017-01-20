@@ -199,24 +199,8 @@ func (p *Processor) findEvents(node *types.Named) []Event {
 
 // isEventPresent checks the given Event is implemented for the given node.
 func (p *Processor) isEventPresent(node *types.Named, e Event) bool {
-	ms := types.NewMethodSet(types.NewPointer(node))
-	method := ms.Lookup(p.Package, string(e))
-	if method != nil {
-		fn := method.Obj().(*types.Func)
-		signature := fn.Type().(*types.Signature)
-		if signature.Params().Len() > 0 {
-			return false
-		}
-
-		if signature.Results().Len() != 1 ||
-			!isBuiltinError(signature.Results().At(0).Type()) {
-			return false
-		}
-
-		return true
-	}
-
-	return false
+	signature := p.getMethodSignature(types.NewPointer(node), string(e))
+	return signatureMatches(signature, nil, typeCheckers{isBuiltinError})
 }
 
 // processFields returns which field index is an embedded kallax.Model, or -1 if none.
@@ -274,15 +258,21 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 
 		if isModel(typ, true) && root {
 			field.Kind = Relationship
-		} else {
-			if t, ok := specialTypes[typeName(typ)]; ok {
-				field.Type = t
-				return
-			}
-
-			p.processField(field, typ.Underlying(), done, root)
-			field.IsAlias = !field.IsJSON
+			return
 		}
+
+		if p.isSQLType(types.NewPointer(typ)) {
+			field.Kind = Interface
+			return
+		}
+
+		if t, ok := specialTypes[typeName(typ)]; ok {
+			field.Type = t
+			return
+		}
+
+		p.processField(field, typ.Underlying(), done, root)
+		field.IsAlias = !field.IsJSON
 	case *types.Array:
 		var underlying Field
 		p.processField(&underlying, typ.Elem(), done, root)
@@ -315,7 +305,6 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 	case *types.Interface:
 		field.Kind = Interface
 		field.IsJSON = true
-		// TODO: Check if implements SQLType, and then don't set IsJSON to true
 	case *types.Struct:
 		field.Kind = Struct
 		field.IsJSON = true
@@ -335,6 +324,67 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 	default:
 		fmt.Printf("Ignored field %s of type %s\n", field.Name, field.Type)
 	}
+}
+
+func (p *Processor) isSQLType(typ types.Type) bool {
+	scan := p.getMethodSignature(typ, "Scan")
+	if !signatureMatches(scan, typeCheckers{isEmptyInterface}, typeCheckers{isBuiltinError}) {
+		return false
+	}
+
+	value := p.getMethodSignature(typ, "Value")
+	if !signatureMatches(value, nil, typeCheckers{isDriverValue, isBuiltinError}) {
+		return false
+	}
+
+	return true
+}
+
+func signatureMatches(s *types.Signature, params typeCheckers, results typeCheckers) bool {
+	return s != nil &&
+		s.Params().Len() == len(params) &&
+		s.Results().Len() == len(results) &&
+		params.check(s.Params()) &&
+		results.check(s.Results())
+}
+
+type typeCheckers []typeChecker
+
+func (c typeCheckers) check(tuple *types.Tuple) bool {
+	for i, checker := range c {
+		if !checker(tuple.At(i).Type()) {
+			return false
+		}
+	}
+	return true
+}
+
+type typeChecker func(types.Type) bool
+
+func (p *Processor) getMethodSignature(typ types.Type, name string) *types.Signature {
+	ms := types.NewMethodSet(typ)
+	method := ms.Lookup(p.Package, name)
+	if method == nil {
+		return nil
+	}
+
+	return method.Obj().(*types.Func).Type().(*types.Signature)
+}
+
+func isEmptyInterface(typ types.Type) bool {
+	switch typ := typ.(type) {
+	case *types.Interface:
+		return typ.NumMethods() == 0
+	}
+	return false
+}
+
+func isDriverValue(typ types.Type) bool {
+	switch typ := typ.(type) {
+	case *types.Named:
+		return typ.String() == "database/sql/driver.Value"
+	}
+	return false
 }
 
 // isModel checks if the type is a model. If dive is true, it will check also

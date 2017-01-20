@@ -254,6 +254,55 @@ func (s *ProcessorSuite) TestCtor() {
 	s.NotNil(m.CtorFunc, "Foo should have ctor")
 }
 
+func (s *ProcessorSuite) TestSQLTypeIsInterface() {
+	fixtureSrc := `
+	package fixture
+
+	import "github.com/src-d/go-kallax"
+	import "database/sql/driver"
+
+	type Foo struct {
+		kallax.Model
+		Foo Bar
+	}
+
+	type Bar string
+
+	func (*Bar) Scan(v interface{}) error {
+		return nil
+	}
+
+	func (Bar) Value() (driver.Value, error) {
+		return nil, nil
+	}
+	`
+
+	pkg := s.processFixture(fixtureSrc)
+	field := findField(findModel(pkg, "Foo"), "Foo")
+	s.Equal(Interface, field.Kind)
+}
+
+func (s *ProcessorSuite) TestIsSQLType() {
+	fixtureSrc := `
+	package fixture
+
+	import 	"github.com/src-d/go-kallax"
+
+	type Foo struct {
+		kallax.Model
+		Foo string
+	}
+	`
+
+	p := s.processorFixture(fixtureSrc)
+	pkg, err := p.processPackage()
+	s.Nil(err)
+	m := findModel(pkg, "Foo")
+
+	s.True(p.isSQLType(types.NewPointer(m.Fields[0].Fields[0].Node.Type())))
+	s.False(p.isSQLType(types.NewPointer(m.Fields[1].Node.Type())))
+}
+
 func (s *ProcessorSuite) processorFixture(source string) *Processor {
 	fset := &token.FileSet{}
 	astFile, err := parser.ParseFile(fset, "fixture.go", source, 0)
