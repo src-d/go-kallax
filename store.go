@@ -211,6 +211,31 @@ func (s *Store) MustFind(q Query) *ResultSet {
 	return rs
 }
 
+// Reload refreshes the record with the data in the database and makes the
+// record writable.
+func (s *Store) Reload(record Record) error {
+	if record.GetID().IsEmpty() {
+		return ErrEmptyID
+	}
+
+	q := NewBaseQuery(s.schema)
+	q.Where(Eq(s.schema.GetID(), record.GetID()))
+	q.Limit(1)
+	columns, builder := q.compile()
+
+	rows, err := builder.RunWith(s.db).Query()
+	if err != nil {
+		return err
+	}
+
+	rs := NewResultSet(rows, false, columns...)
+	if !rs.Next() {
+		return sql.ErrNoRows
+	}
+
+	return rs.Scan(record)
+}
+
 // Count returns the number of rows selected by the given query.
 func (s *Store) Count(q Query) (count int64, err error) {
 	_, queryBuilder := q.compile()
