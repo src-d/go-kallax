@@ -3,10 +3,10 @@ package tests
 import "github.com/src-d/go-kallax"
 
 type EventsFixture struct {
-	kallax.Document `bson:",inline" collection:"event"`
-	Checks          map[string]bool
-	MustFailBefore  error
-	MustFailAfter   error
+	kallax.Model   `bson:",inline" collection:"event"`
+	Checks         map[string]bool
+	MustFailBefore error
+	MustFailAfter  error
 }
 
 func newEventsFixture() *EventsFixture {

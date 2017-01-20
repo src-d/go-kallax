@@ -72,7 +72,7 @@ func (s *Store) Insert(record Record) error {
 	}
 
 	record.setWritable(true)
-	record.setPersisted(true)
+	record.setPersisted()
 	return nil
 }
 

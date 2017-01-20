@@ -3,15 +3,29 @@ package kallax
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestID_IsEmpty(t *testing.T) {
-	require := require.New(t)
+func TestModel(t *testing.T) {
+	suite.Run(t, new(ModelSuite))
+}
 
+type ModelSuite struct {
+	suite.Suite
+}
+
+func (s *ModelSuite) TestID_IsEmpty() {
 	var id ID
-	require.True(id.IsEmpty())
-
+	s.True(id.IsEmpty())
 	id = NewID()
-	require.False(id.IsEmpty())
+	s.False(id.IsEmpty())
+}
+
+func (s *ModelSuite) TestID_ThreeNewIDsAreDifferent() {
+	id1 := NewID()
+	id2 := NewID()
+	id3 := NewID()
+	s.NotEqual(id1, id2)
+	s.NotEqual(id1, id3)
+	s.NotEqual(id2, id3)
 }
