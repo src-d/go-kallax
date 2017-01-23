@@ -8,6 +8,17 @@ matrix:
     allow_failures:
         - go: tip
 
+env:
+  - DBNAME=kallax_test
+  - DBUSER=postgres
+  - DBPASS=''
+
+services:
+  - postgresql
+
+before_script:
+  - psql -c 'create database kallax_test;' -U postgres
+
 install:
   - go get -t -v .
   - go get -t -v ./generator/...

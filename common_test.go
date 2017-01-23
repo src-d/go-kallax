@@ -3,10 +3,24 @@ package kallax
 import (
 	"database/sql"
 	"fmt"
+	"os"
 )
 
+func envOrDefault(key string, def string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		v = def
+	}
+	return v
+}
+
 func openTestDB() (*sql.DB, error) {
-	return sql.Open("postgres", "postgres://testing:testing@0.0.0.0:5432/testing?sslmode=disable")
+	return sql.Open("postgres", fmt.Sprintf(
+		"postgres://%s:%s@0.0.0.0:5432/%s?sslmode=disable",
+		envOrDefault("DBUSER", "testing"),
+		envOrDefault("DBPASS", "testing"),
+		envOrDefault("DBNAME", "testing"),
+	))
 }
 
 type model struct {
