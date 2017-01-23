@@ -194,7 +194,7 @@ func (s *Store) RawQuery(sql string, params ...interface{}) (*ResultSet, error) 
 		return nil, err
 	}
 
-	return NewResultSet(rows, true), nil
+	return NewResultSet(rows, true, nil), nil
 }
 
 // RawExec executes a raw SQL query with the given parameters and returns
@@ -216,7 +216,12 @@ func (s *Store) Find(q Query) (*ResultSet, error) {
 		return nil, err
 	}
 
-	return NewResultSet(rows, q.isReadOnly(), columns...), nil
+	return NewResultSet(
+		rows,
+		q.isReadOnly(),
+		q.getRelationships(),
+		columns...,
+	), nil
 }
 
 // MustFind performs a query and returns a result set with the results.
@@ -246,7 +251,7 @@ func (s *Store) Reload(record Record) error {
 		return err
 	}
 
-	rs := NewResultSet(rows, false, columns...)
+	rs := NewResultSet(rows, false, nil, columns...)
 	if !rs.Next() {
 		return sql.ErrNoRows
 	}

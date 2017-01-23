@@ -145,6 +145,18 @@ func (td *TemplateData) findJSONSchemas(parent string, f *Field) {
 	}
 }
 
+func (td *TemplateData) GenTypeName(f *Field) string {
+	return removeTypePrefix(typeString(f.Node.Type(), td.pkg))
+}
+
+func (td *TemplateData) GenTypeNewPointer(f *Field) string {
+	return fmt.Sprintf("&%s{}", td.GenTypeName(f))
+}
+
+func removeTypePrefix(typ string) string {
+	return strings.TrimLeft(typ, "[]*")
+}
+
 func (td *TemplateData) GenSubSchemas() string {
 	var buf bytes.Buffer
 	for parent, field := range td.subschemas {

@@ -109,7 +109,7 @@ func (p *Processor) parseSourceFiles(filenames []string) (*types.Package, error)
 }
 
 func (p *Processor) processPackage() (*Package, error) {
-	pkg := &Package{Name: p.Package.Name()}
+	pkg := &Package{pkg: p.Package, Name: p.Package.Name()}
 	var ctors []*types.Func
 
 	fmt.Println("Package: ", pkg.Name)
@@ -258,6 +258,7 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 
 		if isModel(typ, true) && root {
 			field.Kind = Relationship
+			field.Type = typ.String()
 			return
 		}
 

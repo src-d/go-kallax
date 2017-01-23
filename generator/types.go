@@ -120,6 +120,7 @@ var mappings = map[string]string{
 
 // Package is the representation of a scanned package.
 type Package struct {
+	pkg *types.Package
 	// Name is the package name.
 	Name string
 	// Models are all the models found in the package.
@@ -349,6 +350,18 @@ func (m *Model) CtorRetVars() string {
 	return strings.Join(ret, ", ")
 }
 
+// Relationships returns the fields of a model that are relationships.
+// NOTE: right now only 1:1 relationships are supported.
+func (m *Model) Relationships() []*Field {
+	var result []*Field
+	for _, f := range m.Fields {
+		if f.Kind == Relationship {
+			result = append(result, f)
+		}
+	}
+	return result
+}
+
 // Field is the representation of a model field.
 type Field struct {
 	// Name is the field name.
@@ -427,6 +440,25 @@ func (f *Field) ColumnName() string {
 	}
 
 	return name
+}
+
+func (f *Field) ForeignKey() string {
+	if f.Kind != Relationship {
+		return ""
+	}
+
+	fk := f.Tag.Get("fk")
+	if fk == "" {
+		fk = foreignKeyForType(f.Type)
+	}
+
+	return fk
+}
+
+func foreignKeyForType(typ string) string {
+	parts := strings.Split(typ, ".")
+	typ = parts[len(parts)-1]
+	return toLowerSnakeCase(typ) + "_id"
 }
 
 // Inline reports whether the field is inline and its children will be in the
@@ -529,6 +561,12 @@ func (f *Field) Value() string {
 	}
 
 	return name + ", nil"
+}
+
+// TypeSchemaName returns the name of the Schema for the field type.
+func (f *Field) TypeSchemaName() string {
+	parts := strings.Split(f.Type, ".")
+	return parts[len(parts)-1]
 }
 
 func isTypeOrPtrTo(ptr types.Type, named *types.Named) bool {
