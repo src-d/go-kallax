@@ -19,6 +19,10 @@ var Schema = &schema{
                 "{{.Table}}",
                 "{{.Alias}}",
                 kallax.NewSchemaField("id"),
+                kallax.ForeignKeys{
+                {{range .Relationships}}"{{.Name}}": kallax.NewSchemaField("{{.ForeignKey}}"),
+                {{end}}
+                },
                 {{$.GenModelColumns .}}
         ),
         {{$.GenSchemaInit .}}

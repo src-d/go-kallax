@@ -206,6 +206,68 @@ func (s *TemplateSuite) TestGenSchemaInit() {
 	s.Equal(expectedInit, s.td.GenSchemaInit(m))
 }
 
+func (s *TemplateSuite) TestGenTypeName() {
+	s.processSource(`
+	package fixture
+
+	import "github.com/src-d/go-kallax"
+	import "net/url"
+
+	type Foo struct {
+		kallax.Model
+		Slice []string
+		Ptr *string
+		NoPtr string
+		URL *url.URL
+		UrlNoPtr url.URL
+	}
+	`)
+
+	m := findModel(s.td.Package, "Foo")
+	var cases = []struct {
+		field    string
+		expected string
+	}{
+		{"Slice", "string"},
+		{"Ptr", "string"},
+		{"NoPtr", "string"},
+		{"URL", "url.URL"},
+		{"UrlNoPtr", "url.URL"},
+	}
+
+	for _, c := range cases {
+		s.Equal(c.expected, s.td.GenTypeName(findField(m, c.field)), c.field)
+	}
+}
+
+func (s *TemplateSuite) TestGenTypeNewPointer() {
+	s.processSource(`
+	package fixture
+
+	import "github.com/src-d/go-kallax"
+	import "net/url"
+
+	type Foo struct {
+		kallax.Model
+		URL *url.URL
+		UrlNoPtr url.URL
+	}
+	`)
+
+	m := findModel(s.td.Package, "Foo")
+	var cases = []struct {
+		field    string
+		expected string
+	}{
+		{"URL", "&url.URL{}"},
+		{"UrlNoPtr", "&url.URL{}"},
+	}
+
+	for _, c := range cases {
+		s.Equal(c.expected, s.td.GenTypeNewPointer(findField(m, c.field)), c.field)
+	}
+}
+
 func (s *TemplateSuite) TestExecute() {
 	s.processSource(baseTpl)
 	var buf bytes.Buffer

@@ -26,6 +26,29 @@ func (r *{{.Name}}) Value(col string) (interface{}, error) {
         }
 }
 
+func (r *{{.Name}}) NewRelationshipRecord(field string) (kallax.Record, error) {
+        switch field {
+        {{range .Relationships}}case "{{.Name}}":
+                return {{$.GenTypeNewPointer .}}, nil
+        {{end}}
+        }
+        return nil, fmt.Errorf("model {{.Name}} has no relationship %s", field)
+}
+
+func (r *{{.Name}}) SetRelationship(field string, record kallax.Record) error {
+        switch field {
+        {{range .Relationships}}case "{{.Name}}":
+                val, ok := record.(*{{$.GenTypeName .}})
+                if !ok {
+                        return fmt.Errorf("record of type %t can't be assigned to relationship {{.Name}}", record)
+                }
+                r.{{.Name}} = {{if not .IsPtr}}*{{end}}val
+                return nil
+        {{end}}
+        }
+        return fmt.Errorf("model {{.Name}} has no relationship %s", field)
+}
+
 // {{.StoreName}} is the entity to access the records of the type {{.Name}}
 // in the database.
 type {{.StoreName}} struct {

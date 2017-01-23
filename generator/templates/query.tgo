@@ -66,3 +66,10 @@ func (q *{{.QueryName}}) Where(cond kallax.Condition) *{{.QueryName}} {
 	q.BaseQuery.Where(cond)
 	return q
 }
+
+{{range .Relationships}}
+func (q *{{$.QueryName}}) With{{.Name}}() *{{$.QueryName}} {
+        q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}")
+        return q
+}
+{{end}}

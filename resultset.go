@@ -12,16 +12,22 @@ var ErrRawScan = fmt.Errorf("result set comes from raw query, use RawScan instea
 
 // ResultSet is a generic collection of rows.
 type ResultSet struct {
-	columns  []string
-	readOnly bool
+	relationships []Relationship
+	columns       []string
+	readOnly      bool
 	*sql.Rows
 }
 
 // NewResultSet creates a new result set with the given rows and columns.
 // It is mandatory that all column names are in the same order and are exactly
 // equal to the ones in the query that produced the rows.
-func NewResultSet(rows *sql.Rows, readOnly bool, columns ...string) *ResultSet {
-	return &ResultSet{columns, readOnly, rows}
+func NewResultSet(rows *sql.Rows, readOnly bool, relationships []Relationship, columns ...string) *ResultSet {
+	return &ResultSet{
+		relationships,
+		columns,
+		readOnly,
+		rows,
+	}
 }
 
 // Scan fills the column fields of the given value with the current row.
@@ -30,7 +36,11 @@ func (rs *ResultSet) Scan(record Record) error {
 		return ErrRawScan
 	}
 
-	var pointers = make([]interface{}, len(rs.columns))
+	var (
+		relationships = make([]Record, len(rs.relationships))
+		pointers      = make([]interface{}, len(rs.columns))
+	)
+
 	for i, col := range rs.columns {
 		ptr, err := record.ColumnAddress(col)
 		if err != nil {
@@ -39,8 +49,32 @@ func (rs *ResultSet) Scan(record Record) error {
 		pointers[i] = ptr
 	}
 
+	for i, r := range rs.relationships {
+		rec, err := record.NewRelationshipRecord(r.Field)
+		if err != nil {
+			return err
+		}
+
+		for _, col := range r.Schema.Columns() {
+			ptr, err := rec.ColumnAddress(col.String())
+			if err != nil {
+				return err
+			}
+			pointers = append(pointers, ptr)
+		}
+
+		relationships[i] = rec
+	}
+
 	if err := rs.Rows.Scan(pointers...); err != nil {
 		return err
+	}
+
+	for i, r := range rs.relationships {
+		err := record.SetRelationship(r.Field, relationships[i])
+		if err != nil {
+			return err
+		}
 	}
 
 	record.setWritable(!rs.readOnly)

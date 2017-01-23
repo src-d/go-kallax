@@ -86,12 +86,21 @@ type ColumnAddresser interface {
 	ColumnAddress(string) (interface{}, error)
 }
 
+// Relationable can perform operations related to relationships of a record.
+type Relationable interface {
+	// NewRelationshipRecord returns a new Record for the relationship at the
+	// given field.
+	NewRelationshipRecord(string) (Record, error)
+	// SetRelationship sets the relationship record at the given field.
+	SetRelationship(string, Record) error
+}
+
 // Valuer must be implemented by those object that expose their properties
 // identified by its property names
 type Valuer interface {
 	// Value returns the value under the object property identified by the passed
 	// string or an error if that property does not exist
-	Value(string) (driver.Value, error)
+	Value(string) (interface{}, error)
 }
 
 // RecordValues returns the values of a record at the given columns in the same
@@ -108,29 +117,30 @@ func RecordValues(record Valuer, columns ...string) ([]interface{}, error) {
 	return values, nil
 }
 
-// Record is the interface that must be implemented for items that can be stored
+// Record is the interface that must be implemented by models that can be stored.
 type Record interface {
 	Identifiable
 	Persistable
 	Writable
+	Relationable
 	ColumnAddresser
 	Valuer
 }
 
-// ID represents the Kallax identificator type. Its underlying type is an UUID
+// ID is the Kallax identifier type.
 type ID uuid.UUID
 
-// NewID returns a new kallax ID
+// NewID returns a new kallax ID.
 func NewID() ID {
 	return ID(uuid.NewV1())
 }
 
-// Scan sets the uuid value from the passed param
+// Scan implements the Scanner interface.
 func (id *ID) Scan(src interface{}) error {
 	return (*uuid.UUID)(id).Scan(src)
 }
 
-// Value returns the uuid value
+// Value implements the Valuer interface.
 func (id ID) Value() (driver.Value, error) {
 	return uuid.UUID(id).Value()
 }

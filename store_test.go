@@ -2,7 +2,6 @@ package kallax
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	"testing"
 
@@ -12,8 +11,9 @@ import (
 
 type StoreSuite struct {
 	suite.Suite
-	db    *sql.DB
-	store *Store
+	db       *sql.DB
+	store    *Store
+	relStore *Store
 }
 
 func (s *StoreSuite) SetupTest() {
@@ -27,11 +27,22 @@ func (s *StoreSuite) SetupTest() {
 		age int not null
 	)`)
 	s.Nil(err)
+
+	_, err = s.db.Exec(`CREATE TABLE rel (
+		id uuid PRIMARY KEY,
+		model_id uuid,
+		foo text
+	)`)
+	s.Nil(err)
+
 	s.store = NewStore(s.db, ModelSchema)
+	s.relStore = NewStore(s.db, RelSchema)
 }
 
 func (s *StoreSuite) TearDownTest() {
 	_, err := s.db.Exec("DROP TABLE model")
+	s.Nil(err)
+	_, err = s.db.Exec("DROP TABLE rel")
 	s.Nil(err)
 	s.Nil(s.db.Close())
 }
@@ -222,6 +233,32 @@ func (s *StoreSuite) TestReload() {
 	s.Equal(1, model.Age)
 }
 
+func (s *StoreSuite) TestFind_1to1() {
+	m := newModel("Foo", "bar", 1)
+	s.Nil(s.store.Insert(m))
+
+	rel := newRel(m.ID, "foo")
+	s.Nil(s.relStore.Insert(rel))
+
+	// just to see it does not randomly takes the most recent one
+	s.Nil(s.relStore.Insert(newRel(NewID(), "foo")))
+
+	q := NewBaseQuery(ModelSchema)
+	q.AddRelation(RelSchema, "rel")
+	rs, err := s.store.Find(q)
+	s.Nil(err)
+
+	var model model
+	s.True(rs.Next())
+	s.Nil(rs.Scan(&model))
+	s.Equal("Foo", model.Name)
+	s.Equal("bar", model.Email)
+	s.Equal(1, model.Age)
+	s.NotNil(model.Rel)
+	s.Equal(model.ID, model.Rel.ModelID)
+	s.Equal("foo", model.Rel.Foo)
+}
+
 func (s *StoreSuite) TestOperators() {
 	cases := []struct {
 		name  string
@@ -281,44 +318,4 @@ func (s *StoreSuite) assertNotExists(m *model) {
 
 func TestStore(t *testing.T) {
 	suite.Run(t, new(StoreSuite))
-}
-
-type model struct {
-	Model
-	Name  string
-	Email string
-	Age   int
-}
-
-func newModel(name, email string, age int) *model {
-	m := &model{Model: NewModel(), Name: name, Email: email, Age: age}
-	return m
-}
-
-func (m *model) Value(col string) (driver.Value, error) {
-	switch col {
-	case "id":
-		return m.ID, nil
-	case "name":
-		return m.Name, nil
-	case "email":
-		return m.Email, nil
-	case "age":
-		return m.Age, nil
-	}
-	return nil, fmt.Errorf("column does not exist: %s", col)
-}
-
-func (m *model) ColumnAddress(col string) (interface{}, error) {
-	switch col {
-	case "id":
-		return &m.ID, nil
-	case "name":
-		return &m.Name, nil
-	case "email":
-		return &m.Email, nil
-	case "age":
-		return &m.Age, nil
-	}
-	return nil, fmt.Errorf("column does not exist: %s", col)
 }
