@@ -1,15 +1,68 @@
 
+// {{.QueryName}} is the object used to create queries for the {{.Name}} 
+// entity.
 type {{.QueryName}} struct {
-	kallax.BaseQuery
+	*kallax.BaseQuery
 }
 
-// FindById add a new criteria to the query searching by _id
-func (q *{{.QueryName}}) FindById(ids ...bson.ObjectId) *{{.QueryName}} {
-	var vs []interface{}
-	for _, id := range ids {
-		vs = append(vs, id)
+// New{{.QueryName}} returns a new instance of {{.QueryName}}.
+func New{{.QueryName}}() *{{.QueryName}} {
+	return &{{.QueryName}}{
+		BaseQuery: kallax.NewBaseQuery(Schema.{{.Name}}.BaseSchema),
 	}
-	q.AddCriteria(operators.In(kallax.IdField, vs...))
+}
 
+// Select adds columns to select in the query.
+func (q *{{.QueryName}}) Select(columns ...kallax.SchemaField) *{{.QueryName}} {
+	if len(columns) == 0 {
+                return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *{{.QueryName}}) SelectNot(columns ...kallax.SchemaField) *{{.QueryName}} {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *{{.QueryName}}) Copy() *{{.QueryName}} {
+	return &{{.QueryName}}{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *{{.QueryName}}) Order(cols ...kallax.ColumnOrder) *{{.QueryName}} {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *{{.QueryName}}) BatchSize(size uint64) *{{.QueryName}} {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *{{.QueryName}}) Limit(n uint64) *{{.QueryName}} {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *{{.QueryName}}) Offset(n uint64) *{{.QueryName}} {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *{{.QueryName}}) Where(cond kallax.Condition) *{{.QueryName}} {
+	q.BaseQuery.Where(cond)
 	return q
 }

@@ -27,7 +27,7 @@ func (s *StoreSuite) SetupTest() {
 		age int not null
 	)`)
 	s.Nil(err)
-	s.store = NewStore(s.db, new(modelSchema))
+	s.store = NewStore(s.db, ModelSchema)
 }
 
 func (s *StoreSuite) TearDownTest() {
@@ -141,9 +141,9 @@ func (s *StoreSuite) TestFind() {
 	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
 	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
-	q := NewBaseQuery("model")
-	q.Select("name")
-	q.Where(Gt("age", 1))
+	q := NewBaseQuery(ModelSchema)
+	q.Select(f("name"))
+	q.Where(Gt(f("age"), 1))
 
 	rs := s.store.MustFind(q)
 
@@ -162,11 +162,64 @@ func (s *StoreSuite) TestCount() {
 	s.Nil(s.store.Insert(newModel("Jane", "", 2)))
 	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
-	q := NewBaseQuery("model")
-	q.Select("name")
-	q.Where(Gt("age", 1))
+	q := NewBaseQuery(ModelSchema)
+	q.Select(f("name"))
+	q.Where(Gt(f("age"), 1))
 
 	s.Equal(int64(2), s.store.MustCount(q))
+}
+
+func (s *StoreSuite) TestTransaction() {
+	err := s.store.Transaction(func(store *Store) error {
+		s.Nil(store.Insert(newModel("Joe", "", 1)))
+		s.Nil(store.Insert(newModel("Anna", "", 1)))
+		return nil
+	})
+	s.Nil(err)
+	s.assertCount(2)
+}
+
+func (s *StoreSuite) TestTransactionRollback() {
+	err := s.store.Transaction(func(store *Store) error {
+		s.Nil(store.Insert(newModel("Joe", "", 1)))
+		s.Nil(store.Insert(newModel("Anna", "", 1)))
+		return fmt.Errorf("we're never ever, ever, getting store together")
+	})
+	s.NotNil(err)
+	s.assertCount(0)
+}
+
+func (s *StoreSuite) TestReload() {
+	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
+
+	// If we don't select all the fields, the records
+	// retrieved will not be writable, as it could be a potential danger
+	// to the user to save a partial model.
+	q := NewBaseQuery(ModelSchema)
+	q.Select(NewSchemaField("name"), ModelSchema.ID())
+	rs, err := s.store.Find(q)
+	s.Nil(err)
+	s.True(rs.Next())
+
+	var model model
+	// First, we check that an empty model can't be reloaded, because it has
+	// no ID
+	s.Equal(ErrEmptyID, s.store.Reload(&model))
+	s.Nil(rs.Scan(&model))
+
+	// Model is not writable, as we said
+	s.False(model.IsWritable())
+	s.Equal(0, model.Age)
+
+	_, err = s.store.Update(&model)
+	s.Equal(ErrNotWritable, err)
+
+	// Now, the model is reloaded with all the fields
+	s.Nil(s.store.Reload(&model))
+
+	// And so, it becomes writable
+	s.True(model.IsWritable())
+	s.Equal(1, model.Age)
 }
 
 func (s *StoreSuite) TestOperators() {
@@ -175,15 +228,17 @@ func (s *StoreSuite) TestOperators() {
 		cond  Condition
 		count int64
 	}{
-		{"Eq", Eq("name", "Joe"), 1},
-		{"Gt", Gt("age", 1), 2},
-		{"Lt", Lt("age", 2), 1},
-		{"Neq", Neq("name", "Joe"), 2},
-		{"GtOrEq", GtOrEq("age", 2), 2},
-		{"LtOrEq", LtOrEq("age", 3), 3},
-		{"Not", Not(Eq("name", "Joe")), 2},
-		{"And", And(Neq("name", "Joe"), Gt("age", 1)), 2},
-		{"Or", Or(Neq("name", "Joe"), Eq("age", 1)), 3},
+		{"Eq", Eq(f("name"), "Joe"), 1},
+		{"Gt", Gt(f("age"), 1), 2},
+		{"Lt", Lt(f("age"), 2), 1},
+		{"Neq", Neq(f("name"), "Joe"), 2},
+		{"GtOrEq", GtOrEq(f("age"), 2), 2},
+		{"LtOrEq", LtOrEq(f("age"), 3), 3},
+		{"Not", Not(Eq(f("name"), "Joe")), 2},
+		{"And", And(Neq(f("name"), "Joe"), Gt(f("age"), 1)), 2},
+		{"Or", Or(Neq(f("name"), "Joe"), Eq(f("age"), 1)), 3},
+		{"In", In(f("name"), "Joe", "Jane"), 2},
+		{"NotIn", NotIn(f("name"), "Joe", "Jane"), 1},
 	}
 
 	s.Nil(s.store.Insert(newModel("Joe", "", 1)))
@@ -191,7 +246,7 @@ func (s *StoreSuite) TestOperators() {
 	s.Nil(s.store.Insert(newModel("Anna", "", 2)))
 
 	for _, c := range cases {
-		q := NewBaseQuery("model")
+		q := NewBaseQuery(ModelSchema)
 		q.Where(c.cond)
 
 		s.Equal(s.store.MustCount(q), c.count, c.name)
@@ -210,6 +265,12 @@ func (s *StoreSuite) assertModel(m *model) {
 		s.Equal(m.Email, result.Email)
 		s.Equal(m.Age, result.Age)
 	}
+}
+
+func (s *StoreSuite) assertCount(n int64) {
+	var count int64
+	s.Nil(s.db.QueryRow("SELECT COUNT(*) FROM model").Scan(&count))
+	s.Equal(n, count)
 }
 
 func (s *StoreSuite) assertNotExists(m *model) {
@@ -260,18 +321,4 @@ func (m *model) ColumnAddress(col string) (interface{}, error) {
 		return &m.Age, nil
 	}
 	return nil, fmt.Errorf("column does not exist: %s", col)
-}
-
-type modelSchema struct{}
-
-func (*modelSchema) Alias() string      { return "model" }
-func (*modelSchema) Table() string      { return "model" }
-func (*modelSchema) Identifier() string { return "id" }
-func (*modelSchema) Columns() []string {
-	return []string{
-		"id",
-		"name",
-		"email",
-		"age",
-	}
 }

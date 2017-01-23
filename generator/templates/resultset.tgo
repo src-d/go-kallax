@@ -1,94 +1,89 @@
 
+// {{.ResultSetName}} is the set of results returned by a query to the
+// database.
 type {{.ResultSetName}} struct {
-    kallax.ResultSet
+    *kallax.ResultSet
     last    *{{.Name}}
     lastErr error
 }
 
-// All returns all documents on the resultset and close the resultset
-func (r *{{.ResultSetName}}) All() ([]*{{.Name}}, error) {
-    var result []*{{.Name}}
-    err := r.ResultSet.All(&result)
-    {{if .Init}} \
-    if err != nil {
-	return result, err
-    }
+func New{{.ResultSetName}}(rs *kallax.ResultSet) *{{.ResultSetName}} {
+        return &{{.ResultSetName}}{ResultSet: rs}
+}
 
-    for _, r := range result {
-	if err := r.Init(r); err != nil {
-	    return result, err   
+// Next fetches the next item in the result set and returns true if there is 
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *{{.ResultSetName}}) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.Close()
+		return false
 	}
-    }
-    {{end}} \
 
-    return result, err 
+	rs.last = new({{.Name}})
+	rs.lastErr = rs.Scan(rs.last)
+	if rs.lastErr != nil {
+		rs.last = nil
+	}
+
+	return true
 }
 
-// One returns the first document on the resultset and close the resultset
-func (r *{{.ResultSetName}}) One() (*{{.Name}}, error) {
-    var result *{{.Name}}
-    err := r.ResultSet.One(&result)
-    {{if .Init}} \
-    if err != nil {
-	return result, err
-    }
-
-    err = result.Init(result)
-    {{end}} \
-
-    return result, err
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *{{.ResultSetName}}) Get() (*{{.Name}}, error) {
+	return rs.last, rs.lastErr
 }
 
-// Next prepares the next result document for reading with the Get method.
-func (r *{{.ResultSetName}}) Next() (returned bool) {
-    r.last = nil
-    returned, r.lastErr = r.ResultSet.Next(&r.last)
-    {{if .Init}} \
-    if r.lastErr != nil {
-	return
-    }
-    if returned {
-    	r.lastErr = r.last.Init(r.last)
-    }
-    {{end}} \
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *{{.ResultSetName}}) ForEach(fn func(*{{.Name}}) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
 
-    return
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
 }
 
-// Get returns the document retrieved with the Next method.
-func (r *{{.ResultSetName}}) Get() (*{{.Name}}, error) {
-    return r.last, r.lastErr
+// All returns all records on the result set and closes the result set.
+func (rs *{{.ResultSetName}}) All() ([]*{{.Name}}, error) {
+	var result []*{{.Name}}
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
 }
 
-// ForEach iterates the resultset calling to the given function.
-func (r *{{.ResultSetName}}) ForEach(f func(*{{.Name}}) error) error {
-    for {
-        var result *{{.Name}}
-        found, err := r.ResultSet.Next(&result)
-        if err != nil {
-            return err
-        }
-        
-	if !found {
-            break
-        }
+// One returns the first record on the result set and closes the result set.
+func (rs *{{.ResultSetName}}) One() (*{{.Name}}, error) {
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
 
-    	{{if .Init}} \
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
 
-	if err := result.Init(result); err != nil {
-	    return err 
-        }
-	
-	{{end}} \
-        err = f(result)
-        if err == kallax.ErrStop {
-            break
-        }
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
 
-        if  err != nil {
-            return err
-        }
-    }
-
-    return nil
+	return record, nil
 }
+

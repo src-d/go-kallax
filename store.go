@@ -21,12 +21,19 @@ var (
 	ErrNoRowUpdate = errors.New("update affected no rows")
 	// ErrNotWritable is returned when a record is not writable.
 	ErrNotWritable = errors.New("record is not writable")
+	// ErrStop can be returned inside a ForEach callback to stop iteration.
+	ErrStop = errors.New("stopped ForEach execution")
+	// ErrTransactionInsideTransaction is returned when a transaction is run
+	// inside a transaction.
+	ErrTransactionInsideTransaction = errors.New("can't start a transaction inside a transaction")
+	ErrInvalidTxCallback            = errors.New("invalid transaction callback given")
 )
 
 // Store is a structure capable of retrieving records from a concrete table in
 // the database.
 type Store struct {
-	db       squirrel.DBProxy
+	db       *sql.DB
+	proxy    squirrel.DBProxy
 	schema   Schema
 	inserter squirrel.InsertBuilder
 	updater  squirrel.UpdateBuilder
@@ -38,7 +45,20 @@ func NewStore(db *sql.DB, schema Schema) *Store {
 	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 	proxy := squirrel.NewStmtCacher(db)
 	return &Store{
-		db:       proxy,
+		db:       db,
+		proxy:    proxy,
+		schema:   schema,
+		inserter: builder.Insert(schema.Table()).RunWith(proxy),
+		updater:  builder.Update(schema.Table()).RunWith(proxy),
+		deleter:  builder.Delete(schema.Table()).RunWith(proxy),
+	}
+}
+
+func newStoreWithTransaction(tx *sql.Tx, schema Schema) *Store {
+	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+	proxy := squirrel.NewStmtCacher(tx)
+	return &Store{
+		proxy:    proxy,
 		schema:   schema,
 		inserter: builder.Insert(schema.Table()).RunWith(proxy),
 		updater:  builder.Update(schema.Table()).RunWith(proxy),
@@ -57,7 +77,7 @@ func (s *Store) Insert(record Record) error {
 		record.SetID(NewID())
 	}
 
-	cols := s.schema.Columns()
+	cols := ColumnNames(s.schema.Columns())
 	values, err := RecordValues(record, cols...)
 	if err != nil {
 		return err
@@ -80,7 +100,7 @@ func (s *Store) Insert(record Record) error {
 // updated if no fields are provided. For an update to take place, the record is
 // required to have a non-empty ID and not to be a new record.
 // Returns the number of updated rows and an error, if any.
-func (s *Store) Update(record Record, cols ...string) (int64, error) {
+func (s *Store) Update(record Record, cols ...SchemaField) (int64, error) {
 	if !record.IsWritable() {
 		return 0, ErrNotWritable
 	}
@@ -96,19 +116,23 @@ func (s *Store) Update(record Record, cols ...string) (int64, error) {
 	if len(cols) == 0 {
 		cols = s.schema.Columns()
 	}
-	values, err := RecordValues(record, cols...)
+
+	columnNames := ColumnNames(cols)
+	values, err := RecordValues(record, columnNames...)
 	if err != nil {
 		return 0, err
 	}
 
 	var clauses = make(map[string]interface{}, len(cols))
-	for i, col := range cols {
+	for i, col := range columnNames {
 		clauses[col] = values[i]
 	}
 
 	result, err := s.updater.
 		SetMap(clauses).
-		Where(squirrel.Eq{s.schema.Identifier(): record.GetID()}).
+		Where(squirrel.Eq{
+			s.schema.ID().String(): record.GetID(),
+		}).
 		Exec()
 	if err != nil {
 		return 0, err
@@ -153,7 +177,9 @@ func (s *Store) Delete(record Record) error {
 	}
 
 	_, err := s.deleter.
-		Where(squirrel.Eq{s.schema.Identifier(): record.GetID()}).
+		Where(squirrel.Eq{
+			s.schema.ID().String(): record.GetID(),
+		}).
 		Exec()
 	return err
 }
@@ -203,11 +229,36 @@ func (s *Store) MustFind(q Query) *ResultSet {
 	return rs
 }
 
+// Reload refreshes the record with the data in the database and makes the
+// record writable.
+func (s *Store) Reload(record Record) error {
+	if record.GetID().IsEmpty() {
+		return ErrEmptyID
+	}
+
+	q := NewBaseQuery(s.schema)
+	q.Where(Eq(s.schema.ID(), record.GetID()))
+	q.Limit(1)
+	columns, builder := q.compile()
+
+	rows, err := builder.RunWith(s.db).Query()
+	if err != nil {
+		return err
+	}
+
+	rs := NewResultSet(rows, false, columns...)
+	if !rs.Next() {
+		return sql.ErrNoRows
+	}
+
+	return rs.Scan(record)
+}
+
 // Count returns the number of rows selected by the given query.
 func (s *Store) Count(q Query) (count int64, err error) {
 	_, queryBuilder := q.compile()
 	builder := builder.Set(queryBuilder, "Columns", nil).(squirrel.SelectBuilder)
-	err = builder.Column(fmt.Sprintf("COUNT(%s)", s.schema.Identifier())).
+	err = builder.Column(fmt.Sprintf("COUNT(%s)", s.schema.ID())).
 		RunWith(s.db).
 		QueryRow().
 		Scan(&count)
@@ -223,4 +274,33 @@ func (s *Store) MustCount(q Query) int64 {
 	}
 
 	return cnt
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *Store) Transaction(callback func(*Store) error) error {
+	if s.db == nil {
+		return ErrTransactionInsideTransaction
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("kallax: can't open transaction: %s", err)
+	}
+
+	if err := callback(newStoreWithTransaction(tx, s.schema)); err != nil {
+		if err := tx.Rollback(); err != nil {
+			return fmt.Errorf("kallax: unable to rollback transaction: %s", err)
+		}
+
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("kallax: unable to commit transaction: %s", err)
+	}
+
+	return nil
 }

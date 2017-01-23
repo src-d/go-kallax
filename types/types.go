@@ -63,25 +63,25 @@ type SQLType interface {
 	driver.Valuer
 }
 
-type array struct {
+type slice struct {
 	val interface{}
 }
 
-// Array wraps a slice value so it can be scanned from and converted to
+// Slice wraps a slice value so it can be scanned from and converted to
 // PostgreSQL arrays. The following values can be used with this function:
 //  - slices of basic types
 //  - slices of *url.URL and url.URL
 //  - slices of types that implement sql.Scanner and driver.Valuer (take into
 //    account that these make use of reflection for scan/value)
-func Array(v interface{}) SQLType {
+func Slice(v interface{}) SQLType {
 	switch v := v.(type) {
 	case []url.URL:
-		return Array(&v)
+		return Slice(&v)
 	}
-	return &array{v}
+	return &slice{v}
 }
 
-func (a *array) Scan(v interface{}) error {
+func (a *slice) Scan(v interface{}) error {
 	switch o := a.val.(type) {
 	case *[]url.URL:
 		var s []string
@@ -117,7 +117,7 @@ func (a *array) Scan(v interface{}) error {
 	return pq.Array(a.val).Scan(v)
 }
 
-func (a array) Value() (driver.Value, error) {
+func (a slice) Value() (driver.Value, error) {
 	switch v := a.val.(type) {
 	case *[]url.URL:
 		var s = make([]string, len(*v))
@@ -142,6 +142,51 @@ func (a array) Value() (driver.Value, error) {
 	default:
 		return pq.Array(v).Value()
 	}
+}
+
+type array struct {
+	val  reflect.Value
+	size int
+}
+
+func Array(v interface{}, size int) SQLType {
+	return &array{reflect.ValueOf(v), size}
+}
+
+func (a *array) Scan(v interface{}) error {
+	sliceTyp := reflect.SliceOf(a.val.Type().Elem().Elem())
+	newSlice := reflect.MakeSlice(sliceTyp, 0, 0)
+	slicePtr := reflect.New(sliceTyp)
+	slicePtr.Elem().Set(newSlice)
+	if err := pq.Array(slicePtr.Interface()).Scan(v); err != nil {
+		return err
+	}
+
+	if slicePtr.Elem().Len() != a.size {
+		return fmt.Errorf(
+			"cannot scan array of size %d into array of size %d",
+			newSlice.Len(),
+			a.size,
+		)
+	}
+
+	for i := 0; i < a.size; i++ {
+		a.val.Elem().Index(i).Set(slicePtr.Elem().Index(i))
+	}
+
+	return nil
+}
+
+func (a *array) Value() (driver.Value, error) {
+	sliceTyp := reflect.SliceOf(a.val.Type().Elem().Elem())
+	newSlice := reflect.MakeSlice(sliceTyp, a.size, a.size)
+	for i := 0; i < a.size; i++ {
+		newSlice.Index(i).Set(a.val.Elem().Index(i))
+	}
+
+	slicePtr := reflect.New(sliceTyp)
+	slicePtr.Elem().Set(newSlice)
+	return pq.Array(slicePtr.Interface()).Value()
 }
 
 type sqlJSON struct {

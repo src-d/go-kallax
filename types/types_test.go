@@ -40,7 +40,7 @@ func mustPtrURL(u string) *url.URL {
 	return url
 }
 
-func TestArray(t *testing.T) {
+func TestSlice(t *testing.T) {
 	require := require.New(t)
 
 	cases := []struct {
@@ -66,7 +66,7 @@ func TestArray(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		arr := Array(c.v)
+		arr := Slice(c.v)
 		val, err := arr.Value()
 		require.Nil(err)
 
@@ -75,7 +75,7 @@ func TestArray(t *testing.T) {
 		require.Nil(err)
 
 		require.Equal(pqVal, val)
-		require.Nil(Array(c.dest).Scan(val))
+		require.Nil(Slice(c.dest).Scan(val))
 		require.Equal(c.v, c.dest)
 	}
 }
@@ -114,4 +114,21 @@ func TestJSON(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, float64(1), val.(float64))
 	})
+}
+
+func TestArray(t *testing.T) {
+	require := require.New(t)
+	input, err := pq.Array([]int64{1, 2}).Value()
+	require.Nil(err)
+
+	var dst [2]int64
+
+	arr := Array(&dst, 2)
+	require.Nil(arr.Scan(input))
+	require.Equal(int64(1), dst[0])
+	require.Equal(int64(2), dst[1])
+
+	v, err := arr.Value()
+	require.Nil(err)
+	require.Equal(input, v)
 }

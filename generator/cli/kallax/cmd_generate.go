@@ -10,8 +10,8 @@ import (
 )
 
 type CmdGenerate struct {
-	Input  string `short:"" long:"input" description:"input package directory" default:"."`
-	Output string `short:"" long:"output" description:"output file name" default:"kallax.go"`
+	Input  string `short:"i" long:"input" description:"input package directory" default:"."`
+	Output string `short:"o" long:"output" description:"output file name" default:"kallax.go"`
 }
 
 func (c *CmdGenerate) Execute(args []string) error {

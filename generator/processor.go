@@ -4,30 +4,36 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
-	"go/importer"
 	"go/parser"
 	"go/token"
 	"go/types"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"strings"
+
+	"github.com/src-d/proteus/source"
 )
 
-const BaseDocument = "github.com/src-d/go-kallax.Document"
+// BaseModel is the type name of the kallax base model.
+const BaseModel = "github.com/src-d/go-kallax.Model"
 
+// Processor is in charge of processing the package in a patch and
+// scan models from it.
 type Processor struct {
-	Path       string
-	Ignore     map[string]bool
-	TypesPkg   *types.Package
-	SourceCode map[string][]byte
+	// Path of the package.
+	Path string
+	// Ignore is the list of files to ignore when scanning.
+	Ignore map[string]struct{}
+	// Package is the scanned package.
+	Package *types.Package
 }
 
+// NewProcessor creates a new Processor for the given path and ignored files.
 func NewProcessor(path string, ignore []string) *Processor {
-	i := make(map[string]bool, 0)
+	i := make(map[string]struct{})
 	for _, file := range ignore {
-		i[file] = true
+		i[file] = struct{}{}
 	}
 
 	return &Processor{
@@ -36,19 +42,19 @@ func NewProcessor(path string, ignore []string) *Processor {
 	}
 }
 
+// Do performs all the processing and returns the scanned package.
 func (p *Processor) Do() (*Package, error) {
 	files, err := p.getSourceFiles()
 	if err != nil {
 		return nil, err
 	}
 
-	p.SourceCode, err = p.readSourceFiles(files)
+	p.Package, err = p.parseSourceFiles(files)
 	if err != nil {
 		return nil, err
 	}
 
-	p.TypesPkg, _ = p.parseSourceFiles(files)
-	return p.processTypesPkg()
+	return p.processPackage()
 }
 
 func (p *Processor) getSourceFiles() ([]string, error) {
@@ -65,10 +71,10 @@ func (p *Processor) getSourceFiles() ([]string, error) {
 		return nil, fmt.Errorf("%s: no buildable Go files", p.Path)
 	}
 
-	return joinDirectory(p.Path, p.removeIngoredFiles(files)), nil
+	return joinDirectory(p.Path, p.removeIgnoredFiles(files)), nil
 }
 
-func (p *Processor) removeIngoredFiles(filenames []string) []string {
+func (p *Processor) removeIgnoredFiles(filenames []string) []string {
 	var output []string
 	for _, filename := range filenames {
 		if _, ok := p.Ignore[filename]; ok {
@@ -79,20 +85,6 @@ func (p *Processor) removeIngoredFiles(filenames []string) []string {
 	}
 
 	return output
-}
-
-func (p *Processor) readSourceFiles(filenames []string) (map[string][]byte, error) {
-	source := make(map[string][]byte, 0)
-	for _, filename := range filenames {
-		b, err := ioutil.ReadFile(filename)
-		if err != nil {
-			return source, err
-		}
-
-		source[filename] = b
-	}
-
-	return source, nil
 }
 
 func (p *Processor) parseSourceFiles(filenames []string) (*types.Package, error) {
@@ -110,117 +102,79 @@ func (p *Processor) parseSourceFiles(filenames []string) (*types.Package, error)
 	config := types.Config{
 		FakeImportC: true,
 		Error:       func(error) {},
-		Importer:    importer.For("gc", nil),
+		Importer:    source.NewImporter(),
 	}
-	info := &types.Info{}
 
-	return config.Check(p.Path, fs, files, info)
+	return config.Check(p.Path, fs, files, new(types.Info))
 }
 
-func (p *Processor) processTypesPkg() (*Package, error) {
-	pkg := &Package{Name: p.TypesPkg.Name()}
-	p.processPackage(pkg)
+func (p *Processor) processPackage() (*Package, error) {
+	pkg := &Package{Name: p.Package.Name()}
+	var ctors []*types.Func
+
+	fmt.Println("Package: ", pkg.Name)
+
+	s := p.Package.Scope()
+	for _, name := range s.Names() {
+		obj := s.Lookup(name)
+		switch t := obj.Type().(type) {
+		case *types.Signature:
+			if strings.HasPrefix(name, "new") {
+				ctors = append(ctors, obj.(*types.Func))
+			}
+		case *types.Named:
+			if str, ok := t.Underlying().(*types.Struct); ok {
+				if m := p.processModel(name, str, t); m != nil {
+					fmt.Printf("Found: %s\n", m)
+					if err := m.Validate(); err != nil {
+						return nil, err
+					}
+
+					pkg.Models = append(pkg.Models, m)
+					m.Node = t
+					m.Package = p.Package
+				}
+			}
+		}
+	}
+
+	for _, ctor := range ctors {
+		p.tryMatchConstructor(pkg.Models, ctor)
+	}
 
 	return pkg, nil
 }
 
-func (p *Processor) processPackage(pkg *Package) {
-	var newFuncs []*types.Func
-
-	fmt.Println("Package: ", pkg.Name)
-	s := p.TypesPkg.Scope()
-	for _, name := range s.Names() {
-		fun := p.tryGetFunction(s.Lookup(name))
-		if fun != nil {
-			pkg.Functions = append(pkg.Functions, name)
-			if strings.HasPrefix(fun.Name(), "new") {
-				newFuncs = append(newFuncs, fun)
-			}
-		}
-
-		str := p.tryGetStruct(s.Lookup(name).Type())
-		if str == nil {
-			continue
-		}
-
-		if m := p.processStruct(name, str, s.Lookup(name).Type()); m != nil {
-			fmt.Printf("Found: %s\n", m)
-			if err := m.Validate(); err != nil {
-				panic(err)
-			}
-
-			pkg.Models = append(pkg.Models, m)
-			m.CheckedNode = s.Lookup(name).Type().(*types.Named)
-			m.Package = p.TypesPkg
-		} else {
-			pkg.Structs = append(pkg.Structs, name)
-		}
-
-	}
-
-	for _, fun := range newFuncs {
-		p.tryMatchNewFunc(pkg.Models, fun)
-	}
-}
-
-func (p *Processor) tryMatchNewFunc(models []*Model, fun *types.Func) {
-	modelName := fun.Name()[len("new"):]
-
+func (p *Processor) tryMatchConstructor(models []*Model, fun *types.Func) {
 	for _, m := range models {
-		if m.Name != modelName {
+		if fun.Name() != fmt.Sprintf("new%s", m.Name) {
 			continue
 		}
 
 		sig := fun.Type().(*types.Signature)
-
 		if sig.Recv() != nil {
 			continue
 		}
 
 		res := sig.Results()
-		for i := 0; i < res.Len(); i++ {
-			if isTypeOrPtrTo(res.At(i).Type(), m.CheckedNode) {
-				m.NewFunc = fun
-				return
+		if res.Len() > 0 {
+			for i := 0; i < res.Len(); i++ {
+				if isTypeOrPtrTo(res.At(i).Type(), m.Node) {
+					m.CtorFunc = fun
+					return
+				}
 			}
 		}
+		return
 	}
 }
 
-func (p *Processor) tryGetFunction(typ types.Object) *types.Func {
-	switch t := typ.(type) {
-	case *types.Func:
-		return t
-	}
-
-	return nil
-}
-
-func (p *Processor) tryGetStruct(typ types.Type) *types.Struct {
-	switch t := typ.(type) {
-	case *types.Named:
-		return p.tryGetStruct(t.Underlying())
-	case *types.Pointer:
-		return p.tryGetStruct(t.Elem())
-	case *types.Slice:
-		return p.tryGetStruct(t.Elem())
-	case *types.Map:
-		return p.tryGetStruct(t.Elem())
-	case *types.Struct:
-		return t
-	}
-
-	return nil
-}
-
-func (p *Processor) processStruct(name string, s *types.Struct, t types.Type) *Model {
+func (p *Processor) processModel(name string, s *types.Struct, t *types.Named) *Model {
 	m := NewModel(name)
-	m.New = p.isNewPresent(name)
-	m.Init = p.isInitPresent(t)
-	m.Events = p.getEvents(name)
+	m.Events = p.findEvents(t)
 
 	var base int
-	if base, m.Fields = p.getFields(s); base == -1 {
+	if base, m.Fields = p.processFields(s, nil, true); base == -1 {
 		return nil
 	}
 
@@ -228,122 +182,254 @@ func (p *Processor) processStruct(name string, s *types.Struct, t types.Type) *M
 	return m
 }
 
-func (p *Processor) getFields(s *types.Struct) (base int, fields []*Field) {
-	base, fields = p.processFields(s, []*types.Struct{})
-	return
-}
-
-func (p *Processor) getEvents(name string) []Event {
-	events := []Event{}
-
+func (p *Processor) findEvents(node *types.Named) []Event {
+	var events []Event
 	all := []Event{
 		BeforeInsert, AfterInsert, BeforeUpdate, AfterUpdate, BeforeSave, AfterSave,
 	}
 
 	for _, e := range all {
-		if p.isEventPresent(name, e) {
+		if p.isEventPresent(node, e) {
 			events = append(events, e)
 		}
 	}
 
 	return events
 }
-func (p *Processor) isNewPresent(name string) bool {
-	re := regexp.MustCompile(fmt.Sprintf("\\*%sStore\\) New\\(", name))
-	for _, code := range p.SourceCode {
-		if re.Match(code) {
-			return true
-		}
-	}
 
-	return false
+// isEventPresent checks the given Event is implemented for the given node.
+func (p *Processor) isEventPresent(node *types.Named, e Event) bool {
+	signature := p.getMethodSignature(types.NewPointer(node), string(e))
+	return signatureMatches(signature, nil, typeCheckers{isBuiltinError})
 }
 
-func (p *Processor) isEventPresent(name string, e Event) bool {
-	re := regexp.MustCompile(fmt.Sprintf("\\*%sStore\\) %s\\(", name, e))
-
-	for _, code := range p.SourceCode {
-		if re.Match(code) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// Returns which field index is an embedded kallax.Document, or -1 if none.
-func (p *Processor) processFields(s *types.Struct, done []*types.Struct) (base int, fields []*Field) {
-	c := s.NumFields()
-
+// processFields returns which field index is an embedded kallax.Model, or -1 if none.
+func (p *Processor) processFields(s *types.Struct, done []*types.Struct, root bool) (base int, fields []*Field) {
 	base = -1
-	fields = make([]*Field, 0)
 
-	for i := 0; i < c; i++ {
+	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)
 		if !f.Exported() {
 			continue
 		}
 
-		t := reflect.StructTag(s.Tag(i))
-		if f.Type().String() == BaseDocument {
+		field := NewField(
+			f.Name(),
+			typeName(f.Type().Underlying()),
+			reflect.StructTag(s.Tag(i)),
+		)
+		field.Node = f
+		if typeName(f.Type()) == BaseModel {
 			base = i
+			field.Type = BaseModel
 		}
 
-		field := NewField(f.Name(), f.Type().Underlying().String(), t)
-		field.CheckedNode = f
-		str := p.tryGetStruct(f.Type())
-		if f.Type().String() != BaseDocument && str != nil {
-			field.Type = getStructType(f.Type())
-
-			d := false
-			for _, v := range done {
-				if v == str {
-					d = true
-					break
-				}
-			}
-			if !d {
-				_, subfs := p.processFields(str, append(done, str))
-				field.SetFields(subfs)
-			}
-		}
-
+		p.processField(field, f.Type(), done, root)
 		fields = append(fields, field)
 	}
 
 	return base, fields
 }
 
-func (p *Processor) isInitPresent(t types.Type) bool {
-	ms := types.NewMethodSet(types.NewPointer(t))
-	for i := 0; i < ms.Len(); i++ {
-		m := ms.At(i)
-		if m.Obj().Name() == "Init" {
-			return true
+// processField processes recursively the field. During the processing several
+// field properties might be modified, such as the properties that report if
+// the type has to be serialized to json, if it's an alias or if it's a pointer
+// and so on. Also, the kind of the field is set here.
+// If root is true, models are established as relationships. If not, they are
+// just treated as structs.
+// The following types are always set as JSON:
+//  - Map
+//  - Slice or Array with non-basic underlying type
+//  - Interface
+//  - Struct that is not a model or is not at root level
+func (p *Processor) processField(field *Field, typ types.Type, done []*types.Struct, root bool) {
+	switch typ := typ.(type) {
+	case *types.Basic:
+		field.Type = typ.String()
+		field.Kind = Basic
+	case *types.Pointer:
+		field.IsPtr = true
+		p.processField(field, typ.Elem(), done, root)
+	case *types.Named:
+		if field.Type == BaseModel {
+			p.processField(field, typ.Underlying(), done, root)
+			return
 		}
+
+		if isModel(typ, true) && root {
+			field.Kind = Relationship
+			return
+		}
+
+		if p.isSQLType(types.NewPointer(typ)) {
+			field.Kind = Interface
+			return
+		}
+
+		if t, ok := specialTypes[typeName(typ)]; ok {
+			field.Type = t
+			return
+		}
+
+		p.processField(field, typ.Underlying(), done, root)
+		field.IsAlias = !field.IsJSON
+	case *types.Array:
+		var underlying Field
+		p.processField(&underlying, typ.Elem(), done, root)
+		if underlying.Kind == Relationship {
+			field.Kind = Relationship
+			return
+		}
+
+		if underlying.Kind != Basic {
+			field.IsJSON = true
+		}
+		field.Kind = Array
+		field.Fields = underlying.Fields
+	case *types.Slice:
+		var underlying Field
+		p.processField(&underlying, typ.Elem(), done, root)
+		if underlying.Kind == Relationship {
+			field.Kind = Relationship
+			return
+		}
+
+		if underlying.Kind != Basic {
+			field.IsJSON = true
+		}
+		field.Kind = Slice
+		field.Fields = underlying.Fields
+	case *types.Map:
+		field.Kind = Map
+		field.IsJSON = true
+	case *types.Interface:
+		field.Kind = Interface
+		field.IsJSON = true
+	case *types.Struct:
+		field.Kind = Struct
+		field.IsJSON = true
+
+		d := false
+		for _, v := range done {
+			if v == typ {
+				d = true
+				break
+			}
+		}
+
+		if !d {
+			_, subfs := p.processFields(typ, append(done, typ), false)
+			field.SetFields(subfs)
+		}
+	default:
+		fmt.Printf("Ignored field %s of type %s\n", field.Name, field.Type)
+	}
+}
+
+func (p *Processor) isSQLType(typ types.Type) bool {
+	scan := p.getMethodSignature(typ, "Scan")
+	if !signatureMatches(scan, typeCheckers{isEmptyInterface}, typeCheckers{isBuiltinError}) {
+		return false
 	}
 
+	value := p.getMethodSignature(typ, "Value")
+	if !signatureMatches(value, nil, typeCheckers{isDriverValue, isBuiltinError}) {
+		return false
+	}
+
+	return true
+}
+
+func signatureMatches(s *types.Signature, params typeCheckers, results typeCheckers) bool {
+	return s != nil &&
+		s.Params().Len() == len(params) &&
+		s.Results().Len() == len(results) &&
+		params.check(s.Params()) &&
+		results.check(s.Results())
+}
+
+type typeCheckers []typeChecker
+
+func (c typeCheckers) check(tuple *types.Tuple) bool {
+	for i, checker := range c {
+		if !checker(tuple.At(i).Type()) {
+			return false
+		}
+	}
+	return true
+}
+
+type typeChecker func(types.Type) bool
+
+func (p *Processor) getMethodSignature(typ types.Type, name string) *types.Signature {
+	ms := types.NewMethodSet(typ)
+	method := ms.Lookup(p.Package, name)
+	if method == nil {
+		return nil
+	}
+
+	return method.Obj().(*types.Func).Type().(*types.Signature)
+}
+
+func isEmptyInterface(typ types.Type) bool {
+	switch typ := typ.(type) {
+	case *types.Interface:
+		return typ.NumMethods() == 0
+	}
 	return false
 }
 
-func getStructType(t types.Type) string {
-	ts := t.String()
-	if ts != "time.Time" && ts != "bson.ObjectId" {
-		return "struct"
+func isDriverValue(typ types.Type) bool {
+	switch typ := typ.(type) {
+	case *types.Named:
+		return typ.String() == "database/sql/driver.Value"
 	}
+	return false
+}
 
-	return ts
+// isModel checks if the type is a model. If dive is true, it will check also
+// the types of the struct if the type is a struct.
+func isModel(typ types.Type, dive bool) bool {
+	switch typ := typ.(type) {
+	case *types.Named:
+		if typeName(typ) == BaseModel {
+			return true
+		}
+		return isModel(typ.Underlying(), true && dive)
+	case *types.Pointer:
+		return isModel(typ.Elem(), true && dive)
+	case *types.Struct:
+		if !dive {
+			return false
+		}
+
+		for i := 0; i < typ.NumFields(); i++ {
+			if isModel(typ.Field(i).Type(), false) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (p *Processor) processBaseField(m *Model, f *Field) {
-	m.Collection = f.Tag.Get("collection")
+	m.Table = f.Tag.Get("table")
+	if m.Table == "" {
+		m.Table = toLowerSnakeCase(m.Name)
+	}
 }
 
 func joinDirectory(directory string, files []string) []string {
-	r := make([]string, len(files))
+	result := make([]string, len(files))
 	for i, file := range files {
-		r[i] = filepath.Join(directory, file)
+		result[i] = filepath.Join(directory, file)
 	}
 
-	return r
+	return result
+}
+
+var goPath = os.Getenv("GOPATH")
+
+func typeName(typ types.Type) string {
+	return strings.Replace(typ.String(), goPath+"/src/", "", -1)
 }
