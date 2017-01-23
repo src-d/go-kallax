@@ -9,7 +9,8 @@ matrix:
         - go: tip
 
 install:
-  - go get -t -v ./...
+  - go get -t -v .
+  - go get -t -v ./generator/...
 
 script:
   - make test
