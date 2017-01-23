@@ -3,8 +3,8 @@ package tests
 import "github.com/src-d/go-kallax"
 
 type ResultSetFixture struct {
-	kallax.Document `bson:",inline" collection:"resultset"`
-	Foo             string
+	kallax.Model `table:"resultset"`
+	Foo          string
 }
 
 func newResultSetFixture(f string) *ResultSetFixture {
@@ -12,11 +12,11 @@ func newResultSetFixture(f string) *ResultSetFixture {
 }
 
 type ResultSetInitFixture struct {
-	kallax.Document `bson:",inline" collection:"resultset"`
-	Foo             string
+	kallax.Model `table:"resultset"`
+	Foo          string
 }
 
-func (r *ResultSetInitFixture) Init(doc kallax.DocumentBase) error {
+func (r *ResultSetInitFixture) Init(doc kallax.Record) error {
 	r.Foo = "foo"
 	return nil
 }

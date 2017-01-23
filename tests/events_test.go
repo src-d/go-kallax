@@ -1,123 +1,123 @@
 package tests
 
-import (
-	"errors"
+import "errors"
 
-	. "gopkg.in/check.v1"
-)
-
-func (s *MongoSuite) TestEventsInsert(c *C) {
+func (s *CommonSuite) TestEventsInsert() {
 	store := NewEventsFixtureStore(s.db)
 
-	doc := store.New()
+	doc := NewEventsFixture()
 	err := store.Insert(doc)
-	c.Assert(err, IsNil)
-	c.Assert(doc.Checks, DeepEquals, map[string]bool{
+	s.Nil(err)
+	s.Equal(doc.Checks, map[string]bool{
 		"BeforeInsert": true,
 		"AfterInsert":  true,
 	})
 }
 
-func (s *MongoSuite) TestEventsUpdate(c *C) {
+func (s *CommonSuite) TestEventsUpdate() {
 	store := NewEventsFixtureStore(s.db)
 
-	doc := store.New()
+	doc := NewEventsFixture()
 	err := store.Insert(doc)
-	c.Assert(err, IsNil)
+	s.Nil(err)
 
 	doc.Checks = make(map[string]bool, 0)
-	err = store.Update(doc)
-	c.Assert(err, IsNil)
-	c.Assert(doc.Checks, DeepEquals, map[string]bool{
+	updatedRows, err := store.Update(doc)
+	s.Nil(err)
+	s.True(updatedRows > 0)
+	s.Equal(doc.Checks, map[string]bool{
 		"BeforeUpdate": true,
 		"AfterUpdate":  true,
 	})
 }
 
-func (s *MongoSuite) TestEventsUpdateError(c *C) {
+func (s *CommonSuite) TestEventsUpdateError() {
 	store := NewEventsFixtureStore(s.db)
 
-	doc := store.New()
+	doc := NewEventsFixture()
 	err := store.Insert(doc)
 	doc.Checks = make(map[string]bool, 0)
 
 	doc.MustFailAfter = errors.New("after")
-	err = store.Update(doc)
-	c.Assert(err, Equals, doc.MustFailAfter)
+	updatedRows, err := store.Update(doc)
+	s.True(updatedRows == 0)
+	s.Equal(err, doc.MustFailAfter)
 
 	doc.MustFailBefore = errors.New("before")
-	err = store.Update(doc)
-	c.Assert(err, Equals, doc.MustFailBefore)
+	updatedRows, err = store.Update(doc)
+	s.True(updatedRows == 0)
+	s.Equal(err, doc.MustFailBefore)
 }
 
-func (s *MongoSuite) TestEventsSaveOnInsert(c *C) {
+func (s *CommonSuite) TestEventsSaveOnInsert() {
 	store := NewEventsFixtureStore(s.db)
 
-	doc := store.New()
+	doc := NewEventsFixture()
 	updated, err := store.Save(doc)
-	c.Assert(err, IsNil)
-	c.Assert(updated, Equals, false)
-	c.Assert(doc.Checks, DeepEquals, map[string]bool{
+	s.Nil(err)
+	s.Equal(updated, false)
+	s.Equal(doc.Checks, map[string]bool{
 		"BeforeInsert": true,
 		"AfterInsert":  true,
 	})
 }
 
-func (s *MongoSuite) TestEventsSaveOnUpdate(c *C) {
+func (s *CommonSuite) TestEventsSaveOnUpdate() {
 	store := NewEventsFixtureStore(s.db)
 
-	doc := store.New()
+	doc := NewEventsFixture()
 	err := store.Insert(doc)
 	doc.Checks = make(map[string]bool, 0)
 
 	updated, err := store.Save(doc)
-	c.Assert(err, IsNil)
-	c.Assert(updated, Equals, true)
-	c.Assert(doc.Checks, DeepEquals, map[string]bool{
+	s.Nil(err)
+	s.Equal(updated, true)
+	s.Equal(doc.Checks, map[string]bool{
 		"BeforeUpdate": true,
 		"AfterUpdate":  true,
 	})
 }
 
-func (s *MongoSuite) TestEventsSaveInsert(c *C) {
+func (s *CommonSuite) TestEventsSaveInsert() {
 	store := NewEventsSaveFixtureStore(s.db)
 
-	doc := store.New()
+	doc := NewEventsSaveFixture()
 	err := store.Insert(doc)
-	c.Assert(err, IsNil)
-	c.Assert(doc.Checks, DeepEquals, map[string]bool{
+	s.Nil(err)
+	s.Equal(doc.Checks, map[string]bool{
 		"BeforeSave": true,
 		"AfterSave":  true,
 	})
 }
 
-func (s *MongoSuite) TestEventsSaveUpdate(c *C) {
+func (s *CommonSuite) TestEventsSaveUpdate() {
 	store := NewEventsSaveFixtureStore(s.db)
 
-	doc := store.New()
+	doc := NewEventsSaveFixture()
 	err := store.Insert(doc)
-	c.Assert(err, IsNil)
+	s.Nil(err)
 
 	doc.Checks = make(map[string]bool, 0)
-	err = store.Update(doc)
-	c.Assert(err, IsNil)
-	c.Assert(doc.Checks, DeepEquals, map[string]bool{
+	updatedRows, err := store.Update(doc)
+	s.Nil(err)
+	s.True(updatedRows > 0)
+	s.Equal(doc.Checks, map[string]bool{
 		"BeforeSave": true,
 		"AfterSave":  true,
 	})
 }
 
-func (s *MongoSuite) TestEventsSaveSave(c *C) {
+func (s *CommonSuite) TestEventsSaveSave() {
 	store := NewEventsSaveFixtureStore(s.db)
 
-	doc := store.New()
+	doc := NewEventsSaveFixture()
 	err := store.Insert(doc)
 	doc.Checks = map[string]bool{"AfterInsert": true}
 
 	updated, err := store.Save(doc)
-	c.Assert(err, IsNil)
-	c.Assert(updated, Equals, true)
-	c.Assert(doc.Checks, DeepEquals, map[string]bool{
+	s.Nil(err)
+	s.Equal(updated, true)
+	s.Equal(doc.Checks, map[string]bool{
 		"AfterInsert": true,
 		"BeforeSave":  true,
 		"AfterSave":   true,

@@ -1,13 +1,17 @@
 package tests
 
-import . "gopkg.in/check.v1"
+import kallax "github.com/src-d/go-kallax"
 
-func (s *MongoSuite) TestQueryFindById(c *C) {
+func (s *CommonSuite) TestQueryFindById() {
 	store := NewResultSetFixtureStore(s.db)
 
-	doc := store.New("bar")
-	c.Assert(store.Insert(doc), IsNil)
+	doc := NewResultSetFixture("bar")
+	s.Nil(store.Insert(doc))
 
-	q := store.Query().FindById(doc.Id)
-	c.Assert(store.MustFindOne(q).Foo, Equals, "bar")
+	query := NewResultSetFixtureQuery()
+	query.Where(kallax.Eq(Schema.ResultSetFixture.ID, doc.ID))
+
+	s.NotPanics(func() {
+		s.Equal(store.MustFindOne(query).Foo, "bar")
+	})
 }

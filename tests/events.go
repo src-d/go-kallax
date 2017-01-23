@@ -3,7 +3,7 @@ package tests
 import "github.com/src-d/go-kallax"
 
 type EventsFixture struct {
-	kallax.Model   `bson:",inline" collection:"event"`
+	kallax.Model   `table:"event"`
 	Checks         map[string]bool
 	MustFailBefore error
 	MustFailAfter  error
@@ -52,10 +52,10 @@ func (s *EventsFixtureStore) AfterUpdate(doc *EventsFixture) error {
 }
 
 type EventsSaveFixture struct {
-	kallax.Document `bson:",inline" collection:"event"`
-	Checks          map[string]bool
-	MustFailBefore  error
-	MustFailAfter   error
+	kallax.Model   `table:"event"`
+	Checks         map[string]bool
+	MustFailBefore error
+	MustFailAfter  error
 }
 
 func newEventsSaveFixture() *EventsSaveFixture {

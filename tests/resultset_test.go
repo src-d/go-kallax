@@ -3,158 +3,189 @@ package tests
 import (
 	"errors"
 
-	"github.com/src-d/go-kallax"
-	. "gopkg.in/check.v1"
+	kallax "github.com/src-d/go-kallax"
 )
 
-func (s *MongoSuite) TestResultSetAll(c *C) {
+func (s *CommonSuite) TestResultSetAll() {
 	store := NewResultSetFixtureStore(s.db)
-	c.Assert(store.Insert(store.New("bar")), IsNil)
-	c.Assert(store.Insert(store.New("foo")), IsNil)
+	s.Nil(store.Insert(NewResultSetFixture("bar")))
+	s.Nil(store.Insert(NewResultSetFixture("foo")))
 
-	docs, err := store.MustFind(store.Query()).All()
-	c.Assert(err, IsNil)
-	c.Assert(docs, HasLen, 2)
+	s.NotPanics(func() {
+		rs := store.MustFind(NewResultSetFixtureQuery())
+		docs, err := rs.All()
+		s.Nil(err)
+		s.Len(docs, 2)
+	})
 }
 
-func (s *MongoSuite) TestResultSetAllInit(c *C) {
+func (s *CommonSuite) TestResultSetAllInit() {
 	store := NewResultSetInitFixtureStore(s.db)
 
-	c.Assert(store.Insert(store.New()), IsNil)
-	c.Assert(store.Insert(store.New()), IsNil)
+	s.Nil(store.Insert(NewResultSetInitFixture()))
+	s.Nil(store.Insert(NewResultSetInitFixture()))
 
-	docs, err := store.MustFind(store.Query()).All()
-	c.Assert(err, IsNil)
-	c.Assert(docs, HasLen, 2)
-	c.Assert(docs[0].Foo, Equals, "foo")
-	c.Assert(docs[1].Foo, Equals, "foo")
+	s.NotPanics(func() {
+		rs := store.MustFind(NewResultSetInitFixtureQuery())
+		docs, err := rs.All()
+		s.Nil(err)
+		s.Len(docs, 2)
+		s.Equal(docs[0].Foo, "foo")
+		s.Equal(docs[1].Foo, "foo")
+	})
 }
 
-func (s *MongoSuite) TestResultSetOne(c *C) {
+func (s *CommonSuite) TestResultSetOne() {
 	store := NewResultSetFixtureStore(s.db)
-	c.Assert(store.Insert(store.New("bar")), IsNil)
+	s.Nil(store.Insert(NewResultSetFixture("bar")))
 
-	doc, err := store.MustFind(store.Query()).One()
-	c.Assert(err, IsNil)
-	c.Assert(doc.Foo, Equals, "bar")
+	s.NotPanics(func() {
+		rs := store.MustFind(NewResultSetFixtureQuery())
+		doc, err := rs.One()
+		s.Nil(err)
+		s.Equal(doc.Foo, "bar")
+	})
 }
 
-func (s *MongoSuite) TestResultInitSetOne(c *C) {
+func (s *CommonSuite) TestResultInitSetOne() {
 	store := NewResultSetInitFixtureStore(s.db)
 
-	a := store.New()
+	a := NewResultSetInitFixture()
 	a.Foo = "qux"
 
-	c.Assert(store.Insert(a), IsNil)
+	s.Nil(store.Insert(a))
 
-	doc, err := store.MustFind(store.Query()).One()
-	c.Assert(err, IsNil)
-	c.Assert(doc.Foo, Equals, "foo")
+	s.NotPanics(func() {
+		rs := store.MustFind(NewResultSetInitFixtureQuery())
+		doc, err := rs.One()
+		s.Nil(err)
+		s.Equal(doc.Foo, "foo")
+	})
 }
 
-func (s *MongoSuite) TestResultSetNextEmpty(c *C) {
+func (s *CommonSuite) TestResultSetNextEmpty() {
 	store := NewResultSetFixtureStore(s.db)
-	rs := store.MustFind(store.Query())
-	returned := rs.Next()
-	c.Assert(returned, Equals, false)
 
-	doc, err := rs.Get()
-	c.Assert(err, IsNil)
-	c.Assert(doc, IsNil)
+	s.NotPanics(func() {
+		rs := store.MustFind(NewResultSetFixtureQuery())
+		returned := rs.Next()
+		s.Equal(returned, false)
+
+		doc, err := rs.Get()
+		s.Nil(err)
+		s.Nil(doc)
+	})
 }
 
-func (s *MongoSuite) TestResultSetNext(c *C) {
+func (s *CommonSuite) TestResultSetNext() {
 	store := NewResultSetFixtureStore(s.db)
-	c.Assert(store.Insert(store.New("bar")), IsNil)
+	s.Nil(store.Insert(NewResultSetFixture("bar")))
 
-	rs := store.MustFind(store.Query())
-	returned := rs.Next()
-	c.Assert(returned, Equals, true)
+	s.NotPanics(func() {
+		rs := store.MustFind(NewResultSetFixtureQuery())
+		returned := rs.Next()
+		s.Equal(returned, true)
 
-	doc, err := rs.Get()
-	c.Assert(err, IsNil)
-	c.Assert(doc.Foo, Equals, "bar")
+		doc, err := rs.Get()
+		s.Nil(err)
+		s.Equal(doc.Foo, "bar")
 
-	returned = rs.Next()
-	c.Assert(returned, Equals, false)
+		returned = rs.Next()
+		s.Equal(returned, false)
 
-	doc, err = rs.Get()
-	c.Assert(err, IsNil)
-	c.Assert(doc, IsNil)
+		doc, err = rs.Get()
+		s.Nil(err)
+		s.Nil(doc)
+	})
 }
 
-func (s *MongoSuite) TestResultSetInitNext(c *C) {
+func (s *CommonSuite) TestResultSetInitNext() {
 	store := NewResultSetInitFixtureStore(s.db)
-	c.Assert(store.Insert(store.New()), IsNil)
+	s.Nil(store.Insert(NewResultSetInitFixture()))
 
-	rs := store.MustFind(store.Query())
-	returned := rs.Next()
-	c.Assert(returned, Equals, true)
+	s.NotPanics(func() {
+		rs := store.MustFind(NewResultSetInitFixtureQuery())
+		returned := rs.Next()
+		s.Equal(returned, true)
 
-	doc, err := rs.Get()
-	c.Assert(err, IsNil)
-	c.Assert(doc.Foo, Equals, "foo")
+		doc, err := rs.Get()
+		s.Nil(err)
+		s.Equal(doc.Foo, "foo")
 
-	returned = rs.Next()
-	c.Assert(returned, Equals, false)
-}
-
-func (s *MongoSuite) TestResultSetForEach(c *C) {
-	store := NewResultSetFixtureStore(s.db)
-	c.Assert(store.Insert(store.New("bar")), IsNil)
-	c.Assert(store.Insert(store.New("foo")), IsNil)
-
-	count := 0
-	err := store.MustFind(store.Query()).ForEach(func(*ResultSetFixture) error {
-		count++
-		return nil
+		returned = rs.Next()
+		s.Equal(returned, false)
 	})
-
-	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 2)
 }
 
-func (s *MongoSuite) TestResultSetInitForEach(c *C) {
+func (s *CommonSuite) TestResultSetForEach() {
+	store := NewResultSetFixtureStore(s.db)
+	s.Nil(store.Insert(NewResultSetFixture("bar")))
+	s.Nil(store.Insert(NewResultSetFixture("foo")))
+
+	s.NotPanics(func() {
+		count := 0
+		rs := store.MustFind(NewResultSetFixtureQuery())
+		err := rs.ForEach(func(*ResultSetFixture) error {
+			count++
+			return nil
+		})
+
+		s.Nil(err)
+		s.Equal(count, 2)
+	})
+}
+
+func (s *CommonSuite) TestResultSetInitForEach() {
 	store := NewResultSetInitFixtureStore(s.db)
-	c.Assert(store.Insert(store.New()), IsNil)
-	c.Assert(store.Insert(store.New()), IsNil)
+	s.Nil(store.Insert(NewResultSetInitFixture()))
+	s.Nil(store.Insert(NewResultSetInitFixture()))
 
-	count := 0
-	err := store.MustFind(store.Query()).ForEach(func(r *ResultSetInitFixture) error {
-		c.Assert(r, NotNil)
-		c.Assert(r.Foo, Equals, "foo")
-		count++
-		return nil
+	s.NotPanics(func() {
+		count := 0
+		rs := store.MustFind(NewResultSetInitFixtureQuery())
+		err := rs.ForEach(func(r *ResultSetInitFixture) error {
+			s.Nil(r)
+			s.Equal(r.Foo, "foo")
+			count++
+			return nil
+		})
+
+		s.Nil(err)
+		s.Equal(count, 2)
 	})
-
-	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 2)
 }
 
-func (s *MongoSuite) TestResultSetForEachStop(c *C) {
+func (s *CommonSuite) TestResultSetForEachStop() {
 	store := NewResultSetFixtureStore(s.db)
-	c.Assert(store.Insert(store.New("bar")), IsNil)
-	c.Assert(store.Insert(store.New("foo")), IsNil)
+	s.Nil(store.Insert(NewResultSetFixture("bar")))
+	s.Nil(store.Insert(NewResultSetFixture("foo")))
 
-	count := 0
-	err := store.MustFind(store.Query()).ForEach(func(*ResultSetFixture) error {
-		count++
-		return kallax.ErrStop
+	s.NotPanics(func() {
+		count := 0
+		rs := store.MustFind(NewResultSetFixtureQuery())
+		err := rs.ForEach(func(*ResultSetFixture) error {
+			count++
+			return kallax.ErrStop
+		})
+
+		s.Nil(err)
+		s.Equal(count, 1)
 	})
-
-	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 1)
 }
 
-func (s *MongoSuite) TestResultSetForEachError(c *C) {
+func (s *CommonSuite) TestResultSetForEachError() {
 	store := NewResultSetFixtureStore(s.db)
-	c.Assert(store.Insert(store.New("bar")), IsNil)
-	c.Assert(store.Insert(store.New("foo")), IsNil)
+	s.Nil(store.Insert(NewResultSetFixture("bar")))
+	s.Nil(store.Insert(NewResultSetFixture("foo")))
 
 	fail := errors.New("foo")
-	err := store.MustFind(store.Query()).ForEach(func(*ResultSetFixture) error {
-		return fail
-	})
 
-	c.Assert(err, Equals, fail)
+	s.NotPanics(func() {
+		rs := store.MustFind(NewResultSetFixtureQuery())
+		err := rs.ForEach(func(*ResultSetFixture) error {
+			return fail
+		})
+
+		s.Equal(err, fail)
+	})
 }
