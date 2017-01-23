@@ -1,8 +1,18 @@
 package tests
 
-import "errors"
+import (
+	"database/sql"
+	"errors"
 
-func (s *CommonSuite) TestEventsInsert() {
+	"github.com/stretchr/testify/suite"
+)
+
+type EventsSuite struct {
+	suite.Suite
+	db *sql.DB
+}
+
+func (s *EventsSuite) TestEventsInsert() {
 	store := NewEventsFixtureStore(s.db)
 
 	doc := NewEventsFixture()
@@ -14,7 +24,7 @@ func (s *CommonSuite) TestEventsInsert() {
 	}, doc.Checks)
 }
 
-func (s *CommonSuite) TestEventsUpdate() {
+func (s *EventsSuite) TestEventsUpdate() {
 	store := NewEventsFixtureStore(s.db)
 
 	doc := NewEventsFixture()
@@ -31,7 +41,7 @@ func (s *CommonSuite) TestEventsUpdate() {
 	}, doc.Checks)
 }
 
-func (s *CommonSuite) TestEventsUpdateError() {
+func (s *EventsSuite) TestEventsUpdateError() {
 	store := NewEventsFixtureStore(s.db)
 
 	doc := NewEventsFixture()
@@ -49,7 +59,7 @@ func (s *CommonSuite) TestEventsUpdateError() {
 	s.Equal(doc.MustFailBefore, err)
 }
 
-func (s *CommonSuite) TestEventsSaveOnInsert() {
+func (s *EventsSuite) TestEventsSaveOnInsert() {
 	store := NewEventsFixtureStore(s.db)
 
 	doc := NewEventsFixture()
@@ -62,7 +72,7 @@ func (s *CommonSuite) TestEventsSaveOnInsert() {
 	}, doc.Checks)
 }
 
-func (s *CommonSuite) TestEventsSaveOnUpdate() {
+func (s *EventsSuite) TestEventsSaveOnUpdate() {
 	store := NewEventsFixtureStore(s.db)
 
 	doc := NewEventsFixture()
@@ -78,7 +88,7 @@ func (s *CommonSuite) TestEventsSaveOnUpdate() {
 	}, doc.Checks)
 }
 
-func (s *CommonSuite) TestEventsSaveInsert() {
+func (s *EventsSuite) TestEventsSaveInsert() {
 	store := NewEventsSaveFixtureStore(s.db)
 
 	doc := NewEventsSaveFixture()
@@ -90,7 +100,7 @@ func (s *CommonSuite) TestEventsSaveInsert() {
 	}, doc.Checks)
 }
 
-func (s *CommonSuite) TestEventsSaveUpdate() {
+func (s *EventsSuite) TestEventsSaveUpdate() {
 	store := NewEventsSaveFixtureStore(s.db)
 
 	doc := NewEventsSaveFixture()
@@ -107,7 +117,7 @@ func (s *CommonSuite) TestEventsSaveUpdate() {
 	}, doc.Checks)
 }
 
-func (s *CommonSuite) TestEventsSaveSave() {
+func (s *EventsSuite) TestEventsSaveSave() {
 	store := NewEventsSaveFixtureStore(s.db)
 
 	doc := NewEventsSaveFixture()
