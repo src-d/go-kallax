@@ -136,7 +136,7 @@ func (s *{{.StoreName}}) Find(q *{{.QueryName}}) (*{{.ResultSetName}}, error) {
 	return New{{.ResultSetName}}(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics yf there
+// MustFind returns the set of results for the given query, but panics if there
 // is any error.
 func (s *{{.StoreName}}) MustFind(q *{{.QueryName}}) *{{.ResultSetName}} {
 	return New{{.ResultSetName}}(s.Store.MustFind(q))
