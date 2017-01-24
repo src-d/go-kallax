@@ -9,11 +9,20 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var (
+	connectionString = "postgres://%s:%s@%s/%s?sslmode=disable"
+	host             = envOrDefault("DBHOST", "0.0.0.0:5432")
+	database         = envOrDefault("DBNAME", "testing")
+	user             = envOrDefault("DBUSER", "testing")
+	password         = envOrDefault("DBPASS", "testing")
+)
+
 func envOrDefault(key string, def string) string {
 	v := os.Getenv(key)
 	if v == "" {
-		v = def
+		return def
 	}
+
 	return v
 }
 
@@ -27,12 +36,10 @@ type CommonSuite struct {
 }
 
 func (s *CommonSuite) SetupSuite() {
-	db, err := sql.Open("postgres", fmt.Sprintf(
-		"postgres://%s:%s@0.0.0.0:5432/%s?sslmode=disable",
-		envOrDefault("DBUSER", "testing"),
-		envOrDefault("DBPASS", "testing"),
-		envOrDefault("DBNAME", "testing"),
-	))
+	db, err := sql.Open(
+		"postgres",
+		fmt.Sprintf(connectionString, user, password, host, database),
+	)
 	s.Nil(err)
 	s.NotNil(db)
 	s.db = db
