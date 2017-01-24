@@ -40,46 +40,6 @@ func mustPtrURL(u string) *url.URL {
 	return url
 }
 
-func TestSlice(t *testing.T) {
-	require := require.New(t)
-
-	cases := []struct {
-		v     interface{}
-		input interface{}
-		dest  interface{}
-	}{
-		{
-			&([]url.URL{mustURL("https://foo.com"), mustURL("http://foo.foo")}),
-			[]string{"https://foo.com", "http://foo.foo"},
-			&([]url.URL{}),
-		},
-		{
-			&([]*url.URL{mustPtrURL("https://foo.com"), mustPtrURL("http://foo.foo")}),
-			[]string{"https://foo.com", "http://foo.foo"},
-			&([]*url.URL{}),
-		},
-		{
-			&([]string{"a", "b"}),
-			[]string{"a", "b"},
-			&([]string{}),
-		},
-	}
-
-	for _, c := range cases {
-		arr := Slice(c.v)
-		val, err := arr.Value()
-		require.Nil(err)
-
-		pqArr := pq.Array(c.input)
-		pqVal, err := pqArr.Value()
-		require.Nil(err)
-
-		require.Equal(pqVal, val)
-		require.Nil(Slice(c.dest).Scan(val))
-		require.Equal(c.v, c.dest)
-	}
-}
-
 type jsonType struct {
 	Foo string `json:"foo"`
 	Bar int    `json:"bar"`
