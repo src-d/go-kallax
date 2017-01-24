@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/src-d/proteus/source"
+	parseutil "srcd.works/go-parse-utils.v1"
 )
 
 // BaseModel is the type name of the kallax base model.
@@ -102,7 +102,7 @@ func (p *Processor) parseSourceFiles(filenames []string) (*types.Package, error)
 	config := types.Config{
 		FakeImportC: true,
 		Error:       func(error) {},
-		Importer:    source.NewImporter(),
+		Importer:    parseutil.NewImporter(),
 	}
 
 	return config.Check(p.Path, fs, files, new(types.Info))
