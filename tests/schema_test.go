@@ -1,34 +1,35 @@
 package tests
 
-import . "gopkg.in/check.v1"
+import "reflect"
 
-func (s *MongoSuite) TestSchemaBasicField(c *C) {
-	c.Assert(Schema.SchemaFixture.String.String(), Equals, "string")
+func (s *CommonSuite) TestSchemaBasicField() {
+	s.Equal("string", Schema.SchemaFixture.String)
 }
 
-func (s *MongoSuite) TestSchemaRanamedField(c *C) {
-	c.Assert(Schema.SchemaFixture.Int.String(), Equals, "foo")
+func (s *CommonSuite) TestSchemaRanamedField() {
+	s.Equal("int", Schema.SchemaFixture.Int)
 }
 
-func (s *MongoSuite) TestSchemaInlineField(c *C) {
-	c.Assert(Schema.SchemaFixture.Inline.Inline.String(), Equals, "inline")
+func (s *CommonSuite) TestSchemaInlineField() {
+	schema := reflect.ValueOf(Schema.SchemaFixture)
+	field := reflect.Indirect(schema).FieldByName("Inline")
+	s.True(field.IsValid())
 }
 
-func (s *MongoSuite) TestSchemaNestedField(c *C) {
-	c.Assert(Schema.SchemaFixture.Nested.Int.String(), Equals, "nested.foo")
+func (s *CommonSuite) TestSchemaMapsOfString() {
+	schema := reflect.ValueOf(Schema.SchemaFixture)
+	field := reflect.Indirect(schema).FieldByName("MapOfString")
+	s.True(field.IsValid())
 }
 
-func (s *MongoSuite) TestSchemaMapsOfString(c *C) {
-	key := Schema.SchemaFixture.MapOfString.Key("foo").String()
-	c.Assert(key, Equals, "mapofstring.foo")
+func (s *CommonSuite) TestSchemaMapOfSomeType() {
+	schema := reflect.ValueOf(Schema.SchemaFixture)
+	field := reflect.Indirect(schema).FieldByName("MapOfSomeType")
+	s.True(field.IsValid())
 }
 
-func (s *MongoSuite) TestSchemaMapOfSomeType(c *C) {
-	key := Schema.SchemaFixture.MapOfSomeType.Foo.Key("qux").String()
-	c.Assert(key, Equals, "mapofsometype.qux.foo")
-}
-
-func (s *MongoSuite) TestSchemaMapOfInterface(c *C) {
-	key := Schema.SchemaFixture.MapOfInterface.Key("foo").String()
-	c.Assert(key, Equals, "mapofinterface.foo")
+func (s *CommonSuite) TestSchemaMapOfInterface() {
+	schema := reflect.ValueOf(Schema.SchemaFixture)
+	field := reflect.Indirect(schema).FieldByName("MapOfInterface")
+	s.True(field.IsValid())
 }

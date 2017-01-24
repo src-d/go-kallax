@@ -3,14 +3,14 @@ package tests
 import "github.com/src-d/go-kallax"
 
 type SchemaFixture struct {
-	kallax.Document `bson:",inline" collection:"schema"`
+	kallax.Model `table:"schema"`
 
 	String string
-	Int    int `bson:"foo"`
+	Int    int
 	Nested *SchemaFixture
 	Inline struct {
 		Inline string
-	} `bson:",inline"`
+	} `kallax:",inline"`
 	MapOfString    map[string]string
 	MapOfInterface map[string]interface{}
 	MapOfSomeType  map[string]struct {

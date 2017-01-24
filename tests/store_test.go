@@ -3,123 +3,133 @@ package tests
 import (
 	"time"
 
-	"github.com/src-d/go-kallax"
-	. "gopkg.in/check.v1"
+	kallax "github.com/src-d/go-kallax"
 )
 
-func (s *MongoSuite) TestStoreNew(c *C) {
-	store := NewStoreFixtureStore(s.db)
-	doc := store.New()
-
-	c.Assert(doc.IsNew(), Equals, true)
-	c.Assert(doc.GetId().Hex(), HasLen, 24)
+func (s *CommonSuite) TestStoreNew() {
+	doc := NewStoreFixture()
+	s.False(doc.IsPersisted())
+	s.Len(doc.ID.String(), 24)
 }
 
-func (s *MongoSuite) TestStoreQuery(c *C) {
-	store := NewStoreFixtureStore(s.db)
-	q := store.Query()
-	c.Assert(q, Not(IsNil))
+func (s *CommonSuite) TestStoreQuery() {
+	q := NewStoreFixtureQuery()
+	s.NotNil(q)
 }
 
-func (s *MongoSuite) TestStoreFind(c *C) {
+func (s *CommonSuite) TestStoreFindAndCount() {
 	store := NewStoreFixtureStore(s.db)
-	c.Assert(store.Insert(store.New()), IsNil)
-	c.Assert(store.Insert(store.New()), IsNil)
+	s.Nil(store.Insert(NewStoreFixture()))
+	s.Nil(store.Insert(NewStoreFixture()))
 
-	rs, err := store.Find(store.Query())
-	c.Assert(err, IsNil)
+	query := NewStoreFixtureQuery()
+	rs, err := store.Find(query)
+	s.NotNil(rs)
+	s.Nil(err)
 
-	count, err := rs.Count()
-	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 2)
+	count, err := store.Count(query)
+	s.Nil(err)
+	s.Equal(2, count)
 }
 
-func (s *MongoSuite) TestStoreCount(c *C) {
+func (s *CommonSuite) TestStoreMustFind() {
 	store := NewStoreFixtureStore(s.db)
-	c.Assert(store.Insert(store.New()), IsNil)
-	c.Assert(store.Insert(store.New()), IsNil)
+	s.Nil(store.Insert(NewStoreFixture()))
+	s.Nil(store.Insert(NewStoreFixture()))
 
-	count, err := store.Count(store.Query())
-	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 2)
+	query := NewStoreFixtureQuery()
+	s.NotPanics(func() {
+		rs := store.MustFind(query)
+		s.NotNil(rs)
+	})
+
 }
 
-func (s *MongoSuite) TestStoreMustFind(c *C) {
-	store := NewStoreFixtureStore(s.db)
-	c.Assert(store.Insert(store.New()), IsNil)
-	c.Assert(store.Insert(store.New()), IsNil)
-
-	count, err := store.MustFind(store.Query()).Count()
-	c.Assert(err, IsNil)
-	c.Assert(count, Equals, 2)
+func (s *CommonSuite) TestStoreFailingOnNew() {
+	doc := NewStoreWithConstructFixture("")
+	s.Nil(doc)
 }
 
-func (s *MongoSuite) TestStoreFailingOnNew(c *C) {
+func (s *CommonSuite) TestStoreFindOne() {
+	store := NewStoreWithConstructFixtureStore(s.db)
+	s.Nil(store.Insert(NewStoreWithConstructFixture("bar")))
+
+	doc, err := store.FindOne(NewStoreWithConstructFixtureQuery())
+	s.Nil(err)
+	s.NotNil(doc)
+	if err != nil {
+		s.Nil(err, "This testcase was aborted")
+		return
+	}
+
+	s.Equal("bar", doc.Foo)
+}
+
+func (s *CommonSuite) TestStoreMustFindOne() {
+	store := NewStoreWithConstructFixtureStore(s.db)
+	s.Nil(store.Insert(NewStoreWithConstructFixture("foo")))
+	s.NotPanics(func() {
+		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+	})
+}
+
+func (s *CommonSuite) TestStoreInsertUpdate() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 
-	doc := store.New("")
-	c.Assert(doc, IsNil)
-}
-
-func (s *MongoSuite) TestStoreFindOne(c *C) {
-	store := NewStoreWithConstructFixtureStore(s.db)
-	c.Assert(store.Insert(store.New("bar")), IsNil)
-
-	doc, err := store.FindOne(store.Query())
-	c.Assert(err, IsNil)
-	c.Assert(doc.Foo, Equals, "bar")
-}
-
-func (s *MongoSuite) TestStoreMustFindOne(c *C) {
-	store := NewStoreWithConstructFixtureStore(s.db)
-	c.Assert(store.Insert(store.New("foo")), IsNil)
-	c.Assert(store.MustFindOne(store.Query()).Foo, Equals, "foo")
-}
-
-func (s *MongoSuite) TestStoreInsertUpdate(c *C) {
-	store := NewStoreWithConstructFixtureStore(s.db)
-
-	doc := store.New("foo")
+	doc := NewStoreWithConstructFixture("foo")
 	err := store.Insert(doc)
-	c.Assert(err, IsNil)
-	c.Assert(store.MustFindOne(store.Query()).Foo, Equals, "foo")
+	s.Nil(err)
+	s.NotPanics(func() {
+		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+	})
 
 	doc.Foo = "bar"
-	err = store.Update(doc)
-	c.Assert(err, IsNil)
-	c.Assert(store.MustFindOne(store.Query()).Foo, Equals, "bar")
+	updatedRows, err := store.Update(doc)
+	s.Nil(err)
+	s.True(updatedRows > 0)
+	s.NotPanics(func() {
+		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+	})
 }
 
-func (s *MongoSuite) TestStoreSave(c *C) {
+func (s *CommonSuite) TestStoreSave() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 
-	doc := store.New("foo")
+	doc := NewStoreWithConstructFixture("foo")
 	updated, err := store.Save(doc)
-	c.Assert(err, IsNil)
-	c.Assert(updated, Equals, false)
-	c.Assert(doc.IsNew(), Equals, false)
-	c.Assert(store.MustFindOne(store.Query()).Foo, Equals, "foo")
+	s.Nil(err)
+	s.False(updated)
+	s.True(doc.IsPersisted())
+	s.NotPanics(func() {
+		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+	})
 
 	doc.Foo = "bar"
 	updated, err = store.Save(doc)
-	c.Assert(err, IsNil)
-	c.Assert(updated, Equals, true)
-	c.Assert(store.MustFindOne(store.Query()).Foo, Equals, "bar")
+	s.Nil(err)
+	s.True(updated)
+	s.NotPanics(func() {
+		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+	})
 }
 
-func (s *MongoSuite) TestStoreCustomNew(c *C) {
+func (s *CommonSuite) TestStoreCustomNew() {
 	store := NewStoreWithNewFixtureStore(s.db)
 
 	doc := store.New("foo", "bar")
 	updated, err := store.Save(doc)
-	c.Assert(err, IsNil)
-	c.Assert(updated, Equals, false)
-	c.Assert(doc.IsNew(), Equals, false)
-	c.Assert(store.MustFindOne(store.Query()).Foo, Equals, "foo")
-	c.Assert(store.MustFindOne(store.Query()).Bar, Equals, "bar")
+	s.Nil(err)
+	s.False(updated)
+	s.False(doc.IsPersisted())
+	s.NotPanics(func() {
+		s.Equal("foo", store.MustFindOne(NewStoreWithNewFixtureQuery()).Foo)
+	})
+	s.NotPanics(func() {
+		s.Equal("bar", store.MustFindOne(NewStoreWithNewFixtureQuery()).Bar)
+	})
 }
 
-func (s *MongoSuite) TestMultiKeySort(c *C) {
+func (s *CommonSuite) TestMultiKeySort() {
 	store := NewMultiKeySortFixtureStore(s.db)
 
 	var (
@@ -127,49 +137,51 @@ func (s *MongoSuite) TestMultiKeySort(c *C) {
 		err error
 	)
 
-	doc = store.New()
+	doc = NewMultiKeySortFixture()
 	doc.Name = "2015-2013"
 	doc.Start = time.Date(2005, 1, 2, 0, 0, 0, 0, time.UTC)
 	doc.End = time.Date(2013, 1, 2, 0, 0, 0, 0, time.UTC)
 	err = store.Insert(doc)
-	c.Assert(err, IsNil)
+	s.Nil(err)
 
-	doc = store.New()
+	doc = NewMultiKeySortFixture()
 	doc.Name = "2015-2012"
 	doc.Start = time.Date(2005, 1, 2, 0, 0, 0, 0, time.UTC)
 	doc.End = time.Date(2012, 4, 5, 0, 0, 0, 0, time.UTC)
 	err = store.Insert(doc)
-	c.Assert(err, IsNil)
+	s.Nil(err)
 
-	doc = store.New()
+	doc = NewMultiKeySortFixture()
 	doc.Name = "2002-2012"
 	doc.Start = time.Date(2002, 1, 2, 0, 0, 0, 0, time.UTC)
 	doc.End = time.Date(2012, 1, 2, 0, 0, 0, 0, time.UTC)
 	err = store.Insert(doc)
-	c.Assert(err, IsNil)
+	s.Nil(err)
 
-	doc = store.New()
+	doc = NewMultiKeySortFixture()
 	doc.Name = "2001-2012"
 	doc.Start = time.Date(2001, 1, 2, 0, 0, 0, 0, time.UTC)
 	doc.End = time.Date(2012, 1, 2, 0, 0, 0, 0, time.UTC)
 	err = store.Insert(doc)
-	c.Assert(err, IsNil)
+	s.Nil(err)
 
-	q := store.Query()
-	q.Sort(kallax.Sort{
-		kallax.FieldSort{Schema.MultiKeySortFixture.End, kallax.Desc},
-		kallax.FieldSort{Schema.MultiKeySortFixture.Start, kallax.Desc},
-	})
+	q := NewMultiKeySortFixtureQuery()
+	q.Order(kallax.Desc(Schema.MultiKeySortFixture.End), kallax.Desc(Schema.MultiKeySortFixture.Start))
 
 	set, err := store.Find(q)
-	c.Assert(err, IsNil)
+	s.Nil(err)
+
+	if err != nil {
+		s.Nil(err, "This testcase was aborted")
+		return
+	}
 
 	documents, err := set.All()
-	c.Assert(err, IsNil)
+	s.Nil(err)
 
-	c.Assert(documents, HasLen, 4)
-	c.Assert(documents[0].Name, Equals, "2015-2013")
-	c.Assert(documents[1].Name, Equals, "2015-2012")
-	c.Assert(documents[2].Name, Equals, "2002-2012")
-	c.Assert(documents[3].Name, Equals, "2001-2012")
+	s.Len(documents, 4)
+	s.Equal("2015-2013", documents[0].Name)
+	s.Equal("2015-2012", documents[1].Name)
+	s.Equal("2002-2012", documents[2].Name)
+	s.Equal("2001-2012", documents[3].Name)
 }
