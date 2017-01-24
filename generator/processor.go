@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"strings"
 
-	parseutil "srcd.works/go-parse-utils.v1"
+	parseutil "gopkg.in/src-d/go-parse-utils.v1"
 )
 
 // BaseModel is the type name of the kallax base model.
