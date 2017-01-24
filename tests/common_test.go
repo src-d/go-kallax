@@ -3,17 +3,19 @@ package tests
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	host     = "0.0.0.0:5432"
-	database = "testing"
-	user     = "testing"
-	password = "testing"
-)
+func envOrDefault(key string, def string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		v = def
+	}
+	return v
+}
 
 func TestHijackSuite(t *testing.T) {
 	suite.Run(t, new(CommonSuite))
@@ -25,10 +27,12 @@ type CommonSuite struct {
 }
 
 func (s *CommonSuite) SetupSuite() {
-	db, err := sql.Open(
-		"postgres",
-		fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", user, password, host, database),
-	)
+	db, err := sql.Open("postgres", fmt.Sprintf(
+		"postgres://%s:%s@0.0.0.0:5432/%s?sslmode=disable",
+		envOrDefault("DBUSER", "testing"),
+		envOrDefault("DBPASS", "testing"),
+		envOrDefault("DBNAME", "testing"),
+	))
 	s.Nil(err)
 	s.NotNil(db)
 	s.db = db
