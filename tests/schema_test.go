@@ -3,11 +3,11 @@ package tests
 import "reflect"
 
 func (s *CommonSuite) TestSchemaBasicField() {
-	s.Equal(Schema.SchemaFixture.String, "string")
+	s.Equal("string", Schema.SchemaFixture.String)
 }
 
 func (s *CommonSuite) TestSchemaRanamedField() {
-	s.Equal(Schema.SchemaFixture.Int, "int")
+	s.Equal("int", Schema.SchemaFixture.Int)
 }
 
 func (s *CommonSuite) TestSchemaInlineField() {

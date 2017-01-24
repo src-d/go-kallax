@@ -12,6 +12,6 @@ func (s *CommonSuite) TestQueryFindById() {
 	query.Where(kallax.Eq(Schema.ResultSetFixture.ID, doc.ID))
 
 	s.NotPanics(func() {
-		s.Equal(store.MustFindOne(query).Foo, "bar")
+		s.Equal("bar", store.MustFindOne(query).Foo)
 	})
 }

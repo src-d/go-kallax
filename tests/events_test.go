@@ -8,10 +8,10 @@ func (s *CommonSuite) TestEventsInsert() {
 	doc := NewEventsFixture()
 	err := store.Insert(doc)
 	s.Nil(err)
-	s.Equal(doc.Checks, map[string]bool{
+	s.Equal(map[string]bool{
 		"BeforeInsert": true,
 		"AfterInsert":  true,
-	})
+	}, doc.Checks)
 }
 
 func (s *CommonSuite) TestEventsUpdate() {
@@ -25,10 +25,10 @@ func (s *CommonSuite) TestEventsUpdate() {
 	updatedRows, err := store.Update(doc)
 	s.Nil(err)
 	s.True(updatedRows > 0)
-	s.Equal(doc.Checks, map[string]bool{
+	s.Equal(map[string]bool{
 		"BeforeUpdate": true,
 		"AfterUpdate":  true,
-	})
+	}, doc.Checks)
 }
 
 func (s *CommonSuite) TestEventsUpdateError() {
@@ -41,12 +41,12 @@ func (s *CommonSuite) TestEventsUpdateError() {
 	doc.MustFailAfter = errors.New("after")
 	updatedRows, err := store.Update(doc)
 	s.True(updatedRows == 0)
-	s.Equal(err, doc.MustFailAfter)
+	s.Equal(doc.MustFailAfter, err)
 
 	doc.MustFailBefore = errors.New("before")
 	updatedRows, err = store.Update(doc)
 	s.True(updatedRows == 0)
-	s.Equal(err, doc.MustFailBefore)
+	s.Equal(doc.MustFailBefore, err)
 }
 
 func (s *CommonSuite) TestEventsSaveOnInsert() {
@@ -55,11 +55,11 @@ func (s *CommonSuite) TestEventsSaveOnInsert() {
 	doc := NewEventsFixture()
 	updated, err := store.Save(doc)
 	s.Nil(err)
-	s.Equal(updated, false)
-	s.Equal(doc.Checks, map[string]bool{
+	s.False(updated)
+	s.Equal(map[string]bool{
 		"BeforeInsert": true,
 		"AfterInsert":  true,
-	})
+	}, doc.Checks)
 }
 
 func (s *CommonSuite) TestEventsSaveOnUpdate() {
@@ -71,11 +71,11 @@ func (s *CommonSuite) TestEventsSaveOnUpdate() {
 
 	updated, err := store.Save(doc)
 	s.Nil(err)
-	s.Equal(updated, true)
-	s.Equal(doc.Checks, map[string]bool{
+	s.True(updated)
+	s.Equal(map[string]bool{
 		"BeforeUpdate": true,
 		"AfterUpdate":  true,
-	})
+	}, doc.Checks)
 }
 
 func (s *CommonSuite) TestEventsSaveInsert() {
@@ -84,10 +84,10 @@ func (s *CommonSuite) TestEventsSaveInsert() {
 	doc := NewEventsSaveFixture()
 	err := store.Insert(doc)
 	s.Nil(err)
-	s.Equal(doc.Checks, map[string]bool{
+	s.Equal(map[string]bool{
 		"BeforeSave": true,
 		"AfterSave":  true,
-	})
+	}, doc.Checks)
 }
 
 func (s *CommonSuite) TestEventsSaveUpdate() {
@@ -101,10 +101,10 @@ func (s *CommonSuite) TestEventsSaveUpdate() {
 	updatedRows, err := store.Update(doc)
 	s.Nil(err)
 	s.True(updatedRows > 0)
-	s.Equal(doc.Checks, map[string]bool{
+	s.Equal(map[string]bool{
 		"BeforeSave": true,
 		"AfterSave":  true,
-	})
+	}, doc.Checks)
 }
 
 func (s *CommonSuite) TestEventsSaveSave() {
@@ -116,10 +116,10 @@ func (s *CommonSuite) TestEventsSaveSave() {
 
 	updated, err := store.Save(doc)
 	s.Nil(err)
-	s.Equal(updated, true)
-	s.Equal(doc.Checks, map[string]bool{
+	s.True(updated)
+	s.Equal(map[string]bool{
 		"AfterInsert": true,
 		"BeforeSave":  true,
 		"AfterSave":   true,
-	})
+	}, doc.Checks)
 }

@@ -29,7 +29,7 @@ func (s *CommonSuite) TestStoreFindAndCount() {
 
 	count, err := store.Count(query)
 	s.Nil(err)
-	s.Equal(count, 2)
+	s.Equal(2, count)
 }
 
 func (s *CommonSuite) TestStoreMustFind() {
@@ -62,14 +62,14 @@ func (s *CommonSuite) TestStoreFindOne() {
 		return
 	}
 
-	s.Equal(doc.Foo, "bar")
+	s.Equal("bar", doc.Foo)
 }
 
 func (s *CommonSuite) TestStoreMustFindOne() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 	s.Nil(store.Insert(NewStoreWithConstructFixture("foo")))
 	s.NotPanics(func() {
-		s.Equal(store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo, "foo")
+		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
 	})
 }
 
@@ -80,7 +80,7 @@ func (s *CommonSuite) TestStoreInsertUpdate() {
 	err := store.Insert(doc)
 	s.Nil(err)
 	s.NotPanics(func() {
-		s.Equal(store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo, "foo")
+		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
 	})
 
 	doc.Foo = "bar"
@@ -88,7 +88,7 @@ func (s *CommonSuite) TestStoreInsertUpdate() {
 	s.Nil(err)
 	s.True(updatedRows > 0)
 	s.NotPanics(func() {
-		s.Equal(store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo, "bar")
+		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
 	})
 }
 
@@ -98,18 +98,18 @@ func (s *CommonSuite) TestStoreSave() {
 	doc := NewStoreWithConstructFixture("foo")
 	updated, err := store.Save(doc)
 	s.Nil(err)
-	s.Equal(updated, false)
+	s.False(updated)
 	s.True(doc.IsPersisted())
 	s.NotPanics(func() {
-		s.Equal(store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo, "foo")
+		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
 	})
 
 	doc.Foo = "bar"
 	updated, err = store.Save(doc)
 	s.Nil(err)
-	s.Equal(updated, true)
+	s.True(updated)
 	s.NotPanics(func() {
-		s.Equal(store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo, "bar")
+		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
 	})
 }
 
@@ -119,13 +119,13 @@ func (s *CommonSuite) TestStoreCustomNew() {
 	doc := store.New("foo", "bar")
 	updated, err := store.Save(doc)
 	s.Nil(err)
-	s.Equal(updated, false)
+	s.False(updated)
 	s.False(doc.IsPersisted())
 	s.NotPanics(func() {
-		s.Equal(store.MustFindOne(NewStoreWithNewFixtureQuery()).Foo, "foo")
+		s.Equal("foo", store.MustFindOne(NewStoreWithNewFixtureQuery()).Foo)
 	})
 	s.NotPanics(func() {
-		s.Equal(store.MustFindOne(NewStoreWithNewFixtureQuery()).Bar, "bar")
+		s.Equal("bar", store.MustFindOne(NewStoreWithNewFixtureQuery()).Bar)
 	})
 }
 
@@ -180,8 +180,8 @@ func (s *CommonSuite) TestMultiKeySort() {
 	s.Nil(err)
 
 	s.Len(documents, 4)
-	s.Equal(documents[0].Name, "2015-2013")
-	s.Equal(documents[1].Name, "2015-2012")
-	s.Equal(documents[2].Name, "2002-2012")
-	s.Equal(documents[3].Name, "2001-2012")
+	s.Equal("2015-2013", documents[0].Name)
+	s.Equal("2015-2012", documents[1].Name)
+	s.Equal("2002-2012", documents[2].Name)
+	s.Equal("2001-2012", documents[3].Name)
 }

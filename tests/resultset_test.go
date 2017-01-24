@@ -30,8 +30,8 @@ func (s *CommonSuite) TestResultSetAllInit() {
 		docs, err := rs.All()
 		s.Nil(err)
 		s.Len(docs, 2)
-		s.Equal(docs[0].Foo, "foo")
-		s.Equal(docs[1].Foo, "foo")
+		s.Equal("foo", docs[0].Foo)
+		s.Equal("foo", docs[1].Foo)
 	})
 }
 
@@ -43,7 +43,7 @@ func (s *CommonSuite) TestResultSetOne() {
 		rs := store.MustFind(NewResultSetFixtureQuery())
 		doc, err := rs.One()
 		s.Nil(err)
-		s.Equal(doc.Foo, "bar")
+		s.Equal("bar", doc.Foo)
 	})
 }
 
@@ -59,7 +59,7 @@ func (s *CommonSuite) TestResultInitSetOne() {
 		rs := store.MustFind(NewResultSetInitFixtureQuery())
 		doc, err := rs.One()
 		s.Nil(err)
-		s.Equal(doc.Foo, "foo")
+		s.Equal("foo", doc.Foo)
 	})
 }
 
@@ -69,7 +69,7 @@ func (s *CommonSuite) TestResultSetNextEmpty() {
 	s.NotPanics(func() {
 		rs := store.MustFind(NewResultSetFixtureQuery())
 		returned := rs.Next()
-		s.Equal(returned, false)
+		s.False(returned)
 
 		doc, err := rs.Get()
 		s.Nil(err)
@@ -84,14 +84,14 @@ func (s *CommonSuite) TestResultSetNext() {
 	s.NotPanics(func() {
 		rs := store.MustFind(NewResultSetFixtureQuery())
 		returned := rs.Next()
-		s.Equal(returned, true)
+		s.True(returned)
 
 		doc, err := rs.Get()
 		s.Nil(err)
-		s.Equal(doc.Foo, "bar")
+		s.Equal("bar", doc.Foo)
 
 		returned = rs.Next()
-		s.Equal(returned, false)
+		s.False(returned)
 
 		doc, err = rs.Get()
 		s.Nil(err)
@@ -106,14 +106,14 @@ func (s *CommonSuite) TestResultSetInitNext() {
 	s.NotPanics(func() {
 		rs := store.MustFind(NewResultSetInitFixtureQuery())
 		returned := rs.Next()
-		s.Equal(returned, true)
+		s.True(returned)
 
 		doc, err := rs.Get()
 		s.Nil(err)
-		s.Equal(doc.Foo, "foo")
+		s.Equal("foo", doc.Foo)
 
 		returned = rs.Next()
-		s.Equal(returned, false)
+		s.False(returned)
 	})
 }
 
@@ -131,7 +131,7 @@ func (s *CommonSuite) TestResultSetForEach() {
 		})
 
 		s.Nil(err)
-		s.Equal(count, 2)
+		s.Equal(2, count)
 	})
 }
 
@@ -145,13 +145,13 @@ func (s *CommonSuite) TestResultSetInitForEach() {
 		rs := store.MustFind(NewResultSetInitFixtureQuery())
 		err := rs.ForEach(func(r *ResultSetInitFixture) error {
 			s.Nil(r)
-			s.Equal(r.Foo, "foo")
+			s.Equal("foo", r.Foo)
 			count++
 			return nil
 		})
 
 		s.Nil(err)
-		s.Equal(count, 2)
+		s.Equal(2, count)
 	})
 }
 
@@ -169,7 +169,7 @@ func (s *CommonSuite) TestResultSetForEachStop() {
 		})
 
 		s.Nil(err)
-		s.Equal(count, 1)
+		s.Equal(1, count)
 	})
 }
 
@@ -186,6 +186,6 @@ func (s *CommonSuite) TestResultSetForEachError() {
 			return fail
 		})
 
-		s.Equal(err, fail)
+		s.Equal(fail, err)
 	})
 }
