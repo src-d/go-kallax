@@ -9,9 +9,7 @@ matrix:
         - go: tip
 
 env:
-  - DBNAME=kallax_test
-  - DBUSER=postgres
-  - DBPASS=''
+  - DBNAME=kallax_test DBUSER=postgres DBPASS=''
 
 services:
   - postgresql
