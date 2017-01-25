@@ -1,8 +1,27 @@
 package tests
 
-import kallax "github.com/src-d/go-kallax"
+import (
+	"testing"
 
-func (s *CommonSuite) TestQueryFindById() {
+	"github.com/src-d/go-kallax"
+	"github.com/stretchr/testify/suite"
+)
+
+type QuerySuite struct {
+	BaseTestSuite
+}
+
+func TestQuerySuite(t *testing.T) {
+	schema := []string{
+		`CREATE TABLE query (
+			id uuid primary key,
+			foo varchar(10)
+		)`,
+	}
+	suite.Run(t, &QuerySuite{BaseTestSuite{initQueries: schema}})
+}
+
+func (s *QuerySuite) TestQueryFindById() {
 	store := NewResultSetFixtureStore(s.db)
 
 	doc := NewResultSetFixture("bar")

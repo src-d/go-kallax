@@ -2,11 +2,27 @@ package tests
 
 import (
 	"errors"
+	"testing"
 
-	kallax "github.com/src-d/go-kallax"
+	"github.com/src-d/go-kallax"
+	"github.com/stretchr/testify/suite"
 )
 
-func (s *CommonSuite) TestResultSetAll() {
+type ResulsetSuite struct {
+	BaseTestSuite
+}
+
+func TestResulsetSuite(t *testing.T) {
+	schema := []string{
+		`CREATE TABLE resultset (
+			id uuid primary key,
+			foo varchar(10)
+		)`,
+	}
+	suite.Run(t, &ResulsetSuite{BaseTestSuite{initQueries: schema}})
+}
+
+func (s *ResulsetSuite) TestResultSetAll() {
 	store := NewResultSetFixtureStore(s.db)
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 	s.Nil(store.Insert(NewResultSetFixture("foo")))
@@ -19,7 +35,7 @@ func (s *CommonSuite) TestResultSetAll() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetAllInit() {
+func (s *ResulsetSuite) TestResultSetAllInit() {
 	store := NewResultSetInitFixtureStore(s.db)
 
 	s.Nil(store.Insert(NewResultSetInitFixture()))
@@ -35,7 +51,7 @@ func (s *CommonSuite) TestResultSetAllInit() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetOne() {
+func (s *ResulsetSuite) TestResultSetOne() {
 	store := NewResultSetFixtureStore(s.db)
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 
@@ -47,7 +63,7 @@ func (s *CommonSuite) TestResultSetOne() {
 	})
 }
 
-func (s *CommonSuite) TestResultInitSetOne() {
+func (s *ResulsetSuite) TestResultInitSetOne() {
 	store := NewResultSetInitFixtureStore(s.db)
 
 	a := NewResultSetInitFixture()
@@ -63,7 +79,7 @@ func (s *CommonSuite) TestResultInitSetOne() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetNextEmpty() {
+func (s *ResulsetSuite) TestResultSetNextEmpty() {
 	store := NewResultSetFixtureStore(s.db)
 
 	s.NotPanics(func() {
@@ -77,7 +93,7 @@ func (s *CommonSuite) TestResultSetNextEmpty() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetNext() {
+func (s *ResulsetSuite) TestResultSetNext() {
 	store := NewResultSetFixtureStore(s.db)
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 
@@ -99,7 +115,7 @@ func (s *CommonSuite) TestResultSetNext() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetInitNext() {
+func (s *ResulsetSuite) TestResultSetInitNext() {
 	store := NewResultSetInitFixtureStore(s.db)
 	s.Nil(store.Insert(NewResultSetInitFixture()))
 
@@ -117,7 +133,7 @@ func (s *CommonSuite) TestResultSetInitNext() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetForEach() {
+func (s *ResulsetSuite) TestResultSetForEach() {
 	store := NewResultSetFixtureStore(s.db)
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 	s.Nil(store.Insert(NewResultSetFixture("foo")))
@@ -135,7 +151,7 @@ func (s *CommonSuite) TestResultSetForEach() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetInitForEach() {
+func (s *ResulsetSuite) TestResultSetInitForEach() {
 	store := NewResultSetInitFixtureStore(s.db)
 	s.Nil(store.Insert(NewResultSetInitFixture()))
 	s.Nil(store.Insert(NewResultSetInitFixture()))
@@ -155,7 +171,7 @@ func (s *CommonSuite) TestResultSetInitForEach() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetForEachStop() {
+func (s *ResulsetSuite) TestResultSetForEachStop() {
 	store := NewResultSetFixtureStore(s.db)
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 	s.Nil(store.Insert(NewResultSetFixture("foo")))
@@ -173,7 +189,7 @@ func (s *CommonSuite) TestResultSetForEachStop() {
 	})
 }
 
-func (s *CommonSuite) TestResultSetForEachError() {
+func (s *ResulsetSuite) TestResultSetForEachError() {
 	store := NewResultSetFixtureStore(s.db)
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 	s.Nil(store.Insert(NewResultSetFixture("foo")))

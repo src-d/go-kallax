@@ -1,23 +1,54 @@
 package tests
 
 import (
+	"testing"
 	"time"
 
 	kallax "github.com/src-d/go-kallax"
+	"github.com/stretchr/testify/suite"
 )
 
-func (s *CommonSuite) TestStoreNew() {
+func TestStoreSuite(t *testing.T) {
+	schema := []string{
+		`CREATE TABLE store_construct (
+			id uuid primary key,
+			foo varchar(10)
+		)`,
+		`CREATE TABLE store (
+			id uuid primary key,
+			foo varchar(10)
+		)`,
+		`CREATE TABLE store_new (
+			id uuid primary key,
+			foo varchar(10),
+			bar varchar(10)
+		)`,
+		`CREATE TABLE query (
+			id uuid primary key,
+			name varchar(10),
+			start timestamp,
+			_end timestamp
+		)`,
+	}
+	suite.Run(t, &StoreSuite{BaseTestSuite{initQueries: schema}})
+}
+
+type StoreSuite struct {
+	BaseTestSuite
+}
+
+func (s *StoreSuite) TestStoreNew() {
 	doc := NewStoreFixture()
 	s.False(doc.IsPersisted())
 	s.Len(doc.ID.String(), 24)
 }
 
-func (s *CommonSuite) TestStoreQuery() {
+func (s *StoreSuite) TestStoreQuery() {
 	q := NewStoreFixtureQuery()
 	s.NotNil(q)
 }
 
-func (s *CommonSuite) TestStoreFindAndCount() {
+func (s *StoreSuite) TestStoreFindAndCount() {
 	store := NewStoreFixtureStore(s.db)
 	s.Nil(store.Insert(NewStoreFixture()))
 	s.Nil(store.Insert(NewStoreFixture()))
@@ -32,7 +63,7 @@ func (s *CommonSuite) TestStoreFindAndCount() {
 	s.Equal(2, count)
 }
 
-func (s *CommonSuite) TestStoreMustFind() {
+func (s *StoreSuite) TestStoreMustFind() {
 	store := NewStoreFixtureStore(s.db)
 	s.Nil(store.Insert(NewStoreFixture()))
 	s.Nil(store.Insert(NewStoreFixture()))
@@ -45,12 +76,12 @@ func (s *CommonSuite) TestStoreMustFind() {
 
 }
 
-func (s *CommonSuite) TestStoreFailingOnNew() {
+func (s *StoreSuite) TestStoreFailingOnNew() {
 	doc := NewStoreWithConstructFixture("")
 	s.Nil(doc)
 }
 
-func (s *CommonSuite) TestStoreFindOne() {
+func (s *StoreSuite) TestStoreFindOne() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 	s.Nil(store.Insert(NewStoreWithConstructFixture("bar")))
 
@@ -65,7 +96,7 @@ func (s *CommonSuite) TestStoreFindOne() {
 	s.Equal("bar", doc.Foo)
 }
 
-func (s *CommonSuite) TestStoreMustFindOne() {
+func (s *StoreSuite) TestStoreMustFindOne() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 	s.Nil(store.Insert(NewStoreWithConstructFixture("foo")))
 	s.NotPanics(func() {
@@ -73,7 +104,7 @@ func (s *CommonSuite) TestStoreMustFindOne() {
 	})
 }
 
-func (s *CommonSuite) TestStoreInsertUpdate() {
+func (s *StoreSuite) TestStoreInsertUpdate() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 
 	doc := NewStoreWithConstructFixture("foo")
@@ -92,7 +123,7 @@ func (s *CommonSuite) TestStoreInsertUpdate() {
 	})
 }
 
-func (s *CommonSuite) TestStoreSave() {
+func (s *StoreSuite) TestStoreSave() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 
 	doc := NewStoreWithConstructFixture("foo")
@@ -113,7 +144,7 @@ func (s *CommonSuite) TestStoreSave() {
 	})
 }
 
-func (s *CommonSuite) TestStoreCustomNew() {
+func (s *StoreSuite) TestStoreCustomNew() {
 	store := NewStoreWithNewFixtureStore(s.db)
 
 	doc := store.New("foo", "bar")
@@ -129,7 +160,7 @@ func (s *CommonSuite) TestStoreCustomNew() {
 	})
 }
 
-func (s *CommonSuite) TestMultiKeySort() {
+func (s *StoreSuite) TestMultiKeySort() {
 	store := NewMultiKeySortFixtureStore(s.db)
 
 	var (
