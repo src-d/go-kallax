@@ -50,7 +50,17 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
         if err := record.BeforeInsert(); err != nil {
         }
         {{end}}
-	return s.Store.Insert(record)
+        {{if or (.Events.Has "AfterSave") (.Events.Has "AfterInsert")}}
+        return s.Store.Transaction(func(store *kallax.Store) error {
+                if err := store.Insert(record); err != nil {
+                        return err
+                }
+
+                return record.{{if .Events.Has "AfterSave"}}AfterSave{{else}}AfterInsert{{end}}()
+        })
+        {{else}}
+        return s.Store.Update(record, cols...)
+        {{end}}
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -59,7 +69,7 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (int64, error) {
+func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (updated int64, err error) {
         {{if .Events.Has "BeforeSave"}}
         if err := record.BeforeSave(); err != nil {
                 return 0, err
@@ -70,7 +80,22 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
                 return 0, err
         }
         {{end}}
-	return s.Store.Update(record, cols...)
+        {{if or (.Events.Has "AfterSave") (.Events.Has "AfterUpdate")}}
+        err = s.Store.Transaction(func(store *kallax.Store) error {
+                updated, err = store.Update(record, cols...)
+                if err != nil {
+                        return err
+                }
+
+                return record.{{if .Events.Has "AfterSave"}}AfterSave{{else}}AfterUpdate{{end}}()
+        })
+        if err != nil {
+                return 0, err
+        }
+        {{else}}
+        updated, err = s.Store.Update(record, cols...)
+        {{end}}
+        return
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -95,7 +120,30 @@ func (s *{{.StoreName}}) Save(record *{{.Name}}) (updated bool,  err error) {
                 }
         }
         {{end}}
-	return s.Store.Save(record)
+        {{if and (.Events.Has "AfterUpdate") (.Events.Has "AfterInsert")}}
+        if !record.IsPersisted() {
+                {{template "afterSaveEvent" "AfterInsert"}}
+        } else {
+                {{template "afterSaveEvent" "AfterUpdate"}}
+        }
+        {{else if .Events.Has "AfterSave"}}
+        {{template "afterSaveEvent" "AfterSave"}}
+        {{else if .Events.Has "AfterInsert"}}
+        if !record.IsPersisted() {
+                {{template "afterSaveEvent" "AfterInsert"}}
+        } else {
+                updated, err = s.Store.Save(record)
+        }
+        {{else if .Events.Has "AfterUpdate"}}
+        if record.IsPersisted() {
+                {{template "afterSaveEvent" "AfterUpdate"}}
+        } else {
+                updated, err = s.Store.Save(record)
+        }
+        {{else}}
+        updated, err = s.Store.Save(record)
+        {{end}}
+        return
 }
 
 // Delete removes the given record from the database.

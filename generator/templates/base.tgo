@@ -9,5 +9,12 @@ import (
 
 var _ types.SQLType
 
+{{define "afterSaveEvent"}}err = s.Store.Transaction(func(store *kallax.Store) error {
+        updated, err = store.Save(record)
+        if err != nil {
+                return err
+        }
+        return record.{{.}}()
+}){{end}}
 {{template "model" .}}
 {{template "schema" .}}
