@@ -80,8 +80,6 @@ type BaseQuery struct {
 	limit         uint64
 }
 
-var _ Query = (*BaseQuery)(nil)
-
 // NewBaseQuery creates a new BaseQuery for querying the given table
 // and the given selected columns.
 func NewBaseQuery(schema Schema) *BaseQuery {
