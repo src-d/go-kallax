@@ -13,16 +13,20 @@ import (
 	"golang.org/x/tools/imports"
 )
 
+// Template renders the kallax templates using given packages.
 type Template struct {
 	template *template.Template
 }
 
+// TemplateData is the structure passed to fill the templates.
 type TemplateData struct {
 	*Package
+	// Processed is a map to keep track of processed nodes.
 	Processed  map[interface{}]string
 	subschemas map[string]*Field
 }
 
+// Execute writes the processed template to the given writer.
 func (t *Template) Execute(wr io.Writer, data *Package) error {
 	var buf bytes.Buffer
 
@@ -39,6 +43,8 @@ func (t *Template) Execute(wr io.Writer, data *Package) error {
 	return prettyfy(buf.Bytes(), wr)
 }
 
+// GenColumnAddresses generates the body of the switch that returns the column
+// address given a column name for the given model.
 func (td *TemplateData) GenColumnAddresses(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsColumnAddresses(&buf, model.Fields)
@@ -60,6 +66,8 @@ func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Fi
 	}
 }
 
+// GenColumnValues generates the body of the switch that returns the column
+// address given a column name for the given model.
 func (td *TemplateData) GenColumnValues(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsValues(&buf, model.Fields)
@@ -81,6 +89,8 @@ func (td *TemplateData) genFieldsValues(buf *bytes.Buffer, fields []*Field) {
 	}
 }
 
+// GenModelColumns generates the creation of the list of columns in the given
+// model.
 func (td *TemplateData) GenModelColumns(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsColumns(&buf, model.Fields)
@@ -101,6 +111,8 @@ func (td *TemplateData) genFieldsColumns(buf *bytes.Buffer, fields []*Field) {
 	}
 }
 
+// GenModelSchema generates generates the fields of the struct definition
+// in the given model.
 func (td *TemplateData) GenModelSchema(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsSchema(&buf, model.Name, model.Fields)
@@ -159,6 +171,9 @@ func removeTypePrefix(typ string) string {
 	return strings.TrimLeft(typ, "[]*")
 }
 
+// GenSubSchemas generates the struct definition of all the subschemas in all
+// models.
+// A subschema is the JSON schema of a field that will be stored as JSON.
 func (td *TemplateData) GenSubSchemas() string {
 	var buf bytes.Buffer
 	for parent, field := range td.subschemas {
@@ -170,6 +185,8 @@ func (td *TemplateData) GenSubSchemas() string {
 	return buf.String()
 }
 
+// GenSchemaInit generates the code to initialize all fields in the schema
+// of a model.
 func (td *TemplateData) GenSchemaInit(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsInit(&buf, model.Name, model.Fields, true)
@@ -253,4 +270,5 @@ var model *template.Template = addTemplate(base, "model", "templates/model.tgo")
 var query *template.Template = addTemplate(model, "query", "templates/query.tgo")
 var resultset *template.Template = addTemplate(model, "resultset", "templates/resultset.tgo")
 
+// Base is the default Template instance with all templates preloaded.
 var Base *Template = &Template{template: base}

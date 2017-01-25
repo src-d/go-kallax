@@ -114,6 +114,8 @@ func (rs *BaseResultSet) RawScan(dest ...interface{}) error {
 	return rs.Rows.Scan(dest...)
 }
 
+// NewBatchingResultSet returns a new result set that performs batching
+// underneath.
 func NewBatchingResultSet(schema Schema, db squirrel.DBProxy, q Query) *BatchingResultSet {
 	cols, builder := q.compile()
 	var (
@@ -141,6 +143,16 @@ func NewBatchingResultSet(schema Schema, db squirrel.DBProxy, q Query) *Batching
 	}
 }
 
+// BatchinResultSet is a result set that retrieves all the items up to the
+// batch size set in the query.
+// If there are 1:N relationships, it collects all the identifiers of
+// those records, retrieves all the rows matching them in the table of the
+// the N end, and assigns them to their correspondent to the record they belong
+// to.
+// It will continue doing this process until no more rows are returned by the
+// query.
+// This minimizes the number of queries and operations to perform in order to
+// retrieve a set of results and their relationships.
 type BatchingResultSet struct {
 	schema        Schema
 	cols          []string
@@ -150,14 +162,19 @@ type BatchingResultSet struct {
 	q             Query
 	builder       squirrel.SelectBuilder
 	records       []Record
-	i             int
-	total         int
-	lastErr       error
+	// idx is the current index in the current batch
+	idx int
+	// total is the total number of records retrieved so far
+	total   int
+	lastErr error
 }
 
+// Next advances the internal index of the fetched records in one.
+// If there are no fetched records, will fetch the next batch.
+// It will return false when there are no more rows.
 func (rs *BatchingResultSet) Next() bool {
-	if rs.i > 0 && rs.i >= len(rs.records) {
-		rs.i = 0
+	if rs.idx > 0 && rs.idx >= len(rs.records) {
+		rs.idx = 0
 		rs.records = nil
 	}
 
@@ -171,24 +188,28 @@ func (rs *BatchingResultSet) Next() bool {
 		}
 
 		rs.total += len(rs.records)
-		rs.i++
+		rs.idx++
 		return true
 	}
 
-	rs.i++
+	rs.idx++
 	return true
 }
 
+// Get returns the next processed record and the last error occurred.
+// Even though it accepts a schema, it is ignored, as the result set is
+// already aware of it. This is here just to be able to imeplement the
+// ResultSet interface.
 func (rs *BatchingResultSet) Get(_ Schema) (Record, error) {
 	if rs.lastErr != nil {
 		return nil, rs.lastErr
 	}
 
-	if (rs.i - 1) >= len(rs.records) {
+	if (rs.idx - 1) >= len(rs.records) {
 		return nil, fmt.Errorf("kallax: no more items cached in result set, please, use Next before calling Get")
 	}
 
-	return rs.records[rs.i-1], nil
+	return rs.records[rs.idx-1], nil
 }
 
 func (rs *BatchingResultSet) nextBatch() error {
@@ -312,10 +333,14 @@ func (rs *BatchingResultSet) getBatchRelation(ids []interface{}, rel Relationshi
 	return indexedResults, nil
 }
 
+// Close will do nothing, as the internal result sets used by this are closed
+// when the rows at fetched. It will never throw an error.
 func (rs *BatchingResultSet) Close() error {
 	return nil
 }
 
+// RawScan will always throw an error, as this is not a supported operation of
+// a batching result set.
 func (rs *BatchingResultSet) RawScan(_ ...interface{}) error {
 	return fmt.Errorf("kallax: cannot perform a raw scan on a batching result set")
 }
