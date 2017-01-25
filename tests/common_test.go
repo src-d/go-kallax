@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"testing"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -17,6 +16,52 @@ var (
 	password         = envOrDefault("DBPASS", "testing")
 )
 
+type BaseTestSuite struct {
+	suite.Suite
+	db          *sql.DB
+	initQueries []string
+}
+
+func (s *BaseTestSuite) SetupSuite() {
+	db, err := sql.Open(
+		"postgres",
+		fmt.Sprintf(connectionString, user, password, host, database),
+	)
+	if err != nil {
+		panic(fmt.Sprintf("It was unable to connect to the DB.\n%s\n", err))
+	}
+
+	s.db = db
+
+	if len(s.initQueries) > 0 {
+		s.QuerySucceed(s.initQueries...)
+	}
+}
+
+func (s *BaseTestSuite) TearDownSuite() {
+	s.QuerySucceed(
+		fmt.Sprintf(`DROP SCHEMA %s CASCADE;`, database),
+		fmt.Sprintf(`CREATE SCHEMA %s;`, database),
+	)
+	s.db.Close()
+}
+
+func (s *BaseTestSuite) QuerySucceed(queries ...string) {
+	for _, query := range queries {
+		res, err := s.db.Exec(query)
+		s.NotNil(res, "Resulset should not be empty")
+		s.Nil(err, fmt.Sprintf("%s\nshould succeed but it failed.\n%s\n", query, err))
+	}
+}
+
+func (s *BaseTestSuite) QueryFails(queries ...string) {
+	for _, query := range queries {
+		res, err := s.db.Exec(query)
+		s.Nil(res, "Resulset should be empty but it was not")
+		s.NotNil(err, fmt.Sprintf("%s\nshould fail but it succeed", query))
+	}
+}
+
 func envOrDefault(key string, def string) string {
 	v := os.Getenv(key)
 	if v == "" {
@@ -24,41 +69,4 @@ func envOrDefault(key string, def string) string {
 	}
 
 	return v
-}
-
-func TestHijackSuite(t *testing.T) {
-	suite.Run(t, new(CommonSuite))
-}
-
-type CommonSuite struct {
-	suite.Suite
-	db *sql.DB
-}
-
-func (s *CommonSuite) SetupSuite() {
-	db, err := sql.Open(
-		"postgres",
-		fmt.Sprintf(connectionString, user, password, host, database),
-	)
-	s.Nil(err)
-	s.NotNil(db)
-	s.db = db
-
-	res, err := s.db.Exec(`DROP TABLE IF EXISTS testing`)
-	s.NotNil(res)
-	s.Nil(err)
-
-	res, err = s.db.Exec(`CREATE TABLE testing (id uuid primary key)`)
-	s.NotNil(res)
-	s.Nil(err)
-}
-
-func (s *CommonSuite) TearDownSuite() {
-	res, err := s.db.Exec("DROP TABLE testing")
-	s.NotNil(res)
-	s.Nil(err)
-
-	res, err = s.db.Exec("DROP TABLE _THIS_TABLE_DOES_NOT_EXIST")
-	s.Nil(res)
-	s.NotNil(err)
 }

@@ -1,15 +1,24 @@
 package tests
 
 import (
-	"database/sql"
+	"testing"
 
 	"github.com/src-d/go-kallax"
 	"github.com/stretchr/testify/suite"
 )
 
 type QuerySuite struct {
-	suite.Suite
-	db *sql.DB
+	BaseTestSuite
+}
+
+func TestQuerySuite(t *testing.T) {
+	schema := []string{
+		`CREATE TABLE query (
+			id uuid primary key,
+			foo varchar(10)
+		)`,
+	}
+	suite.Run(t, &QuerySuite{BaseTestSuite{initQueries: schema}})
 }
 
 func (s *QuerySuite) TestQueryFindById() {

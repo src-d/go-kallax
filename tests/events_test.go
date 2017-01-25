@@ -1,15 +1,26 @@
 package tests
 
 import (
-	"database/sql"
 	"errors"
+	"testing"
 
 	"github.com/stretchr/testify/suite"
 )
 
 type EventsSuite struct {
-	suite.Suite
-	db *sql.DB
+	BaseTestSuite
+}
+
+func TestEventsSuite(t *testing.T) {
+	schema := []string{
+		`CREATE TABLE event (
+			id uuid primary key,
+			checks JSON,
+			must_fail_before JSON,
+			must_fail_after JSON
+		)`,
+	}
+	suite.Run(t, &EventsSuite{BaseTestSuite{initQueries: schema}})
 }
 
 func (s *EventsSuite) TestEventsInsert() {

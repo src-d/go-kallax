@@ -1,16 +1,40 @@
 package tests
 
 import (
-	"database/sql"
+	"testing"
 	"time"
 
-	"github.com/src-d/go-kallax"
+	kallax "github.com/src-d/go-kallax"
 	"github.com/stretchr/testify/suite"
 )
 
+func TestStoreSuite(t *testing.T) {
+	schema := []string{
+		`CREATE TABLE store_construct (
+			id uuid primary key,
+			foo varchar(10)
+		)`,
+		`CREATE TABLE store (
+			id uuid primary key,
+			foo varchar(10)
+		)`,
+		`CREATE TABLE store_new (
+			id uuid primary key,
+			foo varchar(10),
+			bar varchar(10)
+		)`,
+		`CREATE TABLE query (
+			id uuid primary key,
+			name varchar(10),
+			start timestamp,
+			_end timestamp
+		)`,
+	}
+	suite.Run(t, &StoreSuite{BaseTestSuite{initQueries: schema}})
+}
+
 type StoreSuite struct {
-	suite.Suite
-	db *sql.DB
+	BaseTestSuite
 }
 
 func (s *StoreSuite) TestStoreNew() {

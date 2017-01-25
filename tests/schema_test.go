@@ -1,15 +1,18 @@
 package tests
 
 import (
-	"database/sql"
 	"reflect"
+	"testing"
 
 	"github.com/stretchr/testify/suite"
 )
 
 type SchemaSuite struct {
-	suite.Suite
-	db *sql.DB
+	BaseTestSuite
+}
+
+func TestSchemaSuite(t *testing.T) {
+	suite.Run(t, new(SchemaSuite))
 }
 
 func (s *SchemaSuite) TestSchemaBasicField() {

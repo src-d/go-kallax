@@ -1,16 +1,25 @@
 package tests
 
 import (
-	"database/sql"
 	"errors"
+	"testing"
 
 	"github.com/src-d/go-kallax"
 	"github.com/stretchr/testify/suite"
 )
 
 type ResulsetSuite struct {
-	suite.Suite
-	db *sql.DB
+	BaseTestSuite
+}
+
+func TestResulsetSuite(t *testing.T) {
+	schema := []string{
+		`CREATE TABLE resultset (
+			id uuid primary key,
+			foo varchar(10)
+		)`,
+	}
+	suite.Run(t, &ResulsetSuite{BaseTestSuite{initQueries: schema}})
 }
 
 func (s *ResulsetSuite) TestResultSetAll() {
