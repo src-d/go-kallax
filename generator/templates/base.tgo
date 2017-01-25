@@ -1,13 +1,19 @@
+// IMPORTANT! This is auto generated code by https://github.com/src-d/go-kallax
+// Please, do not touch the code below, and if you do, do it under your own
+// risk. Take into account that all the code you write here will be completely
+// erased from earth the next time you generate the kallax models.
 package {{.Name}}
 
 import (
-    "github.com/src-d/go-kallax"
-    "github.com/src-d/go-kallax/types"
-    "database/sql"
-    "database/sql/driver"
+        "github.com/src-d/go-kallax"
+        "github.com/src-d/go-kallax/types"
+        "database/sql"
+        "database/sql/driver"
+        "fmt"
 )
 
 var _ types.SQLType
+var _ fmt.Println
 
 {{template "model" .}}
 {{template "schema" .}}
