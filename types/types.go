@@ -21,13 +21,13 @@ func (u *URL) Scan(v interface{}) error {
 	case string:
 		url, err := url.Parse(t)
 		if err != nil {
-			return fmt.Errorf("error scanning url: %s", err)
+			return fmt.Errorf("kallax: error scanning url: %s", err)
 		}
 
 		*u = URL(*url)
 		return nil
 	}
-	return fmt.Errorf("cannot scan type %s into URL type", reflect.TypeOf(v))
+	return fmt.Errorf("kallax: cannot scan type %s into URL type", reflect.TypeOf(v))
 }
 
 func (u URL) Value() (interface{}, error) {
@@ -46,7 +46,7 @@ func ScanJSON(v interface{}, dst interface{}) error {
 		return ScanJSON([]byte(v), dst)
 	}
 
-	return fmt.Errorf("cannot scan type %s into JSON type", reflect.TypeOf(v))
+	return fmt.Errorf("kallax: cannot scan type %s into JSON type", reflect.TypeOf(v))
 }
 
 // JSONValue converts something into json.
@@ -83,7 +83,7 @@ func (a *array) Scan(v interface{}) error {
 
 	if slicePtr.Elem().Len() != a.size {
 		return fmt.Errorf(
-			"cannot scan array of size %d into array of size %d",
+			"kallax: cannot scan array of size %d into array of size %d",
 			newSlice.Len(),
 			a.size,
 		)

@@ -16,7 +16,7 @@ type CmdGenerate struct {
 
 func (c *CmdGenerate) Execute(args []string) error {
 	if !isDirectory(c.Input) {
-		return fmt.Errorf("Input path should be a directory %s", c.Input)
+		return fmt.Errorf("kallax: Input path should be a directory %s", c.Input)
 	}
 
 	p := generator.NewProcessor(c.Input, []string{c.Output})

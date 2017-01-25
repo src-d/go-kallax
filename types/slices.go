@@ -807,11 +807,11 @@ Close:
 			depth--
 			i++
 		} else {
-			return nil, nil, fmt.Errorf("pq: unable to parse array; unexpected %q at offset %d", src[i], i)
+			return nil, nil, fmt.Errorf("kallax: unable to parse array; unexpected %q at offset %d", src[i], i)
 		}
 	}
 	if depth > 0 {
-		err = fmt.Errorf("pq: unable to parse array; expected %q at offset %d", '}', i)
+		err = fmt.Errorf("kallax: unable to parse array; expected %q at offset %d", '}', i)
 	}
 	if err == nil {
 		for _, d := range dims {

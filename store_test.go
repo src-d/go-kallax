@@ -197,7 +197,7 @@ func (s *StoreSuite) TestTransactionRollback() {
 	err := s.store.Transaction(func(store *Store) error {
 		s.Nil(store.Insert(newModel("Joe", "", 1)))
 		s.Nil(store.Insert(newModel("Anna", "", 1)))
-		return fmt.Errorf("we're never ever, ever, getting store together")
+		return fmt.Errorf("kallax: we're never ever, ever, getting store together")
 	})
 	s.NotNil(err)
 	s.assertCount(0)
