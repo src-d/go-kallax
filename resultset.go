@@ -143,7 +143,7 @@ func NewBatchingResultSet(schema Schema, db squirrel.DBProxy, q Query) *Batching
 	}
 }
 
-// BatchinResultSet is a result set that retrieves all the items up to the
+// BatchingResultSet is a result set that retrieves all the items up to the
 // batch size set in the query.
 // If there are 1:N relationships, it collects all the identifiers of
 // those records, retrieves all the rows matching them in the table of the
