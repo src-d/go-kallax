@@ -20,6 +20,8 @@ type Schema interface {
 	// Calling WithAlias on a schema returned by WithAlias not return a
 	// schema based on the child, but another based on the parent.
 	WithAlias(string) Schema
+	// New creates a new record with the given schema.
+	New() Record
 }
 
 // BaseSchema is the basic implementation of Schema.
@@ -29,17 +31,22 @@ type BaseSchema struct {
 	foreignKeys ForeignKeys
 	id          SchemaField
 	columns     []SchemaField
+	constructor RecordConstructor
 }
+
+// RecordConstructor is a function that creates a record.
+type RecordConstructor func() Record
 
 // NewBaseSchema creates a new schema with the given table, alias, identifier
 // and columns.
-func NewBaseSchema(table, alias string, id SchemaField, fks ForeignKeys, columns ...SchemaField) *BaseSchema {
+func NewBaseSchema(table, alias string, id SchemaField, fks ForeignKeys, ctor RecordConstructor, columns ...SchemaField) *BaseSchema {
 	return &BaseSchema{
 		alias:       alias,
 		table:       table,
 		foreignKeys: fks,
 		id:          id,
 		columns:     columns,
+		constructor: ctor,
 	}
 }
 
@@ -53,6 +60,9 @@ func (s *BaseSchema) ForeignKey(field string) (SchemaField, bool) {
 }
 func (s *BaseSchema) WithAlias(field string) Schema {
 	return &aliasSchema{s, field}
+}
+func (s *BaseSchema) New() Record {
+	return s.constructor()
 }
 
 type aliasSchema struct {
@@ -104,10 +114,40 @@ func (f *BaseSchemaField) QualifiedName(schema Schema) string {
 // Relationship is a relationship with its schema and the field of te relation
 // in the record.
 type Relationship struct {
+	// Type is the kind of relationship this is.
+	Type RelationshipType
 	// Field is the field in the record where the relationship is.
 	Field string
 	// Schema is the schema of the relationship.
 	Schema Schema
+	// Filter establishes the filter to be applied when retrieving rows of the
+	// relationships.
+	Filter Condition
+}
+
+// RelationshipType describes the type of the relationship.
+type RelationshipType byte
+
+const (
+	// OneToOne is a relationship between one record in a table and another in
+	// another table.
+	OneToOne RelationshipType = iota
+	// OneToMany is a relationship between one record in a table and multiple
+	// in another table.
+	OneToMany
+	// ManyToMany is a relationship between many records on both sides of the
+	// relationship.
+	// NOTE: It is not supported yet.
+	ManyToMany
+)
+
+func containsRelationshipOfType(rels []Relationship, typ RelationshipType) bool {
+	for _, r := range rels {
+		if r.Type == typ {
+			return true
+		}
+	}
+	return false
 }
 
 // ColumnNames returns the names of the given schema fields.

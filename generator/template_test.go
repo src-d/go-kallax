@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/importer"
 	"go/parser"
@@ -240,7 +241,7 @@ func (s *TemplateSuite) TestGenTypeName() {
 	}
 }
 
-func (s *TemplateSuite) TestGenTypeNewPointer() {
+func (s *TemplateSuite) TestIsPtrSlice() {
 	s.processSource(`
 	package fixture
 
@@ -249,29 +250,33 @@ func (s *TemplateSuite) TestGenTypeNewPointer() {
 
 	type Foo struct {
 		kallax.Model
-		URL *url.URL
-		UrlNoPtr url.URL
+		Ptr *url.URL
+		Slice []url.URL
+		PtrSlice []*url.URL
 	}
 	`)
 
 	m := findModel(s.td.Package, "Foo")
 	var cases = []struct {
 		field    string
-		expected string
+		expected bool
 	}{
-		{"URL", "&url.URL{}"},
-		{"UrlNoPtr", "&url.URL{}"},
+		{"Ptr", false},
+		{"Slice", false},
+		{"PtrSlice", true},
 	}
 
 	for _, c := range cases {
-		s.Equal(c.expected, s.td.GenTypeNewPointer(findField(m, c.field)), c.field)
+		s.Equal(c.expected, s.td.IsPtrSlice(findField(m, c.field)), c.field)
 	}
 }
 
 func (s *TemplateSuite) TestExecute() {
 	s.processSource(baseTpl)
 	var buf bytes.Buffer
-	s.Nil(Base.Execute(&buf, s.td.Package))
+	err := Base.Execute(&buf, s.td.Package)
+	fmt.Println(err)
+	s.Nil(err)
 }
 
 func TestTemplate(t *testing.T) {

@@ -83,7 +83,7 @@ func (s *QuerySuite) TestString() {
 }
 
 func (s *QuerySuite) TestAddRelation() {
-	s.Nil(s.q.AddRelation(RelSchema, "rel"))
+	s.Nil(s.q.AddRelation(RelSchema, "rel", OneToOne, nil))
 	s.Equal("SELECT __model.id, __model.name, __model.email, __model.age, __rel_rel.id, __rel_rel.model_id, __rel_rel.foo FROM model __model LEFT JOIN rel __rel_rel ON (__rel_rel.model_id = __model.id)", s.q.String())
 }
 

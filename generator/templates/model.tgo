@@ -9,12 +9,11 @@ func New{{.Name}}({{.CtorArgs}}) {{.CtorReturns}} {
         return
 }
 
-
 func (r *{{.Name}}) ColumnAddress(col string) (interface{}, error) {
         switch col {
                 {{$.GenColumnAddresses .}}
         default:
-                return nil, fmt.Errorf("invalid column in {{.Name}}: %s", col)
+                return nil, fmt.Errorf("kallax: invalid column in {{.Name}}: %s", col)
         }
 }
 
@@ -22,31 +21,46 @@ func (r *{{.Name}}) Value(col string) (interface{}, error) {
         switch col {
                 {{$.GenColumnValues .}}
         default:
-                return nil, fmt.Errorf("invalid column in {{.Name}}: %s", col)
+                return nil, fmt.Errorf("kallax: invalid column in {{.Name}}: %s", col)
         }
 }
 
 func (r *{{.Name}}) NewRelationshipRecord(field string) (kallax.Record, error) {
         switch field {
         {{range .Relationships}}case "{{.Name}}":
-                return {{$.GenTypeNewPointer .}}, nil
+                return new({{$.GenTypeName .}}), nil
         {{end}}
         }
-        return nil, fmt.Errorf("model {{.Name}} has no relationship %s", field)
+        return nil, fmt.Errorf("kallax: model {{.Name}} has no relationship %s", field)
 }
 
-func (r *{{.Name}}) SetRelationship(field string, record kallax.Record) error {
+func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
         switch field {
-        {{range .Relationships}}case "{{.Name}}":
-                val, ok := record.(*{{$.GenTypeName .}})
+        {{range .Relationships}}{{if not .IsOneToManyRelationship}}case "{{.Name}}":
+                val, ok := rel.(*{{$.GenTypeName .}})
                 if !ok {
-                        return fmt.Errorf("record of type %t can't be assigned to relationship {{.Name}}", record)
+                        return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", rel)
                 }
-                r.{{.Name}} = {{if not .IsPtr}}*{{end}}val
+                r.{{.Name}} = {{if or (not .IsPtr) .IsOneToManyRelationship}}*{{end}}val
                 return nil
-        {{end}}
+        {{else}}case "{{.Name}}":
+                records, ok := rel.([]kallax.Record) 
+                if !ok {
+                        return fmt.Errorf("kallax: relationship field %s needs a collection of records, not %T", field, rel)
+                }
+
+                r.{{.Name}} = make([]{{if $.IsPtrSlice .}}*{{end}}{{$.GenTypeName .}}, len(records))
+                for i, record := range records {
+                        rel, ok := record.(*{{$.GenTypeName . }})
+                        if !ok {
+                                return fmt.Errorf("kallax: element of type %T cannot be added to relationship %s", record, field)
+                        }
+                        r.{{.Name}}[i] = {{if not ($.IsPtrSlice .)}}*{{end}}rel
+                }
+                return nil
+        {{end}}{{end}}
         }
-        return fmt.Errorf("model {{.Name}} has no relationship %s", field)
+        return fmt.Errorf("kallax: model {{.Name}} has no relationship %s", field)
 }
 
 // {{.StoreName}} is the entity to access the records of the type {{.Name}}

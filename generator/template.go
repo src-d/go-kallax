@@ -145,12 +145,14 @@ func (td *TemplateData) findJSONSchemas(parent string, f *Field) {
 	}
 }
 
+// GenTypeName generates the name of the type in the field.
 func (td *TemplateData) GenTypeName(f *Field) string {
 	return removeTypePrefix(typeString(f.Node.Type(), td.pkg))
 }
 
-func (td *TemplateData) GenTypeNewPointer(f *Field) string {
-	return fmt.Sprintf("&%s{}", td.GenTypeName(f))
+// IsPtrSlice returns whether the field is a slice of pointers or not.
+func (td *TemplateData) IsPtrSlice(f *Field) bool {
+	return strings.HasPrefix(typeString(f.Node.Type(), td.pkg), "[]*")
 }
 
 func removeTypePrefix(typ string) string {

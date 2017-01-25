@@ -129,7 +129,8 @@ func (s *StoreSuite) TestRawQuery() {
 
 	var names []string
 	for rs.Next() {
-		s.Equal(ErrRawScan, rs.Scan(nil))
+		_, err := rs.Get(ModelSchema)
+		s.Equal(ErrRawScan, err)
 		var name string
 		s.Nil(rs.RawScan(&name))
 		names = append(names, name)
@@ -160,8 +161,10 @@ func (s *StoreSuite) TestFind() {
 
 	var names []string
 	for rs.Next() {
-		var m = newModel("", "", 0)
-		s.Nil(rs.Scan(m))
+		record, err := rs.Get(ModelSchema)
+		s.Nil(err)
+		m, ok := record.(*model)
+		s.True(ok)
 		s.True(m.IsPersisted())
 		names = append(names, m.Name)
 	}
@@ -212,25 +215,29 @@ func (s *StoreSuite) TestReload() {
 	s.Nil(err)
 	s.True(rs.Next())
 
-	var model model
+	var m = new(model)
 	// First, we check that an empty model can't be reloaded, because it has
 	// no ID
-	s.Equal(ErrEmptyID, s.store.Reload(&model))
-	s.Nil(rs.Scan(&model))
+	s.Equal(ErrEmptyID, s.store.Reload(m))
+	record, err := rs.Get(ModelSchema)
+	var ok bool
+	m, ok = record.(*model)
+	s.True(ok)
+	s.Nil(err)
 
 	// Model is not writable, as we said
-	s.False(model.IsWritable())
-	s.Equal(0, model.Age)
+	s.False(m.IsWritable())
+	s.Equal(0, m.Age)
 
-	_, err = s.store.Update(&model)
+	_, err = s.store.Update(m)
 	s.Equal(ErrNotWritable, err)
 
 	// Now, the model is reloaded with all the fields
-	s.Nil(s.store.Reload(&model))
+	s.Nil(s.store.Reload(m))
 
 	// And so, it becomes writable
-	s.True(model.IsWritable())
-	s.Equal(1, model.Age)
+	s.True(m.IsWritable())
+	s.Equal(1, m.Age)
 }
 
 func (s *StoreSuite) TestFind_1to1() {
@@ -244,19 +251,140 @@ func (s *StoreSuite) TestFind_1to1() {
 	s.Nil(s.relStore.Insert(newRel(NewID(), "foo")))
 
 	q := NewBaseQuery(ModelSchema)
-	q.AddRelation(RelSchema, "rel")
+	q.AddRelation(RelSchema, "rel", OneToOne, nil)
 	rs, err := s.store.Find(q)
 	s.Nil(err)
 
-	var model model
 	s.True(rs.Next())
-	s.Nil(rs.Scan(&model))
+	record, err := rs.Get(ModelSchema)
+	s.Nil(err)
+	model, ok := record.(*model)
+	s.True(ok)
+
 	s.Equal("Foo", model.Name)
 	s.Equal("bar", model.Email)
 	s.Equal(1, model.Age)
 	s.NotNil(model.Rel)
 	s.Equal(model.ID, model.Rel.ModelID)
 	s.Equal("foo", model.Rel.Foo)
+}
+
+func (s *StoreSuite) rel1ToNFixtures() {
+	m := newModel("Foo", "bar", 1)
+	s.Nil(s.store.Insert(m))
+
+	rels := []string{"foo", "bar", "baz"}
+	for _, v := range rels {
+		rel := newRel(m.ID, v)
+		s.Nil(s.relStore.Insert(rel))
+	}
+
+	s.Nil(s.relStore.Insert(newRel(NewID(), "qux")))
+}
+
+func (s *StoreSuite) TestFind_1toN() {
+	s.rel1ToNFixtures()
+
+	q := NewBaseQuery(ModelSchema)
+	s.Nil(q.AddRelation(RelSchema, "rels", OneToMany, nil))
+	rs, err := s.store.Find(q)
+	s.Nil(err)
+
+	s.True(rs.Next())
+	record, err := rs.Get(ModelSchema)
+	s.Nil(err)
+	model, ok := record.(*model)
+	s.True(ok)
+
+	s.Equal("Foo", model.Name)
+	s.Equal("bar", model.Email)
+	s.Equal(1, model.Age)
+	s.Nil(model.Rel)
+	s.Len(model.Rels, 3)
+	s.Equal("foo", model.Rels[0].Foo)
+	s.Equal("bar", model.Rels[1].Foo)
+	s.Equal("baz", model.Rels[2].Foo)
+}
+
+func (s *StoreSuite) TestFind_1toN_Filter() {
+	s.rel1ToNFixtures()
+
+	q := NewBaseQuery(ModelSchema)
+	s.Nil(q.AddRelation(RelSchema, "rels", OneToMany, Eq(NewSchemaField("foo"), "bar")))
+	rs, err := s.store.Find(q)
+	s.Nil(err)
+
+	s.True(rs.Next())
+	record, err := rs.Get(ModelSchema)
+	s.Nil(err)
+	model, ok := record.(*model)
+	s.True(ok)
+
+	s.Equal("Foo", model.Name)
+	s.Equal("bar", model.Email)
+	s.Equal(1, model.Age)
+	s.Nil(model.Rel)
+	s.Len(model.Rels, 1)
+	s.Equal("bar", model.Rels[0].Foo)
+}
+
+func (s *StoreSuite) TestFind_1toNAnd1to1() {
+	s.rel1ToNFixtures()
+
+	q := NewBaseQuery(ModelSchema)
+	s.Nil(q.AddRelation(RelSchema, "rels", OneToMany, nil))
+	s.Nil(q.AddRelation(RelSchema, "rel", OneToOne, nil))
+	rs, err := s.store.Find(q)
+	s.Nil(err)
+
+	s.True(rs.Next())
+	record, err := rs.Get(ModelSchema)
+	s.Nil(err)
+	model, ok := record.(*model)
+	s.True(ok)
+
+	s.Equal("Foo", model.Name)
+	s.Equal("bar", model.Email)
+	s.Equal(1, model.Age)
+	s.NotNil(model.Rel)
+	s.Len(model.Rels, 3)
+}
+
+func (s *StoreSuite) TestFind_1toNMultiple() {
+	rels := []string{"foo", "bar", "baz"}
+	for i := 0; i < 100; i++ {
+		m := newModel(fmt.Sprint(i), fmt.Sprint(i), i)
+		s.Nil(s.store.Insert(m))
+
+		for _, v := range rels {
+			s.Nil(s.relStore.Insert(newRel(m.ID, fmt.Sprintf("%s%d", v, i))))
+		}
+	}
+
+	q := NewBaseQuery(ModelSchema)
+	q.BatchSize(20)
+	s.Nil(q.AddRelation(RelSchema, "rels", OneToMany, nil))
+	rs, err := s.store.Find(q)
+	s.Nil(err)
+
+	var i int
+	for rs.Next() {
+		record, err := rs.Get(ModelSchema)
+		s.Nil(err, "row #%d", i)
+
+		model, ok := record.(*model)
+		s.True(ok, "row #%d", i)
+
+		s.Equal(fmt.Sprint(i), model.Name, "row #%d", i)
+		s.Len(model.Rels, 3, "row #%d", i)
+
+		for j, v := range rels {
+			s.Equal(model.ID, model.Rels[j].ModelID, "row #%d", i)
+			s.Equal(fmt.Sprintf("%s%d", v, i), model.Rels[j].Foo, "row #%d", i)
+		}
+		i++
+	}
+	s.Equal(100, i)
 }
 
 func (s *StoreSuite) TestOperators() {
