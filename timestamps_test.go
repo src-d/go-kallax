@@ -15,7 +15,7 @@ type TimestampableSuite struct {
 }
 
 func (s *TimestampableSuite) TestTimestamp() {
-	item := Timestamps{}
+	var item Timestamps
 	s.True(item.CreatedAt.IsZero())
 	s.True(item.UpdatedAt.IsZero())
 	item.Timestamp()
@@ -28,10 +28,10 @@ func (s *TimestampableSuite) TestTimestamp() {
 	s.NotEqual(updatedAt, item.UpdatedAt)
 }
 
-func (s *TimestampableSuite) TestTimestampBeforePersist() {
-	item := Timestamps{}
-	error := item.BeforePersist()
-	s.Nil(error)
+func (s *TimestampableSuite) TestTimestampBeforeSave() {
+	var item Timestamps
+	err := item.BeforeSave()
+	s.Nil(err)
 	s.False(item.CreatedAt.IsZero())
 	s.False(item.UpdatedAt.IsZero())
 }
