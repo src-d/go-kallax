@@ -137,7 +137,7 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
                 })
         }
         {{end}}
-	return s.Store.Insert(Schema.{{.Name}}.BaseSchema, record)
+        return s.Store.Insert(Schema.{{.Name}}.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
