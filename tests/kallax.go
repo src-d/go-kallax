@@ -1,3 +1,7 @@
+// IMPORTANT! This is auto generated code by https://github.com/src-d/go-kallax
+// Please, do not touch the code below, and if you do, do it under your own
+// risk. Take into account that all the code you write here will be completely
+// erased from earth the next time you generate the kallax models.
 package tests
 
 import (
@@ -9,6 +13,7 @@ import (
 )
 
 var _ types.SQLType
+var _ fmt.Formatter
 
 // NewEventsFixture returns a new instance of EventsFixture.
 func NewEventsFixture() (record *EventsFixture) {
@@ -31,7 +36,7 @@ func (r *EventsFixture) ColumnAddress(col string) (interface{}, error) {
 		return types.JSON(&r.MustFailAfter), nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in EventsFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in EventsFixture: %s", col)
 	}
 }
 
@@ -47,7 +52,7 @@ func (r *EventsFixture) Value(col string) (interface{}, error) {
 		return types.JSON(r.MustFailAfter), nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in EventsFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in EventsFixture: %s", col)
 	}
 }
 
@@ -55,14 +60,14 @@ func (r *EventsFixture) NewRelationshipRecord(field string) (kallax.Record, erro
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model EventsFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model EventsFixture has no relationship %s", field)
 }
 
-func (r *EventsFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *EventsFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model EventsFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model EventsFixture has no relationship %s", field)
 }
 
 // EventsFixtureStore is the entity to access the records of the type EventsFixture
@@ -261,12 +266,14 @@ func (q *EventsFixtureQuery) Where(cond kallax.Condition) *EventsFixtureQuery {
 // EventsFixtureResultSet is the set of results returned by a query to the
 // database.
 type EventsFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *EventsFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *EventsFixture
+	lastErr   error
 }
 
-func NewEventsFixtureResultSet(rs *kallax.ResultSet) *EventsFixtureResultSet {
+// NewEventsFixtureResultSet creates a new result set for rows of the type
+// EventsFixture.
+func NewEventsFixtureResultSet(rs kallax.ResultSet) *EventsFixtureResultSet {
 	return &EventsFixtureResultSet{ResultSet: rs}
 }
 
@@ -279,10 +286,17 @@ func (rs *EventsFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(EventsFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*EventsFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *EventsFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -346,6 +360,16 @@ func (rs *EventsFixtureResultSet) One() (*EventsFixture, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *EventsFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *EventsFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewEventsSaveFixture returns a new instance of EventsSaveFixture.
 func NewEventsSaveFixture() (record *EventsSaveFixture) {
 	record = newEventsSaveFixture()
@@ -367,7 +391,7 @@ func (r *EventsSaveFixture) ColumnAddress(col string) (interface{}, error) {
 		return types.JSON(&r.MustFailAfter), nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in EventsSaveFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in EventsSaveFixture: %s", col)
 	}
 }
 
@@ -383,7 +407,7 @@ func (r *EventsSaveFixture) Value(col string) (interface{}, error) {
 		return types.JSON(r.MustFailAfter), nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in EventsSaveFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in EventsSaveFixture: %s", col)
 	}
 }
 
@@ -391,14 +415,14 @@ func (r *EventsSaveFixture) NewRelationshipRecord(field string) (kallax.Record, 
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model EventsSaveFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model EventsSaveFixture has no relationship %s", field)
 }
 
-func (r *EventsSaveFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *EventsSaveFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model EventsSaveFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model EventsSaveFixture has no relationship %s", field)
 }
 
 // EventsSaveFixtureStore is the entity to access the records of the type EventsSaveFixture
@@ -597,12 +621,14 @@ func (q *EventsSaveFixtureQuery) Where(cond kallax.Condition) *EventsSaveFixture
 // EventsSaveFixtureResultSet is the set of results returned by a query to the
 // database.
 type EventsSaveFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *EventsSaveFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *EventsSaveFixture
+	lastErr   error
 }
 
-func NewEventsSaveFixtureResultSet(rs *kallax.ResultSet) *EventsSaveFixtureResultSet {
+// NewEventsSaveFixtureResultSet creates a new result set for rows of the type
+// EventsSaveFixture.
+func NewEventsSaveFixtureResultSet(rs kallax.ResultSet) *EventsSaveFixtureResultSet {
 	return &EventsSaveFixtureResultSet{ResultSet: rs}
 }
 
@@ -615,10 +641,17 @@ func (rs *EventsSaveFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(EventsSaveFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*EventsSaveFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *EventsSaveFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -682,6 +715,16 @@ func (rs *EventsSaveFixtureResultSet) One() (*EventsSaveFixture, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *EventsSaveFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *EventsSaveFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewMultiKeySortFixture returns a new instance of MultiKeySortFixture.
 func NewMultiKeySortFixture() (record *MultiKeySortFixture) {
 	record = &MultiKeySortFixture{}
@@ -703,7 +746,7 @@ func (r *MultiKeySortFixture) ColumnAddress(col string) (interface{}, error) {
 		return &r.End, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in MultiKeySortFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in MultiKeySortFixture: %s", col)
 	}
 }
 
@@ -719,7 +762,7 @@ func (r *MultiKeySortFixture) Value(col string) (interface{}, error) {
 		return r.End, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in MultiKeySortFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in MultiKeySortFixture: %s", col)
 	}
 }
 
@@ -727,14 +770,14 @@ func (r *MultiKeySortFixture) NewRelationshipRecord(field string) (kallax.Record
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model MultiKeySortFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model MultiKeySortFixture has no relationship %s", field)
 }
 
-func (r *MultiKeySortFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *MultiKeySortFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model MultiKeySortFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model MultiKeySortFixture has no relationship %s", field)
 }
 
 // MultiKeySortFixtureStore is the entity to access the records of the type MultiKeySortFixture
@@ -933,12 +976,14 @@ func (q *MultiKeySortFixtureQuery) Where(cond kallax.Condition) *MultiKeySortFix
 // MultiKeySortFixtureResultSet is the set of results returned by a query to the
 // database.
 type MultiKeySortFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *MultiKeySortFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *MultiKeySortFixture
+	lastErr   error
 }
 
-func NewMultiKeySortFixtureResultSet(rs *kallax.ResultSet) *MultiKeySortFixtureResultSet {
+// NewMultiKeySortFixtureResultSet creates a new result set for rows of the type
+// MultiKeySortFixture.
+func NewMultiKeySortFixtureResultSet(rs kallax.ResultSet) *MultiKeySortFixtureResultSet {
 	return &MultiKeySortFixtureResultSet{ResultSet: rs}
 }
 
@@ -951,10 +996,17 @@ func (rs *MultiKeySortFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(MultiKeySortFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*MultiKeySortFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *MultiKeySortFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -1018,6 +1070,16 @@ func (rs *MultiKeySortFixtureResultSet) One() (*MultiKeySortFixture, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *MultiKeySortFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *MultiKeySortFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewQueryFixture returns a new instance of QueryFixture.
 func NewQueryFixture(f string) (record *QueryFixture) {
 	record = newQueryFixture(f)
@@ -1035,7 +1097,7 @@ func (r *QueryFixture) ColumnAddress(col string) (interface{}, error) {
 		return &r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in QueryFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in QueryFixture: %s", col)
 	}
 }
 
@@ -1047,7 +1109,7 @@ func (r *QueryFixture) Value(col string) (interface{}, error) {
 		return r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in QueryFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in QueryFixture: %s", col)
 	}
 }
 
@@ -1055,14 +1117,14 @@ func (r *QueryFixture) NewRelationshipRecord(field string) (kallax.Record, error
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model QueryFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model QueryFixture has no relationship %s", field)
 }
 
-func (r *QueryFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *QueryFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model QueryFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model QueryFixture has no relationship %s", field)
 }
 
 // QueryFixtureStore is the entity to access the records of the type QueryFixture
@@ -1261,12 +1323,14 @@ func (q *QueryFixtureQuery) Where(cond kallax.Condition) *QueryFixtureQuery {
 // QueryFixtureResultSet is the set of results returned by a query to the
 // database.
 type QueryFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *QueryFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *QueryFixture
+	lastErr   error
 }
 
-func NewQueryFixtureResultSet(rs *kallax.ResultSet) *QueryFixtureResultSet {
+// NewQueryFixtureResultSet creates a new result set for rows of the type
+// QueryFixture.
+func NewQueryFixtureResultSet(rs kallax.ResultSet) *QueryFixtureResultSet {
 	return &QueryFixtureResultSet{ResultSet: rs}
 }
 
@@ -1279,10 +1343,17 @@ func (rs *QueryFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(QueryFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*QueryFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *QueryFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -1346,6 +1417,16 @@ func (rs *QueryFixtureResultSet) One() (*QueryFixture, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *QueryFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *QueryFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewResultSetFixture returns a new instance of ResultSetFixture.
 func NewResultSetFixture(f string) (record *ResultSetFixture) {
 	record = newResultSetFixture(f)
@@ -1363,7 +1444,7 @@ func (r *ResultSetFixture) ColumnAddress(col string) (interface{}, error) {
 		return &r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in ResultSetFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in ResultSetFixture: %s", col)
 	}
 }
 
@@ -1375,7 +1456,7 @@ func (r *ResultSetFixture) Value(col string) (interface{}, error) {
 		return r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in ResultSetFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in ResultSetFixture: %s", col)
 	}
 }
 
@@ -1383,14 +1464,14 @@ func (r *ResultSetFixture) NewRelationshipRecord(field string) (kallax.Record, e
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model ResultSetFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model ResultSetFixture has no relationship %s", field)
 }
 
-func (r *ResultSetFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *ResultSetFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model ResultSetFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model ResultSetFixture has no relationship %s", field)
 }
 
 // ResultSetFixtureStore is the entity to access the records of the type ResultSetFixture
@@ -1589,12 +1670,14 @@ func (q *ResultSetFixtureQuery) Where(cond kallax.Condition) *ResultSetFixtureQu
 // ResultSetFixtureResultSet is the set of results returned by a query to the
 // database.
 type ResultSetFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *ResultSetFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *ResultSetFixture
+	lastErr   error
 }
 
-func NewResultSetFixtureResultSet(rs *kallax.ResultSet) *ResultSetFixtureResultSet {
+// NewResultSetFixtureResultSet creates a new result set for rows of the type
+// ResultSetFixture.
+func NewResultSetFixtureResultSet(rs kallax.ResultSet) *ResultSetFixtureResultSet {
 	return &ResultSetFixtureResultSet{ResultSet: rs}
 }
 
@@ -1607,10 +1690,17 @@ func (rs *ResultSetFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(ResultSetFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*ResultSetFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *ResultSetFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -1674,6 +1764,16 @@ func (rs *ResultSetFixtureResultSet) One() (*ResultSetFixture, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *ResultSetFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *ResultSetFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewResultSetInitFixture returns a new instance of ResultSetInitFixture.
 func NewResultSetInitFixture() (record *ResultSetInitFixture) {
 	record = &ResultSetInitFixture{}
@@ -1691,7 +1791,7 @@ func (r *ResultSetInitFixture) ColumnAddress(col string) (interface{}, error) {
 		return &r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in ResultSetInitFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in ResultSetInitFixture: %s", col)
 	}
 }
 
@@ -1703,7 +1803,7 @@ func (r *ResultSetInitFixture) Value(col string) (interface{}, error) {
 		return r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in ResultSetInitFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in ResultSetInitFixture: %s", col)
 	}
 }
 
@@ -1711,14 +1811,14 @@ func (r *ResultSetInitFixture) NewRelationshipRecord(field string) (kallax.Recor
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model ResultSetInitFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model ResultSetInitFixture has no relationship %s", field)
 }
 
-func (r *ResultSetInitFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *ResultSetInitFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model ResultSetInitFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model ResultSetInitFixture has no relationship %s", field)
 }
 
 // ResultSetInitFixtureStore is the entity to access the records of the type ResultSetInitFixture
@@ -1917,12 +2017,14 @@ func (q *ResultSetInitFixtureQuery) Where(cond kallax.Condition) *ResultSetInitF
 // ResultSetInitFixtureResultSet is the set of results returned by a query to the
 // database.
 type ResultSetInitFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *ResultSetInitFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *ResultSetInitFixture
+	lastErr   error
 }
 
-func NewResultSetInitFixtureResultSet(rs *kallax.ResultSet) *ResultSetInitFixtureResultSet {
+// NewResultSetInitFixtureResultSet creates a new result set for rows of the type
+// ResultSetInitFixture.
+func NewResultSetInitFixtureResultSet(rs kallax.ResultSet) *ResultSetInitFixtureResultSet {
 	return &ResultSetInitFixtureResultSet{ResultSet: rs}
 }
 
@@ -1935,10 +2037,17 @@ func (rs *ResultSetInitFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(ResultSetInitFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*ResultSetInitFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *ResultSetInitFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -2002,6 +2111,16 @@ func (rs *ResultSetInitFixtureResultSet) One() (*ResultSetInitFixture, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *ResultSetInitFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *ResultSetInitFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewSchemaFixture returns a new instance of SchemaFixture.
 func NewSchemaFixture() (record *SchemaFixture) {
 	record = &SchemaFixture{}
@@ -2029,7 +2148,7 @@ func (r *SchemaFixture) ColumnAddress(col string) (interface{}, error) {
 		return types.JSON(&r.MapOfSomeType), nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in SchemaFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in SchemaFixture: %s", col)
 	}
 }
 
@@ -2051,31 +2170,31 @@ func (r *SchemaFixture) Value(col string) (interface{}, error) {
 		return types.JSON(r.MapOfSomeType), nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in SchemaFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in SchemaFixture: %s", col)
 	}
 }
 
 func (r *SchemaFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	switch field {
 	case "Nested":
-		return &SchemaFixture{}, nil
+		return new(SchemaFixture), nil
 
 	}
-	return nil, fmt.Errorf("model SchemaFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model SchemaFixture has no relationship %s", field)
 }
 
-func (r *SchemaFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *SchemaFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 	case "Nested":
-		val, ok := record.(*SchemaFixture)
+		val, ok := rel.(*SchemaFixture)
 		if !ok {
-			return fmt.Errorf("record of type %t can't be assigned to relationship Nested", record)
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Nested", rel)
 		}
 		r.Nested = val
 		return nil
 
 	}
-	return fmt.Errorf("model SchemaFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model SchemaFixture has no relationship %s", field)
 }
 
 // SchemaFixtureStore is the entity to access the records of the type SchemaFixture
@@ -2272,19 +2391,21 @@ func (q *SchemaFixtureQuery) Where(cond kallax.Condition) *SchemaFixtureQuery {
 }
 
 func (q *SchemaFixtureQuery) WithNested() *SchemaFixtureQuery {
-	q.AddRelation(Schema.SchemaFixture.BaseSchema, "Nested")
+	q.AddRelation(Schema.SchemaFixture.BaseSchema, "Nested", kallax.OneToOne, nil)
 	return q
 }
 
 // SchemaFixtureResultSet is the set of results returned by a query to the
 // database.
 type SchemaFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *SchemaFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *SchemaFixture
+	lastErr   error
 }
 
-func NewSchemaFixtureResultSet(rs *kallax.ResultSet) *SchemaFixtureResultSet {
+// NewSchemaFixtureResultSet creates a new result set for rows of the type
+// SchemaFixture.
+func NewSchemaFixtureResultSet(rs kallax.ResultSet) *SchemaFixtureResultSet {
 	return &SchemaFixtureResultSet{ResultSet: rs}
 }
 
@@ -2297,10 +2418,17 @@ func (rs *SchemaFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(SchemaFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*SchemaFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *SchemaFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -2364,6 +2492,16 @@ func (rs *SchemaFixtureResultSet) One() (*SchemaFixture, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *SchemaFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *SchemaFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewStoreFixture returns a new instance of StoreFixture.
 func NewStoreFixture() (record *StoreFixture) {
 	record = &StoreFixture{}
@@ -2381,7 +2519,7 @@ func (r *StoreFixture) ColumnAddress(col string) (interface{}, error) {
 		return &r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in StoreFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in StoreFixture: %s", col)
 	}
 }
 
@@ -2393,7 +2531,7 @@ func (r *StoreFixture) Value(col string) (interface{}, error) {
 		return r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in StoreFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in StoreFixture: %s", col)
 	}
 }
 
@@ -2401,14 +2539,14 @@ func (r *StoreFixture) NewRelationshipRecord(field string) (kallax.Record, error
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model StoreFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model StoreFixture has no relationship %s", field)
 }
 
-func (r *StoreFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *StoreFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model StoreFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model StoreFixture has no relationship %s", field)
 }
 
 // StoreFixtureStore is the entity to access the records of the type StoreFixture
@@ -2607,12 +2745,14 @@ func (q *StoreFixtureQuery) Where(cond kallax.Condition) *StoreFixtureQuery {
 // StoreFixtureResultSet is the set of results returned by a query to the
 // database.
 type StoreFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *StoreFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *StoreFixture
+	lastErr   error
 }
 
-func NewStoreFixtureResultSet(rs *kallax.ResultSet) *StoreFixtureResultSet {
+// NewStoreFixtureResultSet creates a new result set for rows of the type
+// StoreFixture.
+func NewStoreFixtureResultSet(rs kallax.ResultSet) *StoreFixtureResultSet {
 	return &StoreFixtureResultSet{ResultSet: rs}
 }
 
@@ -2625,10 +2765,17 @@ func (rs *StoreFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(StoreFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*StoreFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *StoreFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -2692,6 +2839,16 @@ func (rs *StoreFixtureResultSet) One() (*StoreFixture, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *StoreFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *StoreFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewStoreWithConstructFixture returns a new instance of StoreWithConstructFixture.
 func NewStoreWithConstructFixture(f string) (record *StoreWithConstructFixture) {
 	record = newStoreWithConstructFixture(f)
@@ -2709,7 +2866,7 @@ func (r *StoreWithConstructFixture) ColumnAddress(col string) (interface{}, erro
 		return &r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in StoreWithConstructFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in StoreWithConstructFixture: %s", col)
 	}
 }
 
@@ -2721,7 +2878,7 @@ func (r *StoreWithConstructFixture) Value(col string) (interface{}, error) {
 		return r.Foo, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in StoreWithConstructFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in StoreWithConstructFixture: %s", col)
 	}
 }
 
@@ -2729,14 +2886,14 @@ func (r *StoreWithConstructFixture) NewRelationshipRecord(field string) (kallax.
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model StoreWithConstructFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model StoreWithConstructFixture has no relationship %s", field)
 }
 
-func (r *StoreWithConstructFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *StoreWithConstructFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model StoreWithConstructFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model StoreWithConstructFixture has no relationship %s", field)
 }
 
 // StoreWithConstructFixtureStore is the entity to access the records of the type StoreWithConstructFixture
@@ -2935,12 +3092,14 @@ func (q *StoreWithConstructFixtureQuery) Where(cond kallax.Condition) *StoreWith
 // StoreWithConstructFixtureResultSet is the set of results returned by a query to the
 // database.
 type StoreWithConstructFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *StoreWithConstructFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *StoreWithConstructFixture
+	lastErr   error
 }
 
-func NewStoreWithConstructFixtureResultSet(rs *kallax.ResultSet) *StoreWithConstructFixtureResultSet {
+// NewStoreWithConstructFixtureResultSet creates a new result set for rows of the type
+// StoreWithConstructFixture.
+func NewStoreWithConstructFixtureResultSet(rs kallax.ResultSet) *StoreWithConstructFixtureResultSet {
 	return &StoreWithConstructFixtureResultSet{ResultSet: rs}
 }
 
@@ -2953,10 +3112,17 @@ func (rs *StoreWithConstructFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(StoreWithConstructFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*StoreWithConstructFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *StoreWithConstructFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -3020,6 +3186,16 @@ func (rs *StoreWithConstructFixtureResultSet) One() (*StoreWithConstructFixture,
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *StoreWithConstructFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *StoreWithConstructFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewStoreWithNewFixture returns a new instance of StoreWithNewFixture.
 func NewStoreWithNewFixture() (record *StoreWithNewFixture) {
 	record = &StoreWithNewFixture{}
@@ -3039,7 +3215,7 @@ func (r *StoreWithNewFixture) ColumnAddress(col string) (interface{}, error) {
 		return &r.Bar, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in StoreWithNewFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in StoreWithNewFixture: %s", col)
 	}
 }
 
@@ -3053,7 +3229,7 @@ func (r *StoreWithNewFixture) Value(col string) (interface{}, error) {
 		return r.Bar, nil
 
 	default:
-		return nil, fmt.Errorf("invalid column in StoreWithNewFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in StoreWithNewFixture: %s", col)
 	}
 }
 
@@ -3061,14 +3237,14 @@ func (r *StoreWithNewFixture) NewRelationshipRecord(field string) (kallax.Record
 	switch field {
 
 	}
-	return nil, fmt.Errorf("model StoreWithNewFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model StoreWithNewFixture has no relationship %s", field)
 }
 
-func (r *StoreWithNewFixture) SetRelationship(field string, record kallax.Record) error {
+func (r *StoreWithNewFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 
 	}
-	return fmt.Errorf("model StoreWithNewFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model StoreWithNewFixture has no relationship %s", field)
 }
 
 // StoreWithNewFixtureStore is the entity to access the records of the type StoreWithNewFixture
@@ -3267,12 +3443,14 @@ func (q *StoreWithNewFixtureQuery) Where(cond kallax.Condition) *StoreWithNewFix
 // StoreWithNewFixtureResultSet is the set of results returned by a query to the
 // database.
 type StoreWithNewFixtureResultSet struct {
-	*kallax.ResultSet
-	last    *StoreWithNewFixture
-	lastErr error
+	ResultSet kallax.ResultSet
+	last      *StoreWithNewFixture
+	lastErr   error
 }
 
-func NewStoreWithNewFixtureResultSet(rs *kallax.ResultSet) *StoreWithNewFixtureResultSet {
+// NewStoreWithNewFixtureResultSet creates a new result set for rows of the type
+// StoreWithNewFixture.
+func NewStoreWithNewFixtureResultSet(rs kallax.ResultSet) *StoreWithNewFixtureResultSet {
 	return &StoreWithNewFixtureResultSet{ResultSet: rs}
 }
 
@@ -3285,10 +3463,17 @@ func (rs *StoreWithNewFixtureResultSet) Next() bool {
 		return false
 	}
 
-	rs.last = new(StoreWithNewFixture)
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
+	var record kallax.Record
+	record, rs.lastErr = rs.Get()
+	if rs.lastErr == nil {
 		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*StoreWithNewFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *StoreWithNewFixture")
+			rs.last = nil
+		}
 	}
 
 	return true
@@ -3350,6 +3535,16 @@ func (rs *StoreWithNewFixtureResultSet) One() (*StoreWithNewFixture, error) {
 	}
 
 	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *StoreWithNewFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *StoreWithNewFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
 }
 
 type schema struct {
@@ -3440,6 +3635,9 @@ var Schema = &schema{
 			"__eventsfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(EventsFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("checks"),
 			kallax.NewSchemaField("must_fail_before"),
@@ -3456,6 +3654,9 @@ var Schema = &schema{
 			"__eventssavefixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(EventsSaveFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("checks"),
 			kallax.NewSchemaField("must_fail_before"),
@@ -3472,6 +3673,9 @@ var Schema = &schema{
 			"__multikeysortfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(MultiKeySortFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("name"),
 			kallax.NewSchemaField("start"),
@@ -3488,6 +3692,9 @@ var Schema = &schema{
 			"__queryfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(QueryFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 		),
@@ -3500,6 +3707,9 @@ var Schema = &schema{
 			"__resultsetfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(ResultSetFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 		),
@@ -3512,6 +3722,9 @@ var Schema = &schema{
 			"__resultsetinitfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(ResultSetInitFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 		),
@@ -3525,6 +3738,9 @@ var Schema = &schema{
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
 				"Nested": kallax.NewSchemaField("schema_fixture_id"),
+			},
+			func() kallax.Record {
+				return new(SchemaFixture)
 			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("string"),
@@ -3544,6 +3760,9 @@ var Schema = &schema{
 			"__storefixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(StoreFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 		),
@@ -3556,6 +3775,9 @@ var Schema = &schema{
 			"__storewithconstructfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(StoreWithConstructFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 		),
@@ -3568,6 +3790,9 @@ var Schema = &schema{
 			"__storewithnewfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(StoreWithNewFixture)
+			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 			kallax.NewSchemaField("bar"),
