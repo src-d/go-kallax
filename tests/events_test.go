@@ -38,12 +38,12 @@ func (s *CommonSuite) TestEventsUpdateError() {
 	err := store.Insert(doc)
 	doc.Checks = make(map[string]bool, 0)
 
-	doc.MustFailAfter = errors.New("after")
+	doc.MustFailAfter = errors.New("kallax: after")
 	updatedRows, err := store.Update(doc)
 	s.True(updatedRows == 0)
 	s.Equal(doc.MustFailAfter, err)
 
-	doc.MustFailBefore = errors.New("before")
+	doc.MustFailBefore = errors.New("kallax: before")
 	updatedRows, err = store.Update(doc)
 	s.True(updatedRows == 0)
 	s.Equal(doc.MustFailBefore, err)

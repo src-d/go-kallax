@@ -48,7 +48,7 @@ func (m *model) Value(col string) (interface{}, error) {
 	case "age":
 		return m.Age, nil
 	}
-	return nil, fmt.Errorf("column does not exist: %s", col)
+	return nil, fmt.Errorf("kallax: column does not exist: %s", col)
 }
 
 func (m *model) ColumnAddress(col string) (interface{}, error) {
@@ -62,7 +62,7 @@ func (m *model) ColumnAddress(col string) (interface{}, error) {
 	case "age":
 		return &m.Age, nil
 	}
-	return nil, fmt.Errorf("column does not exist: %s", col)
+	return nil, fmt.Errorf("kallax: column does not exist: %s", col)
 }
 
 func (m *model) NewRelationshipRecord(field string) (Record, error) {
@@ -72,7 +72,7 @@ func (m *model) NewRelationshipRecord(field string) (Record, error) {
 	case "rels":
 		return new(rel), nil
 	}
-	return nil, fmt.Errorf("no relationship found for field %s", field)
+	return nil, fmt.Errorf("kallax: no relationship found for field %s", field)
 }
 
 func (m *model) SetRelationship(field string, record interface{}) error {
@@ -80,26 +80,26 @@ func (m *model) SetRelationship(field string, record interface{}) error {
 	case "rel":
 		rel, ok := record.(*rel)
 		if !ok {
-			return fmt.Errorf("can't set relationship %s with a record of type %t", field, record)
+			return fmt.Errorf("kallax: can't set relationship %s with a record of type %t", field, record)
 		}
 		m.Rel = rel
 		return nil
 	case "rels":
 		rels, ok := record.([]Record)
 		if !ok {
-			return fmt.Errorf("can't set relationship %s with value of type %T", field, record)
+			return fmt.Errorf("kallax: can't set relationship %s with value of type %T", field, record)
 		}
 		m.Rels = make([]*rel, len(rels))
 		for i, r := range rels {
 			rel, ok := r.(*rel)
 			if !ok {
-				return fmt.Errorf("can't set element of relationship %s with element of type %T", field, r)
+				return fmt.Errorf("kallax: can't set element of relationship %s with element of type %T", field, r)
 			}
 			m.Rels[i] = rel
 		}
 		return nil
 	}
-	return fmt.Errorf("no relationship found for field %s", field)
+	return fmt.Errorf("kallax: no relationship found for field %s", field)
 }
 
 type rel struct {
@@ -121,7 +121,7 @@ func (m *rel) Value(col string) (interface{}, error) {
 	case "foo":
 		return m.Foo, nil
 	}
-	return nil, fmt.Errorf("column does not exist: %s", col)
+	return nil, fmt.Errorf("kallax: column does not exist: %s", col)
 }
 
 func (m *rel) ColumnAddress(col string) (interface{}, error) {
@@ -133,15 +133,15 @@ func (m *rel) ColumnAddress(col string) (interface{}, error) {
 	case "foo":
 		return &m.Foo, nil
 	}
-	return nil, fmt.Errorf("column does not exist: %s", col)
+	return nil, fmt.Errorf("kallax: column does not exist: %s", col)
 }
 
 func (m *rel) NewRelationshipRecord(field string) (Record, error) {
-	return nil, fmt.Errorf("no relationship found for field %s", field)
+	return nil, fmt.Errorf("kallax: no relationship found for field %s", field)
 }
 
 func (m *rel) SetRelationship(field string, record interface{}) error {
-	return fmt.Errorf("no relationship found for field %s", field)
+	return fmt.Errorf("kallax: no relationship found for field %s", field)
 }
 
 var ModelSchema = &BaseSchema{

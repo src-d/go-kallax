@@ -19,7 +19,7 @@ type User struct {
 
 func newUser(username, email string) (*User, error) {
 	if strings.Contains(email, "@spam.org") {
-		return nil, errors.New("is spam!")
+		return nil, errors.New("kallax: is spam!")
 	}
 	return &User{Username: username, Email: email}, nil
 }
