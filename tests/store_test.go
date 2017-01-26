@@ -1,6 +1,13 @@
 package tests
 
-/*
+import (
+	"testing"
+	"time"
+
+	kallax "github.com/src-d/go-kallax"
+	"github.com/stretchr/testify/suite"
+)
+
 func TestStoreSuite(t *testing.T) {
 	schema := []string{
 		`CREATE TABLE store_construct (
@@ -33,27 +40,12 @@ type StoreSuite struct {
 func (s *StoreSuite) TestStoreNew() {
 	doc := NewStoreFixture()
 	s.False(doc.IsPersisted())
-	s.Len(doc.ID.String(), 24)
+	s.False(doc.ID.IsEmpty())
 }
 
 func (s *StoreSuite) TestStoreQuery() {
 	q := NewStoreFixtureQuery()
 	s.NotNil(q)
-}
-
-func (s *StoreSuite) TestStoreFindAndCount() {
-	store := NewStoreFixtureStore(s.db)
-	s.Nil(store.Insert(NewStoreFixture()))
-	s.Nil(store.Insert(NewStoreFixture()))
-
-	query := NewStoreFixtureQuery()
-	rs, err := store.Find(query)
-	s.NotNil(rs)
-	s.Nil(err)
-
-	count, err := store.Count(query)
-	s.Nil(err)
-	s.Equal(2, count)
 }
 
 func (s *StoreSuite) TestStoreMustFind() {
@@ -66,7 +58,6 @@ func (s *StoreSuite) TestStoreMustFind() {
 		rs := store.MustFind(query)
 		s.NotNil(rs)
 	})
-
 }
 
 func (s *StoreSuite) TestStoreFailingOnNew() {
@@ -74,30 +65,20 @@ func (s *StoreSuite) TestStoreFailingOnNew() {
 	s.Nil(doc)
 }
 
-func (s *StoreSuite) TestStoreFindOne() {
+func (s *StoreSuite) TestStoreFindOneReturnValues() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 	s.Nil(store.Insert(NewStoreWithConstructFixture("bar")))
 
-	doc, err := store.FindOne(NewStoreWithConstructFixtureQuery())
-	s.Nil(err)
-	s.NotNil(doc)
-	if err != nil {
-		s.Nil(err, "This testcase was aborted")
-		return
-	}
+	notFoundQuery := NewStoreWithConstructFixtureQuery()
+	notFoundQuery.Where(kallax.Eq(Schema.ResultSetFixture.ID, kallax.NewID()))
+	doc, err := store.FindOne(notFoundQuery)
+	s.resultOrError(doc, err)
 
-	s.Equal("bar", doc.Foo)
+	doc, err = store.FindOne(NewStoreWithConstructFixtureQuery())
+	s.resultOrError(doc, err)
 }
 
-func (s *StoreSuite) TestStoreMustFindOne() {
-	store := NewStoreWithConstructFixtureStore(s.db)
-	s.Nil(store.Insert(NewStoreWithConstructFixture("foo")))
-	s.NotPanics(func() {
-		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	})
-}
-
-func (s *StoreSuite) TestStoreInsertUpdate() {
+func (s *StoreSuite) TestStoreInsertUpdateMustFind() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 
 	doc := NewStoreWithConstructFixture("foo")
@@ -105,7 +86,7 @@ func (s *StoreSuite) TestStoreInsertUpdate() {
 	s.Nil(err)
 	s.NotPanics(func() {
 		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	})
+	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
 
 	doc.Foo = "bar"
 	updatedRows, err := store.Update(doc)
@@ -113,7 +94,7 @@ func (s *StoreSuite) TestStoreInsertUpdate() {
 	s.True(updatedRows > 0)
 	s.NotPanics(func() {
 		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	})
+	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
 }
 
 func (s *StoreSuite) TestStoreSave() {
@@ -126,7 +107,7 @@ func (s *StoreSuite) TestStoreSave() {
 	s.True(doc.IsPersisted())
 	s.NotPanics(func() {
 		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	})
+	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
 
 	doc.Foo = "bar"
 	updated, err = store.Save(doc)
@@ -134,23 +115,7 @@ func (s *StoreSuite) TestStoreSave() {
 	s.True(updated)
 	s.NotPanics(func() {
 		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	})
-}
-
-func (s *StoreSuite) TestStoreCustomNew() {
-	store := NewStoreWithNewFixtureStore(s.db)
-
-	doc := store.New("foo", "bar")
-	updated, err := store.Save(doc)
-	s.Nil(err)
-	s.False(updated)
-	s.False(doc.IsPersisted())
-	s.NotPanics(func() {
-		s.Equal("foo", store.MustFindOne(NewStoreWithNewFixtureQuery()).Foo)
-	})
-	s.NotPanics(func() {
-		s.Equal("bar", store.MustFindOne(NewStoreWithNewFixtureQuery()).Bar)
-	})
+	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
 }
 
 func (s *StoreSuite) TestMultiKeySort() {
@@ -194,18 +159,46 @@ func (s *StoreSuite) TestMultiKeySort() {
 
 	set, err := store.Find(q)
 	s.Nil(err)
-
-	if err != nil {
-		s.Nil(err, "This testcase was aborted")
+	if set == nil {
+		s.Nil(err, "This testcase was aborted. ResultSet should not be nil")
 		return
 	}
 
 	documents, err := set.All()
 	s.Nil(err)
-
 	s.Len(documents, 4)
+	success := true
+	for _, doc := range documents {
+		if !s.NotNil(doc, "TODO: https://github.com/src-d/go-kallax/issues/49") {
+			success = false
+		}
+	}
+
+	if !success {
+		s.Fail(
+			`Testcase aborted. All retrieved Documents should be not-nil
+			TODO: https://github.com/src-d/go-kallax/issues/49`,
+		)
+		return
+	}
+
 	s.Equal("2015-2013", documents[0].Name)
 	s.Equal("2015-2012", documents[1].Name)
 	s.Equal("2002-2012", documents[2].Name)
 	s.Equal("2001-2012", documents[3].Name)
-}*/
+}
+
+// TODO: https://github.com/src-d/go-kallax/issues/49
+func (s *StoreSuite) TestFindOne() {
+	store := NewStoreWithConstructFixtureStore(s.db)
+
+	docInserted := NewStoreWithConstructFixture("bar")
+	s.Nil(store.Insert(docInserted))
+
+	query := NewStoreWithConstructFixtureQuery()
+	docFound, err := store.FindOne(query)
+	s.resultOrError(docFound, err)
+	if s.NotNil(docFound, "TODO: https://github.com/src-d/go-kallax/issues/49") {
+		s.Equal(docInserted.Foo, docFound.Foo)
+	}
+}

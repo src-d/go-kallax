@@ -4,11 +4,11 @@ import "github.com/src-d/go-kallax"
 
 type SchemaFixture struct {
 	kallax.Model `table:"schema"`
-
-	String string
-	Int    int
-	Nested *SchemaFixture
-	Inline struct {
+	ShouldIgnore string `kallax:"-"`
+	String       string
+	Int          int
+	Nested       *SchemaFixture
+	Inline       struct {
 		Inline string
 	} `kallax:",inline"`
 	MapOfString    map[string]string

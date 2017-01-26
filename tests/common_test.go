@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -83,9 +84,30 @@ func (s *BaseTestSuite) QueryFails(queries ...string) bool {
 
 func (s *BaseTestSuite) resetSchema() bool {
 	return s.QuerySucceed(
-		fmt.Sprintf(`DROP SCHEMA %s CASCADE;`, database),
+		fmt.Sprintf(`DROP SCHEMA IF EXISTS %s CASCADE;`, database),
 		fmt.Sprintf(`CREATE SCHEMA %s;`, database),
 	)
+}
+
+func (s *BaseTestSuite) resultOrError(res interface{}, err error) bool {
+	if !reflect.ValueOf(res).Elem().IsValid() {
+		res = nil
+	}
+
+	if err == nil && res == nil {
+		s.Fail(
+			`FindOne should return an error or a document, but nothing was returned
+			TODO: https://github.com/src-d/go-kallax/issues/49`,
+		)
+		return false
+	}
+
+	if err != nil && res != nil {
+		s.Fail("FindOne should return only an error or a document, but it was returned both")
+		return false
+	}
+
+	return true
 }
 
 func envOrDefault(key string, def string) string {

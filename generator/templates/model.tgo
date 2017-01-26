@@ -26,15 +26,20 @@ func (r *{{.Name}}) Value(col string) (interface{}, error) {
 }
 
 func (r *{{.Name}}) NewRelationshipRecord(field string) (kallax.Record, error) {
+        {{if .Relationships -}}
         switch field {
         {{range .Relationships}}case "{{.Name}}":
                 return new({{$.GenTypeName .}}), nil
         {{end}}
         }
         return nil, fmt.Errorf("kallax: model {{.Name}} has no relationship %s", field)
+        {{- else -}}
+        return nil, fmt.Errorf("kallax: model {{.Name}} has no relationships")
+        {{- end}}
 }
 
 func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
+        {{if .Relationships -}}
         switch field {
         {{range .Relationships}}{{if not .IsOneToManyRelationship}}case "{{.Name}}":
                 val, ok := rel.(*{{$.GenTypeName .}})
@@ -64,6 +69,9 @@ func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
         {{end}}{{end}}
         }
         return fmt.Errorf("kallax: model {{.Name}} has no relationship %s", field)
+        {{- else -}}
+        return fmt.Errorf("kallax: model {{.Name}} has no relationships")
+        {{- end}}
 }
 
 // {{.StoreName}} is the entity to access the records of the type {{.Name}}
@@ -125,6 +133,7 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
         {{end}}
         {{if .Events.Has "BeforeInsert"}}
         if err := record.BeforeInsert(); err != nil {
+                return err
         }
         {{end}}
         {{if .HasRelationships}}
