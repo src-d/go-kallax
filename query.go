@@ -80,8 +80,6 @@ type BaseQuery struct {
 	limit         uint64
 }
 
-var _ Query = (*BaseQuery)(nil)
-
 // NewBaseQuery creates a new BaseQuery for querying the given table
 // and the given selected columns.
 func NewBaseQuery(schema Schema) *BaseQuery {
@@ -147,15 +145,32 @@ func (q *BaseQuery) selectedColumns() []SchemaField {
 	return result
 }
 
-// AddRelation makes the query join the relationship schema and retrieve its
-// fields as well.
-func (q *BaseQuery) AddRelation(schema Schema, field string) error {
+// AddRelation adds a relationship if the given to the query, which is present
+// in the given field of the query base schema. A condition to filter can also
+// be passed in the case of one to many relationships.
+func (q *BaseQuery) AddRelation(schema Schema, field string, typ RelationshipType, filter Condition) error {
+	if typ == ManyToMany {
+		return fmt.Errorf("kallax: many to many relationship are not supported, field: %s", field)
+	}
+
 	fk, ok := q.schema.ForeignKey(field)
 	if !ok {
-		return fmt.Errorf("cannot find foreign key to join tables %s and %s", q.schema.Table(), schema.Table())
+		return fmt.Errorf(
+			"kallax: cannot find foreign key to join tables %s and %s",
+			q.schema.Table(), schema.Table(),
+		)
 	}
 	schema = schema.WithAlias(field)
 
+	if typ == OneToOne {
+		q.join(schema, fk)
+	}
+
+	q.relationships = append(q.relationships, Relationship{typ, field, schema, filter})
+	return nil
+}
+
+func (q *BaseQuery) join(schema Schema, fk SchemaField) {
 	q.builder = q.builder.LeftJoin(fmt.Sprintf(
 		"%s %s ON (%s = %s)",
 		schema.Table(),
@@ -170,8 +185,6 @@ func (q *BaseQuery) AddRelation(schema Schema, field string) error {
 			col.QualifiedName(schema),
 		)
 	}
-	q.relationships = append(q.relationships, Relationship{field, schema})
-	return nil
 }
 
 // Order adds the given order clauses to the list of columns to order the

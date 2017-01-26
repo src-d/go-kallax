@@ -60,7 +60,7 @@ func (p *Processor) Do() (*Package, error) {
 func (p *Processor) getSourceFiles() ([]string, error) {
 	pkg, err := build.Default.ImportDir(p.Path, 0)
 	if err != nil {
-		return nil, fmt.Errorf("cannot process directory %s: %s", p.Path, err)
+		return nil, fmt.Errorf("kallax: cannot process directory %s: %s", p.Path, err)
 	}
 
 	var files []string
@@ -68,7 +68,7 @@ func (p *Processor) getSourceFiles() ([]string, error) {
 	files = append(files, pkg.CgoFiles...)
 
 	if len(files) == 0 {
-		return nil, fmt.Errorf("%s: no buildable Go files", p.Path)
+		return nil, fmt.Errorf("kallax: %s: no buildable Go files", p.Path)
 	}
 
 	return joinDirectory(p.Path, p.removeIgnoredFiles(files)), nil
@@ -93,7 +93,7 @@ func (p *Processor) parseSourceFiles(filenames []string) (*types.Package, error)
 	for _, filename := range filenames {
 		file, err := parser.ParseFile(fs, filename, nil, 0)
 		if err != nil {
-			return nil, fmt.Errorf("parsing package: %s: %s", filename, err)
+			return nil, fmt.Errorf("kallax: parsing package: %s: %s", filename, err)
 		}
 
 		files = append(files, file)

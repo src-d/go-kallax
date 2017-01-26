@@ -91,8 +91,8 @@ type Relationable interface {
 	// NewRelationshipRecord returns a new Record for the relationship at the
 	// given field.
 	NewRelationshipRecord(string) (Record, error)
-	// SetRelationship sets the relationship record at the given field.
-	SetRelationship(string, Record) error
+	// SetRelationship sets the relationship value at the given field.
+	SetRelationship(string, interface{}) error
 }
 
 // Valuer must be implemented by those object that expose their properties

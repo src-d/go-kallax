@@ -196,7 +196,7 @@ func (m *Model) String() string {
 // ErrEventConflict is returned whenever the model implements a Save event,
 // but also implements an Update or Insert event of the same kind.
 var ErrEventConflict = errors.New(
-	"Event conflict a *Save and a *Update or *Insert are present",
+	"kallax: Event conflict a *Save and a *Update or *Insert are present",
 )
 
 // repeatedFields returns the list of repeated fields found in the model.
@@ -228,11 +228,11 @@ func (m *Model) checkFieldOccurrences(fields []*Field, occurrences map[string]ui
 // conflicting events.
 func (m *Model) Validate() error {
 	if fields := m.repeatedFields(); len(fields) > 0 {
-		return fmt.Errorf("the following fields are repeated: %v", fields)
+		return fmt.Errorf("kallax: the following fields are repeated: %v", fields)
 	}
 
 	if m.Table == "" {
-		return fmt.Errorf("model %s has no table", m.Name)
+		return fmt.Errorf("kallax: model %s has no table", m.Name)
 	}
 
 	if m.Events.Has(BeforeSave) && m.Events.Has(BeforeInsert) {
@@ -353,10 +353,16 @@ func (m *Model) CtorRetVars() string {
 // Relationships returns the fields of a model that are relationships.
 // NOTE: right now only 1:1 relationships are supported.
 func (m *Model) Relationships() []*Field {
+	return relationshipsOnFields(m.Fields)
+}
+
+func relationshipsOnFields(fields []*Field) []*Field {
 	var result []*Field
-	for _, f := range m.Fields {
+	for _, f := range fields {
 		if f.Kind == Relationship {
 			result = append(result, f)
+		} else if f.Inline() {
+			result = append(result, relationshipsOnFields(f.Fields)...)
 		}
 	}
 	return result
@@ -442,6 +448,9 @@ func (f *Field) ColumnName() string {
 	return name
 }
 
+// ForeignKey returns the name of the foreign keys as specified in the struct
+// tag `fk` or the default foreign key, which is the name of the relationship
+// type in lower snake case with "_id" appended.
 func (f *Field) ForeignKey() string {
 	if f.Kind != Relationship {
 		return ""
@@ -453,6 +462,12 @@ func (f *Field) ForeignKey() string {
 	}
 
 	return fk
+}
+
+// IsOneToManyRelationship returns whether the field is a one to many
+// relationship.
+func (f *Field) IsOneToManyRelationship() bool {
+	return f.Kind == Relationship && strings.HasPrefix(f.Type, "[]")
 }
 
 func foreignKeyForType(typ string) string {

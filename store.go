@@ -11,22 +11,22 @@ import (
 
 var (
 	// ErrNonNewDocument non-new documents cannot be inserted
-	ErrNonNewDocument = errors.New("cannot insert a non new document")
+	ErrNonNewDocument = errors.New("kallax: cannot insert a non new document")
 	// ErrNewDocument a new documents cannot be updated
-	ErrNewDocument = errors.New("cannot updated a new document")
+	ErrNewDocument = errors.New("kallax: cannot updated a new document")
 	// ErrEmptyID a document without ID cannot be used with Save method
-	ErrEmptyID = errors.New("a record without id is not allowed")
+	ErrEmptyID = errors.New("kallax: a record without id is not allowed")
 	// ErrNoRowUpdate is returned when an update operation does not affect any
 	// rows, meaning the model being updated does not exist.
-	ErrNoRowUpdate = errors.New("update affected no rows")
+	ErrNoRowUpdate = errors.New("kallax: update affected no rows")
 	// ErrNotWritable is returned when a record is not writable.
-	ErrNotWritable = errors.New("record is not writable")
+	ErrNotWritable = errors.New("kallax: record is not writable")
 	// ErrStop can be returned inside a ForEach callback to stop iteration.
-	ErrStop = errors.New("stopped ForEach execution")
+	ErrStop = errors.New("kallax: stopped ForEach execution")
 	// ErrTransactionInsideTransaction is returned when a transaction is run
 	// inside a transaction.
-	ErrTransactionInsideTransaction = errors.New("can't start a transaction inside a transaction")
-	ErrInvalidTxCallback            = errors.New("invalid transaction callback given")
+	ErrTransactionInsideTransaction = errors.New("kallax: can't start a transaction inside a transaction")
+	ErrInvalidTxCallback            = errors.New("kallax: invalid transaction callback given")
 )
 
 // Store is a structure capable of retrieving records from a concrete table in
@@ -188,7 +188,7 @@ func (s *Store) Delete(record Record) error {
 // result set with the results.
 // WARNING: A result set created from a raw query can only be scanned using the
 // RawScan method of ResultSet, instead of Scan.
-func (s *Store) RawQuery(sql string, params ...interface{}) (*ResultSet, error) {
+func (s *Store) RawQuery(sql string, params ...interface{}) (ResultSet, error) {
 	rows, err := s.db.Query(sql, params...)
 	if err != nil {
 		return nil, err
@@ -209,8 +209,25 @@ func (s *Store) RawExec(sql string, params ...interface{}) (int64, error) {
 }
 
 // Find performs a query and returns a result set with the results.
-func (s *Store) Find(q Query) (*ResultSet, error) {
+func (s *Store) Find(q Query) (ResultSet, error) {
+	rels := q.getRelationships()
+	if containsRelationshipOfType(rels, ManyToMany) {
+		return nil, fmt.Errorf("kallax: many to many relationships are not supported")
+	}
+
+	if containsRelationshipOfType(rels, OneToMany) {
+		return NewBatchingResultSet(newBatchQueryRunner(s.schema, s.proxy, q)), nil
+	}
+
 	columns, builder := q.compile()
+	if offset := q.GetOffset(); offset > 0 {
+		builder = builder.Offset(offset)
+	}
+
+	if limit := q.GetLimit(); limit > 0 {
+		builder = builder.Limit(limit)
+	}
+
 	rows, err := builder.RunWith(s.db).Query()
 	if err != nil {
 		return nil, err
@@ -226,7 +243,7 @@ func (s *Store) Find(q Query) (*ResultSet, error) {
 
 // MustFind performs a query and returns a result set with the results.
 // It panics if the query fails.
-func (s *Store) MustFind(q Query) *ResultSet {
+func (s *Store) MustFind(q Query) ResultSet {
 	rs, err := s.Find(q)
 	if err != nil {
 		panic(err)
@@ -246,7 +263,7 @@ func (s *Store) Reload(record Record) error {
 	q.Limit(1)
 	columns, builder := q.compile()
 
-	rows, err := builder.RunWith(s.db).Query()
+	rows, err := builder.RunWith(s.proxy).Query()
 	if err != nil {
 		return err
 	}
@@ -264,7 +281,7 @@ func (s *Store) Count(q Query) (count int64, err error) {
 	_, queryBuilder := q.compile()
 	builder := builder.Set(queryBuilder, "Columns", nil).(squirrel.SelectBuilder)
 	err = builder.Column(fmt.Sprintf("COUNT(%s)", s.schema.ID())).
-		RunWith(s.db).
+		RunWith(s.proxy).
 		QueryRow().
 		Scan(&count)
 	return

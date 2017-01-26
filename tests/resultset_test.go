@@ -194,7 +194,7 @@ func (s *ResulsetSuite) TestResultSetForEachError() {
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 	s.Nil(store.Insert(NewResultSetFixture("foo")))
 
-	fail := errors.New("foo")
+	fail := errors.New("kallax: foo")
 
 	s.NotPanics(func() {
 		rs := store.MustFind(NewResultSetFixtureQuery())

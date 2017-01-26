@@ -2,12 +2,14 @@
 // {{.ResultSetName}} is the set of results returned by a query to the
 // database.
 type {{.ResultSetName}} struct {
-    *kallax.ResultSet
-    last    *{{.Name}}
-    lastErr error
+        ResultSet kallax.ResultSet
+        last *{{.Name}}
+        lastErr error
 }
 
-func New{{.ResultSetName}}(rs *kallax.ResultSet) *{{.ResultSetName}} {
+// New{{.ResultSetName}} creates a new result set for rows of the type 
+// {{.Name}}.
+func New{{.ResultSetName}}(rs kallax.ResultSet) *{{.ResultSetName}} {
         return &{{.ResultSetName}}{ResultSet: rs}
 }
 
@@ -20,11 +22,18 @@ func (rs *{{.ResultSetName}}) Next() bool {
 		return false
 	}
 
-	rs.last = new({{.Name}})
-	rs.lastErr = rs.Scan(rs.last)
-	if rs.lastErr != nil {
-		rs.last = nil
-	}
+        var record kallax.Record
+        record, rs.lastErr = rs.Get()
+        if rs.lastErr == nil {
+                rs.last = nil
+        } else {
+                var ok bool
+                rs.last, ok = record.(*{{.Name}})
+                if !ok {
+                        rs.lastErr = fmt.Errorf("kallax: unable to convert record to *{{.Name}}")
+                        rs.last = nil
+                }
+        }
 
 	return true
 }
@@ -87,3 +96,12 @@ func (rs *{{.ResultSetName}}) One() (*{{.Name}}, error) {
 	return record, nil
 }
 
+// Err returns the last error occurred.
+func (rs *{{.ResultSetName}}) Err() error {
+        return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *{{.ResultSetName}}) Close() error {
+        return rs.ResultSet.Close()
+}
