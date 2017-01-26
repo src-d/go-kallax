@@ -193,35 +193,60 @@ func (m *Model) String() string {
 	return fmt.Sprintf("%q [%d Field(s)] [Events: %s]", m.Name, len(m.Fields), events)
 }
 
+type occurrences map[string]uint
+
+func (o occurrences) inc(name string) {
+	o[name]++
+}
+
+func (o occurrences) repeated() []string {
+	var result []string
+	for v, times := range o {
+		if times > 1 {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+// repeatedFields returns the list of repeated fields found in the model.
+func (m *Model) repeatedFields() []string {
+	var occ = make(occurrences)
+	m.checkFieldOccurrences(m.Fields, occ)
+	return occ.repeated()
+}
+
+func (m *Model) checkFieldOccurrences(fields []*Field, occurrences occurrences) {
+	for _, f := range fields {
+		if f.Inline() {
+			m.checkFieldOccurrences(f.Fields, occurrences)
+		} else {
+			occurrences.inc(f.Name)
+		}
+	}
+}
+
+func (m *Model) repeatedCols() []string {
+	columns := make(occurrences)
+	m.checkFieldColumns(m.Fields, columns)
+	return columns.repeated()
+}
+
+func (m *Model) checkFieldColumns(fields []*Field, cols occurrences) {
+	for _, f := range fields {
+		if f.Inline() {
+			m.checkFieldColumns(f.Fields, cols)
+		} else if f.Kind != Relationship {
+			cols.inc(f.ColumnName())
+		}
+	}
+}
+
 // ErrEventConflict is returned whenever the model implements a Save event,
 // but also implements an Update or Insert event of the same kind.
 var ErrEventConflict = errors.New(
 	"kallax: Event conflict a *Save and a *Update or *Insert are present",
 )
-
-// repeatedFields returns the list of repeated fields found in the model.
-func (m *Model) repeatedFields() []string {
-	var occ = make(map[string]uint)
-	m.checkFieldOccurrences(m.Fields, occ)
-
-	var names []string
-	for name, times := range occ {
-		if times > 1 {
-			names = append(names, name)
-		}
-	}
-	return names
-}
-
-func (m *Model) checkFieldOccurrences(fields []*Field, occurrences map[string]uint) {
-	for _, f := range fields {
-		if f.Inline() {
-			m.checkFieldOccurrences(f.Fields, occurrences)
-		} else {
-			occurrences[f.Name]++
-		}
-	}
-}
 
 // Validate returns an error if the model is not valid. To be valid, a model
 // needs a non-empty table name, a non-repeated set of fields, and no
@@ -229,6 +254,10 @@ func (m *Model) checkFieldOccurrences(fields []*Field, occurrences map[string]ui
 func (m *Model) Validate() error {
 	if fields := m.repeatedFields(); len(fields) > 0 {
 		return fmt.Errorf("kallax: the following fields are repeated: %v", fields)
+	}
+
+	if cols := m.repeatedCols(); len(cols) > 0 {
+		return fmt.Errorf("kallax: the following column names are repeated: %v", cols)
 	}
 
 	if m.Table == "" {
@@ -350,10 +379,22 @@ func (m *Model) CtorRetVars() string {
 	return strings.Join(ret, ", ")
 }
 
+// SetFields sets all the children fields and their model to the current model.
+func (m *Model) SetFields(fields []*Field) {
+	for _, f := range fields {
+		f.Model = m
+		m.Fields = append(m.Fields, f)
+	}
+}
+
 // Relationships returns the fields of a model that are relationships.
-// NOTE: right now only 1:1 relationships are supported.
 func (m *Model) Relationships() []*Field {
 	return relationshipsOnFields(m.Fields)
+}
+
+// HasRelationships returns whether the model has relationships or not.
+func (m *Model) HasRelationships() bool {
+	return len(m.Relationships()) > 0
 }
 
 func relationshipsOnFields(fields []*Field) []*Field {
@@ -385,6 +426,8 @@ type Field struct {
 	Fields []*Field
 	// Parent is a reference to the parent field.
 	Parent *Field
+	// Model is the reference to the model containing this field.
+	Model *Model
 	// IsPtr reports whether the field is a pointer type or not.
 	IsPtr bool
 	// IsJSON reports whether the field has to be converted to JSON.
@@ -427,6 +470,7 @@ func NewField(n, t string, tag reflect.StructTag) *Field {
 func (f *Field) SetFields(sf []*Field) {
 	for _, field := range sf {
 		field.Parent = f
+		field.Model = f.Model
 		f.Fields = append(f.Fields, field)
 	}
 }
@@ -456,12 +500,27 @@ func (f *Field) ForeignKey() string {
 		return ""
 	}
 
-	fk := f.Tag.Get("fk")
+	fk := strings.Split(f.Tag.Get("fk"), ",")[0]
 	if fk == "" {
-		fk = foreignKeyForType(f.Type)
+		fk = foreignKeyForModel(f.Model.Name)
 	}
 
 	return fk
+}
+
+// IsInverse returns whether the field is an inverse relationship.
+func (f *Field) IsInverse() bool {
+	if f.Kind != Relationship {
+		return false
+	}
+
+	for _, part := range strings.Split(f.Tag.Get("fk"), ",") {
+		if part == "inverse" {
+			return true
+		}
+	}
+
+	return false
 }
 
 // IsOneToManyRelationship returns whether the field is a one to many
@@ -470,10 +529,8 @@ func (f *Field) IsOneToManyRelationship() bool {
 	return f.Kind == Relationship && strings.HasPrefix(f.Type, "[]")
 }
 
-func foreignKeyForType(typ string) string {
-	parts := strings.Split(typ, ".")
-	typ = parts[len(parts)-1]
-	return toLowerSnakeCase(typ) + "_id"
+func foreignKeyForModel(model string) string {
+	return toLowerSnakeCase(model) + "_id"
 }
 
 // Inline reports whether the field is inline and its children will be in the

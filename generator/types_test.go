@@ -3,8 +3,10 @@ package generator
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -206,6 +208,32 @@ func TestModelValidate(t *testing.T) {
 
 	m.Table = ""
 	require.NotNil(m.Validate(), "should return error")
+}
+
+func TestFieldForeignKey(t *testing.T) {
+	assert := assert.New(t)
+	m := &Model{Name: "Foo", Table: "bar", Type: "foo.Foo"}
+
+	cases := []struct {
+		tag      string
+		inverse  bool
+		expected string
+	}{
+		{`fk:""`, false, "foo_id"},
+		{`fk:"foo_bar_baz"`, false, "foo_bar_baz"},
+		{`fk:",inverse"`, true, "foo_id"},
+		{`fk:"foos,inverse"`, true, "foos"},
+		{``, false, "foo_id"},
+	}
+
+	for _, c := range cases {
+		f := NewField("", "", reflect.StructTag(c.tag))
+		f.Kind = Relationship
+		f.Model = m
+
+		assert.Equal(c.expected, f.ForeignKey(), "foreign key with tag: %s", c.tag)
+		assert.Equal(c.inverse, f.IsInverse(), "is inverse: %s", c.tag)
+	}
 }
 
 func TestModelValidateEvents(t *testing.T) {

@@ -8,9 +8,10 @@ import (
 
 // Model is the base type of the items that are stored
 type Model struct {
-	ID        ID
-	persisted bool
-	writable  bool
+	ID             ID
+	virtualColumns []VirtualColumn
+	persisted      bool
+	writable       bool
 }
 
 // NewModel creates and return a new Model
@@ -43,15 +44,30 @@ func (m *Model) setWritable(w bool) {
 }
 
 // GetID returns the ID.
-func (i *Model) GetID() ID {
-	return i.ID
+func (m *Model) GetID() ID {
+	return m.ID
 }
 
 // SetID overrides the ID.
 // The ID should not be modified once it has been set and stored in the DB
 // WARNING: Not to be used by final users!
-func (i *Model) SetID(id ID) {
-	i.ID = id
+func (m *Model) SetID(id ID) {
+	m.ID = id
+}
+
+// VirtualColumns returns all the virtual columns in the model.
+func (m *Model) VirtualColumns() []VirtualColumn {
+	return m.virtualColumns
+}
+
+// ClearVirtualColumns clears all the previous virtual columns.
+func (m *Model) ClearVirtualColumns() {
+	m.virtualColumns = nil
+}
+
+// AddVirtualColumn adds a new virtual column with the given name and value.
+func (m *Model) AddVirtualColumn(name string, v interface{}) {
+	m.virtualColumns = append(m.virtualColumns, VirtualColumn{name, v})
 }
 
 // Identifiable must be implemented by those values that can be identified by an ID
@@ -103,6 +119,24 @@ type Valuer interface {
 	Value(string) (interface{}, error)
 }
 
+// VirtualColumn is a column that even though it's not present in the model
+// exists in the table. Foreign Keys are VirtualColumns, for example.
+type VirtualColumn struct {
+	Name  string
+	Value interface{}
+}
+
+// VirtualColumnContainer contains a collection of virtual columns and
+// manages them.
+type VirtualColumnContainer interface {
+	// ClearVirtualColumns removes all virtual columns.
+	ClearVirtualColumns()
+	// AddVirtualColumn adds a new virtual column with the given name and value
+	AddVirtualColumn(string, interface{})
+	// VirtualColumns returns all the virtual columns.
+	VirtualColumns() []VirtualColumn
+}
+
 // RecordValues returns the values of a record at the given columns in the same
 // order as the columns.
 func RecordValues(record Valuer, columns ...string) ([]interface{}, error) {
@@ -125,6 +159,7 @@ type Record interface {
 	Relationable
 	ColumnAddresser
 	Valuer
+	VirtualColumnContainer
 }
 
 // ID is the Kallax identifier type.

@@ -11,6 +11,8 @@ type Query interface {
 	compile() ([]string, squirrel.SelectBuilder)
 	getRelationships() []Relationship
 	isReadOnly() bool
+	// Schema returns the schema of the query model.
+	Schema() Schema
 	// GetOffset returns the number of skipped rows in the query.
 	GetOffset() uint64
 	// GetLimit returns the max number of rows retrieved by the query.
@@ -94,6 +96,10 @@ func NewBaseQuery(schema Schema) *BaseQuery {
 	}
 }
 
+func (q *BaseQuery) Schema() Schema {
+	return q.schema
+}
+
 func (q *BaseQuery) isReadOnly() bool {
 	return q.selectChanged
 }
@@ -170,13 +176,20 @@ func (q *BaseQuery) AddRelation(schema Schema, field string, typ RelationshipTyp
 	return nil
 }
 
-func (q *BaseQuery) join(schema Schema, fk SchemaField) {
+func (q *BaseQuery) join(schema Schema, fk *ForeignKey) {
+	fkCol := fk.QualifiedName(schema)
+	idCol := q.schema.ID().QualifiedName(q.schema)
+	if fk.Inverse {
+		fkCol = schema.ID().QualifiedName(schema)
+		idCol = fk.QualifiedName(q.schema)
+	}
+
 	q.builder = q.builder.LeftJoin(fmt.Sprintf(
 		"%s %s ON (%s = %s)",
 		schema.Table(),
 		schema.Alias(),
-		fk.QualifiedName(schema),
-		q.schema.ID().QualifiedName(q.schema),
+		fkCol,
+		idCol,
 	))
 
 	for _, col := range schema.Columns() {

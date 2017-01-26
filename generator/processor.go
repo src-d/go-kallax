@@ -174,10 +174,12 @@ func (p *Processor) processModel(name string, s *types.Struct, t *types.Named) *
 	m.Events = p.findEvents(t)
 
 	var base int
-	if base, m.Fields = p.processFields(s, nil, true); base == -1 {
+	var fields []*Field
+	if base, fields = p.processFields(s, nil, true); base == -1 {
 		return nil
 	}
 
+	m.SetFields(fields)
 	p.processBaseField(m, m.Fields[base])
 	return m
 }

@@ -14,7 +14,7 @@ type Schema interface {
 	// Columns returns the list of columns in the schema.
 	Columns() []SchemaField
 	// ForeignKey returns the name of the foreign key of the given model field.
-	ForeignKey(string) (SchemaField, bool)
+	ForeignKey(string) (*ForeignKey, bool)
 	// WithAlias returns a new schema with the given string added to the
 	// default alias.
 	// Calling WithAlias on a schema returned by WithAlias not return a
@@ -54,7 +54,7 @@ func (s *BaseSchema) Alias() string          { return s.alias }
 func (s *BaseSchema) Table() string          { return s.table }
 func (s *BaseSchema) ID() SchemaField        { return s.id }
 func (s *BaseSchema) Columns() []SchemaField { return s.columns }
-func (s *BaseSchema) ForeignKey(field string) (SchemaField, bool) {
+func (s *BaseSchema) ForeignKey(field string) (*ForeignKey, bool) {
 	k, ok := s.foreignKeys[field]
 	return k, ok
 }
@@ -75,7 +75,7 @@ func (s *aliasSchema) Alias() string {
 }
 
 // ForeignKeys is a mapping between relationships and their foreign key field.
-type ForeignKeys map[string]SchemaField
+type ForeignKeys map[string]*ForeignKey
 
 // SchemaField is a named field in the table schema.
 type SchemaField interface {
@@ -109,6 +109,18 @@ func (f *BaseSchemaField) QualifiedName(schema Schema) string {
 		return fmt.Sprintf("%s.%s", alias, f.name)
 	}
 	return f.name
+}
+
+// ForeignKey contains the schema field of the foreign key and if it is an
+// inverse foreign key or not.
+type ForeignKey struct {
+	*BaseSchemaField
+	Inverse bool
+}
+
+// NewForeignKey creates a new Foreign key with the given name.
+func NewForeignKey(name string, inverse bool) *ForeignKey {
+	return &ForeignKey{&BaseSchemaField{name}, inverse}
 }
 
 // Relationship is a relationship with its schema and the field of te relation

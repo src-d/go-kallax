@@ -32,43 +32,34 @@ var (
 // Store is a structure capable of retrieving records from a concrete table in
 // the database.
 type Store struct {
-	db       *sql.DB
-	proxy    squirrel.DBProxy
-	schema   Schema
-	inserter squirrel.InsertBuilder
-	updater  squirrel.UpdateBuilder
-	deleter  squirrel.DeleteBuilder
+	builder squirrel.StatementBuilderType
+	db      *sql.DB
+	proxy   squirrel.DBProxy
 }
 
 // NewStore returns a new Store instance.
-func NewStore(db *sql.DB, schema Schema) *Store {
-	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+func NewStore(db *sql.DB) *Store {
 	proxy := squirrel.NewStmtCacher(db)
+	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar).RunWith(proxy)
 	return &Store{
-		db:       db,
-		proxy:    proxy,
-		schema:   schema,
-		inserter: builder.Insert(schema.Table()).RunWith(proxy),
-		updater:  builder.Update(schema.Table()).RunWith(proxy),
-		deleter:  builder.Delete(schema.Table()).RunWith(proxy),
+		db:      db,
+		proxy:   proxy,
+		builder: builder,
 	}
 }
 
-func newStoreWithTransaction(tx *sql.Tx, schema Schema) *Store {
-	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+func newStoreWithTransaction(tx *sql.Tx) *Store {
 	proxy := squirrel.NewStmtCacher(tx)
+	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar).RunWith(proxy)
 	return &Store{
-		proxy:    proxy,
-		schema:   schema,
-		inserter: builder.Insert(schema.Table()).RunWith(proxy),
-		updater:  builder.Update(schema.Table()).RunWith(proxy),
-		deleter:  builder.Delete(schema.Table()).RunWith(proxy),
+		proxy:   proxy,
+		builder: builder,
 	}
 }
 
 // Insert insert the given record in the table, returns error if no-new
 // record is given. The record id is set if it's empty.
-func (s *Store) Insert(record Record) error {
+func (s *Store) Insert(schema Schema, record Record) error {
 	if record.IsPersisted() {
 		return ErrNonNewDocument
 	}
@@ -77,13 +68,19 @@ func (s *Store) Insert(record Record) error {
 		record.SetID(NewID())
 	}
 
-	cols := ColumnNames(s.schema.Columns())
+	cols := ColumnNames(schema.Columns())
 	values, err := RecordValues(record, cols...)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.inserter.
+	for _, col := range record.VirtualColumns() {
+		cols = append(cols, col.Name)
+		values = append(values, col.Value)
+	}
+
+	_, err = s.builder.
+		Insert(schema.Table()).
 		Columns(cols...).
 		Values(values...).
 		Exec()
@@ -100,7 +97,7 @@ func (s *Store) Insert(record Record) error {
 // updated if no fields are provided. For an update to take place, the record is
 // required to have a non-empty ID and not to be a new record.
 // Returns the number of updated rows and an error, if any.
-func (s *Store) Update(record Record, cols ...SchemaField) (int64, error) {
+func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64, error) {
 	if !record.IsWritable() {
 		return 0, ErrNotWritable
 	}
@@ -114,7 +111,7 @@ func (s *Store) Update(record Record, cols ...SchemaField) (int64, error) {
 	}
 
 	if len(cols) == 0 {
-		cols = s.schema.Columns()
+		cols = schema.Columns()
 	}
 
 	columnNames := ColumnNames(cols)
@@ -128,10 +125,15 @@ func (s *Store) Update(record Record, cols ...SchemaField) (int64, error) {
 		clauses[col] = values[i]
 	}
 
-	result, err := s.updater.
+	for _, col := range record.VirtualColumns() {
+		clauses[col.Name] = col.Value
+	}
+
+	result, err := s.builder.
+		Update(schema.Table()).
 		SetMap(clauses).
 		Where(squirrel.Eq{
-			s.schema.ID().String(): record.GetID(),
+			schema.ID().String(): record.GetID(),
 		}).
 		Exec()
 	if err != nil {
@@ -152,16 +154,16 @@ func (s *Store) Update(record Record, cols ...SchemaField) (int64, error) {
 
 // Save inserts or updates the given record in the table. It requires a record
 // with non empty ID.
-func (s *Store) Save(record Record) (updated bool, err error) {
+func (s *Store) Save(schema Schema, record Record) (updated bool, err error) {
 	if record.GetID().IsEmpty() {
 		return false, ErrEmptyID
 	}
 
 	if !record.IsPersisted() {
-		return false, s.Insert(record)
+		return false, s.Insert(schema, record)
 	}
 
-	rowsUpdated, err := s.Update(record)
+	rowsUpdated, err := s.Update(schema, record)
 	if err != nil {
 		return false, err
 	}
@@ -171,14 +173,15 @@ func (s *Store) Save(record Record) (updated bool, err error) {
 
 // Delete removes the record from the table. A non-new record with non-empty
 // ID is required.
-func (s *Store) Delete(record Record) error {
+func (s *Store) Delete(schema Schema, record Record) error {
 	if record.GetID().IsEmpty() {
 		return ErrEmptyID
 	}
 
-	_, err := s.deleter.
+	_, err := s.builder.
+		Delete(schema.Table()).
 		Where(squirrel.Eq{
-			s.schema.ID().String(): record.GetID(),
+			schema.ID().String(): record.GetID(),
 		}).
 		Exec()
 	return err
@@ -216,7 +219,7 @@ func (s *Store) Find(q Query) (ResultSet, error) {
 	}
 
 	if containsRelationshipOfType(rels, OneToMany) {
-		return NewBatchingResultSet(newBatchQueryRunner(s.schema, s.proxy, q)), nil
+		return NewBatchingResultSet(newBatchQueryRunner(q.Schema(), s.proxy, q)), nil
 	}
 
 	columns, builder := q.compile()
@@ -253,13 +256,13 @@ func (s *Store) MustFind(q Query) ResultSet {
 
 // Reload refreshes the record with the data in the database and makes the
 // record writable.
-func (s *Store) Reload(record Record) error {
+func (s *Store) Reload(schema Schema, record Record) error {
 	if record.GetID().IsEmpty() {
 		return ErrEmptyID
 	}
 
-	q := NewBaseQuery(s.schema)
-	q.Where(Eq(s.schema.ID(), record.GetID()))
+	q := NewBaseQuery(schema)
+	q.Where(Eq(schema.ID(), record.GetID()))
 	q.Limit(1)
 	columns, builder := q.compile()
 
@@ -280,7 +283,7 @@ func (s *Store) Reload(record Record) error {
 func (s *Store) Count(q Query) (count int64, err error) {
 	_, queryBuilder := q.compile()
 	builder := builder.Set(queryBuilder, "Columns", nil).(squirrel.SelectBuilder)
-	err = builder.Column(fmt.Sprintf("COUNT(%s)", s.schema.ID())).
+	err = builder.Column(fmt.Sprintf("COUNT(%s)", q.Schema().ID())).
 		RunWith(s.proxy).
 		QueryRow().
 		Scan(&count)
@@ -312,7 +315,7 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 		return fmt.Errorf("kallax: can't open transaction: %s", err)
 	}
 
-	if err := callback(newStoreWithTransaction(tx, s.schema)); err != nil {
+	if err := callback(newStoreWithTransaction(tx)); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return fmt.Errorf("kallax: unable to rollback transaction: %s", err)
 		}
@@ -325,4 +328,10 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 	}
 
 	return nil
+}
+
+// RecordWithSchema is a structure that contains both a record and its schema.
+type RecordWithSchema struct {
+	Schema Schema
+	Record Record
 }
