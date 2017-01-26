@@ -13,7 +13,7 @@ import (
 )
 
 var _ types.SQLType
-var _ fmt.Println
+var _ fmt.Formatter
 
 {{template "model" .}}
 {{template "schema" .}}
