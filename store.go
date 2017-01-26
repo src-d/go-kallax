@@ -216,7 +216,7 @@ func (s *Store) Find(q Query) (ResultSet, error) {
 	}
 
 	if containsRelationshipOfType(rels, OneToMany) {
-		return NewBatchingResultSet(s.schema, s.proxy, q), nil
+		return NewBatchingResultSet(newBatchQueryRunner(s.schema, s.proxy, q)), nil
 	}
 
 	columns, builder := q.compile()
