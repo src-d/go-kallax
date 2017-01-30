@@ -74,16 +74,12 @@ func (s *Store) Insert(schema Schema, record Record) error {
 		return err
 	}
 
-	for _, col := range record.VirtualColumns() {
-		cols = append(cols, col.Name)
-		values = append(values, col.Value)
-	}
-
 	_, err = s.builder.
 		Insert(schema.Table()).
 		Columns(cols...).
 		Values(values...).
 		Exec()
+
 	if err != nil {
 		return err
 	}
@@ -123,10 +119,6 @@ func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64
 	var clauses = make(map[string]interface{}, len(cols))
 	for i, col := range columnNames {
 		clauses[col] = values[i]
-	}
-
-	for _, col := range record.VirtualColumns() {
-		clauses[col.Name] = col.Value
 	}
 
 	result, err := s.builder.

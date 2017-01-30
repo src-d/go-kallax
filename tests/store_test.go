@@ -1,13 +1,6 @@
 package tests
 
-import (
-	"testing"
-	"time"
-
-	kallax "github.com/src-d/go-kallax"
-	"github.com/stretchr/testify/suite"
-)
-
+/*
 func TestStoreSuite(t *testing.T) {
 	schema := []string{
 		`CREATE TABLE store_construct (
@@ -215,4 +208,4 @@ func (s *StoreSuite) TestMultiKeySort() {
 	s.Equal("2015-2012", documents[1].Name)
 	s.Equal("2002-2012", documents[2].Name)
 	s.Equal("2001-2012", documents[3].Name)
-}
+}*/

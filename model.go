@@ -1,6 +1,7 @@
 package kallax
 
 import (
+	"database/sql"
 	"database/sql/driver"
 
 	uuid "github.com/satori/go.uuid"
@@ -9,7 +10,7 @@ import (
 // Model is the base type of the items that are stored
 type Model struct {
 	ID             ID
-	virtualColumns []VirtualColumn
+	virtualColumns map[string]interface{}
 	persisted      bool
 	writable       bool
 }
@@ -17,8 +18,9 @@ type Model struct {
 // NewModel creates and return a new Model
 func NewModel() Model {
 	m := Model{
-		persisted: false,
-		writable:  true,
+		persisted:      false,
+		writable:       true,
+		virtualColumns: make(map[string]interface{}),
 	}
 	m.ID = NewID()
 	return m
@@ -55,19 +57,25 @@ func (m *Model) SetID(id ID) {
 	m.ID = id
 }
 
-// VirtualColumns returns all the virtual columns in the model.
-func (m *Model) VirtualColumns() []VirtualColumn {
-	return m.virtualColumns
-}
-
 // ClearVirtualColumns clears all the previous virtual columns.
 func (m *Model) ClearVirtualColumns() {
-	m.virtualColumns = nil
+	m.virtualColumns = make(map[string]interface{})
 }
 
 // AddVirtualColumn adds a new virtual column with the given name and value.
 func (m *Model) AddVirtualColumn(name string, v interface{}) {
-	m.virtualColumns = append(m.virtualColumns, VirtualColumn{name, v})
+	if m.virtualColumns == nil {
+		m.ClearVirtualColumns()
+	}
+	m.virtualColumns[name] = v
+}
+
+// VirtualColumn returns the value of the virtual column with the given column name.
+func (m *Model) VirtualColumn(name string) interface{} {
+	if m.virtualColumns == nil {
+		m.ClearVirtualColumns()
+	}
+	return m.virtualColumns[name]
 }
 
 // Identifiable must be implemented by those values that can be identified by an ID
@@ -119,13 +127,6 @@ type Valuer interface {
 	Value(string) (interface{}, error)
 }
 
-// VirtualColumn is a column that even though it's not present in the model
-// exists in the table. Foreign Keys are VirtualColumns, for example.
-type VirtualColumn struct {
-	Name  string
-	Value interface{}
-}
-
 // VirtualColumnContainer contains a collection of virtual columns and
 // manages them.
 type VirtualColumnContainer interface {
@@ -133,8 +134,8 @@ type VirtualColumnContainer interface {
 	ClearVirtualColumns()
 	// AddVirtualColumn adds a new virtual column with the given name and value
 	AddVirtualColumn(string, interface{})
-	// VirtualColumns returns all the virtual columns.
-	VirtualColumns() []VirtualColumn
+	// VirtualColumn returns the virtual column with the given column name.
+	VirtualColumn(string) interface{}
 }
 
 // RecordValues returns the values of a record at the given columns in the same
@@ -187,4 +188,23 @@ func (id ID) IsEmpty() bool {
 
 func (id ID) String() string {
 	return uuid.UUID(id).String()
+}
+
+type virtualColumn struct {
+	r   Record
+	col string
+}
+
+func VirtualColumn(col string, r Record) sql.Scanner {
+	return &virtualColumn{r, col}
+}
+
+func (c *virtualColumn) Scan(src interface{}) error {
+	var id ID
+	if err := (&id).Scan(src); err != nil {
+		return err
+	}
+
+	c.r.AddVirtualColumn(c.col, id)
+	return nil
 }

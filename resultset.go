@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/src-d/go-kallax/types"
 )
 
 // ResultSet is the common interface all result sets need to implement.
@@ -83,7 +85,7 @@ func (rs *BaseResultSet) Scan(record Record) error {
 			if err != nil {
 				return err
 			}
-			pointers = append(pointers, ptr)
+			pointers = append(pointers, types.Nullable(ptr))
 		}
 
 		relationships[i] = rec
@@ -94,6 +96,8 @@ func (rs *BaseResultSet) Scan(record Record) error {
 	}
 
 	for i, r := range rs.relationships {
+		relationships[i].setPersisted()
+		relationships[i].setWritable(true)
 		err := record.SetRelationship(r.Field, relationships[i])
 		if err != nil {
 			return err

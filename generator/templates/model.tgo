@@ -41,7 +41,10 @@ func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
                 if !ok {
                         return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", rel)
                 }
-                r.{{.Name}} = {{if or (not .IsPtr) .IsOneToManyRelationship}}*{{end}}val
+                {{if .IsPtr}}if !val.Model.ID.IsEmpty() {
+                {{end}}r.{{.Name}} = {{if or (not .IsPtr) .IsOneToManyRelationship}}*{{end}}val{{if .IsPtr}}
+                }
+                {{end}}
                 return nil
         {{else}}case "{{.Name}}":
                 records, ok := rel.([]kallax.Record) 
@@ -128,12 +131,17 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
         records := s.relationshipRecords(record)
         if len(records) > 0 {
                 return s.Store.Transaction(func(s *kallax.Store) error {
+                        if err := s.Insert(Schema.{{.Name}}.BaseSchema, record); err != nil {
+                                return err
+                        }
+
                         for _, r := range records {
                                 if _, err := s.Save(r.Schema, r.Record); err != nil {
                                         return err
                                 }
                         }
-                        return s.Insert(Schema.{{.Name}}.BaseSchema, record)
+
+                        return nil
                 })
         }
         {{end}}
@@ -161,13 +169,17 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
         records := s.relationshipRecords(record)
         if len(records) > 0 {
                 err = s.Store.Transaction(func(s *kallax.Store) error {
+                        updated, err = s.Update(Schema.{{.Name}}.BaseSchema, record, cols...)
+                        if err != nil {
+                                return err
+                        }
+
                         for _, r := range records {
                                 if _, err := s.Save(r.Schema, r.Record); err != nil {
                                         return err
                                 }
                         }
-                        updated, err = s.Update(Schema.{{.Name}}.BaseSchema, record, cols...)
-                        return err
+                        return nil
                 })
                 return updated, err
         }
@@ -197,7 +209,16 @@ func (s *{{.StoreName}}) Save(record *{{.Name}}) (updated bool,  err error) {
                 }
         }
         {{end}}
-	return s.Store.Save(Schema.{{.Name}}.BaseSchema, record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
@@ -237,6 +258,7 @@ func (s *{{.StoreName}}) MustCount(q *{{.QueryName}}) int64 {
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *{{.StoreName}}) FindOne(q *{{.QueryName}}) (*{{.Name}}, error) {
 	q.Limit(1)
+        q.Offset(0)
         rs, err := s.Find(q)
         if err != nil {
                 return nil, err
@@ -341,6 +363,18 @@ func (s *{{.Model.StoreName}}) Remove{{.Name}}(record *{{.Model.Name}}, deleted 
                 }
         }
         record.{{.Name}} = updated
+        return nil
+}
+{{else if not .IsInverse}}
+// Remove{{.Name}} removes from the database the given relationship of the
+// model. It also resets the field {{.Name}} of the model.
+func (s *{{.Model.StoreName}}) Remove{{.Name}}(record *{{.Model.Name}}) error {
+        err := s.Store.Delete(Schema.{{.TypeSchemaName}}.BaseSchema, {{if not .IsPtr}}&{{end}}record.{{.Name}})
+        if err != nil {
+                return err
+        }
+
+        record.{{.Name}} = {{if .IsPtr}}nil{{else}}{{$.GenTypeName .}}{}{{end}}
         return nil
 }
 {{end}}{{end}}

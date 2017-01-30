@@ -18,13 +18,13 @@ func New{{.ResultSetName}}(rs kallax.ResultSet) *{{.ResultSetName}} {
 // The result set is closed automatically when there are no more items.
 func (rs *{{.ResultSetName}}) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
         var record kallax.Record
-        record, rs.lastErr = rs.Get()
-        if rs.lastErr == nil {
+        record, rs.lastErr = rs.ResultSet.Get(Schema.{{.Name}}.BaseSchema)
+        if rs.lastErr != nil {
                 rs.last = nil
         } else {
                 var ok bool

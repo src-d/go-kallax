@@ -53,13 +53,12 @@ func (td *TemplateData) GenColumnAddresses(model *Model) string {
 
 func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Field) {
 	for _, f := range fields {
-		if f.Kind == Relationship {
-			continue
-		}
-
 		if f.Inline() {
 			td.genFieldsColumnAddresses(buf, f.Fields)
-		} else {
+		} else if f.Kind == Relationship && f.IsInverse() {
+			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ForeignKey()))
+			buf.WriteString(fmt.Sprintf("return kallax.VirtualColumn(\"%s\", r), nil\n", f.ForeignKey()))
+		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
 			buf.WriteString(fmt.Sprintf("return %s\n", f.Address()))
 		}
@@ -76,13 +75,12 @@ func (td *TemplateData) GenColumnValues(model *Model) string {
 
 func (td *TemplateData) genFieldsValues(buf *bytes.Buffer, fields []*Field) {
 	for _, f := range fields {
-		if f.Kind == Relationship {
-			continue
-		}
-
 		if f.Inline() {
 			td.genFieldsValues(buf, f.Fields)
-		} else {
+		} else if f.Kind == Relationship && f.IsInverse() {
+			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ForeignKey()))
+			buf.WriteString(fmt.Sprintf("return r.Model.VirtualColumn(col), nil\n"))
+		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
 			buf.WriteString(fmt.Sprintf("return %s\n", f.Value()))
 		}
@@ -99,13 +97,11 @@ func (td *TemplateData) GenModelColumns(model *Model) string {
 
 func (td *TemplateData) genFieldsColumns(buf *bytes.Buffer, fields []*Field) {
 	for _, f := range fields {
-		if f.Kind == Relationship {
-			continue
-		}
-
 		if f.Inline() {
 			td.genFieldsColumns(buf, f.Fields)
-		} else {
+		} else if f.Kind == Relationship && f.IsInverse() {
+			buf.WriteString(fmt.Sprintf("kallax.NewSchemaField(\"%s\"),\n", f.ForeignKey()))
+		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("kallax.NewSchemaField(\"%s\"),\n", f.ColumnName()))
 		}
 	}
