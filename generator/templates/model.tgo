@@ -42,9 +42,9 @@ func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
                         return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", rel)
                 }
                 {{if .IsPtr}}if !val.Model.ID.IsEmpty() {
-                {{end}}r.{{.Name}} = {{if or (not .IsPtr) .IsOneToManyRelationship}}*{{end}}val{{if .IsPtr}}
+                        r.{{.Name}} = val
                 }
-                {{end}}
+                {{else}}r.{{.Name}} = *val{{end}}
                 return nil
         {{else}}case "{{.Name}}":
                 records, ok := rel.([]kallax.Record) 
