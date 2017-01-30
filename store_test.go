@@ -385,37 +385,6 @@ func (s *StoreSuite) TestFind_1toNMultiple() {
 	s.Equal(100, i)
 }
 
-func (s *StoreSuite) TestOperators() {
-	cases := []struct {
-		name  string
-		cond  Condition
-		count int64
-	}{
-		{"Eq", Eq(f("name"), "Joe"), 1},
-		{"Gt", Gt(f("age"), 1), 2},
-		{"Lt", Lt(f("age"), 2), 1},
-		{"Neq", Neq(f("name"), "Joe"), 2},
-		{"GtOrEq", GtOrEq(f("age"), 2), 2},
-		{"LtOrEq", LtOrEq(f("age"), 3), 3},
-		{"Not", Not(Eq(f("name"), "Joe")), 2},
-		{"And", And(Neq(f("name"), "Joe"), Gt(f("age"), 1)), 2},
-		{"Or", Or(Neq(f("name"), "Joe"), Eq(f("age"), 1)), 3},
-		{"In", In(f("name"), "Joe", "Jane"), 2},
-		{"NotIn", NotIn(f("name"), "Joe", "Jane"), 1},
-	}
-
-	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
-
-	for _, c := range cases {
-		q := NewBaseQuery(ModelSchema)
-		q.Where(c.cond)
-
-		s.Equal(s.store.MustCount(q), c.count, c.name)
-	}
-}
-
 func (s *StoreSuite) assertModel(m *model) {
 	var result model
 	err := s.db.QueryRow("SELECT id, name, email, age FROM model WHERE id = $1", m.ID).
