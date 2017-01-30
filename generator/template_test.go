@@ -78,11 +78,11 @@ const baseTpl = `
 		kallax.Model
 		Foo string
 		Bar *string
+		Rel Rel
 		Arr []string
 		JSON JSON
 		URL *url.URL
 		UrlNoPtr url.URL
-		Rel Rel
 	}
 `
 
@@ -134,12 +134,12 @@ func (s *TemplateSuite) TestGenColumnValues() {
 		kallax.Model
 		Foo string
 		Bar *string
+		Rel Rel
 		Aliased Aliased
 		Arr []string
 		JSON JSON
 		URL *url.URL
 		UrlNoPtr url.URL
-		Rel Rel
 	}
 	`)
 
