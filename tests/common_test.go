@@ -95,10 +95,7 @@ func (s *BaseTestSuite) resultOrError(res interface{}, err error) bool {
 	}
 
 	if err == nil && res == nil {
-		s.Fail(
-			`FindOne should return an error or a document, but nothing was returned
-			TODO: https://github.com/src-d/go-kallax/issues/49`,
-		)
+		s.Fail("FindOne should return an error or a document, but nothing was returned")
 		return false
 	}
 

@@ -136,7 +136,6 @@ func (s *ResulsetSuite) TestResultSetForEachError() {
 	})
 }
 
-// TODO: https://github.com/src-d/go-kallax/issues/49
 func (s *ResulsetSuite) TestForEachAndCount() {
 	store := NewResultSetFixtureStore(s.db)
 
@@ -151,7 +150,7 @@ func (s *ResulsetSuite) TestForEachAndCount() {
 	manualCount := 0
 	rs.ForEach(func(doc *ResultSetFixture) error {
 		manualCount++
-		s.NotNil(doc, "TODO: https://github.com/src-d/go-kallax/issues/49")
+		s.NotNil(doc)
 		return nil
 	})
 	s.Equal(2, manualCount)

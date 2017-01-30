@@ -29,9 +29,10 @@ func (s *QuerySuite) TestQuery() {
 
 	query := NewQueryFixtureQuery()
 	query.Where(kallax.Eq(Schema.QueryFixture.ID, doc.ID))
+
 	s.NotPanics(func() {
 		s.Equal("bar", store.MustFindOne(query).Foo)
-	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
+	})
 
 	notID := kallax.NewID()
 	queryErr := NewQueryFixtureQuery()
