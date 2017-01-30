@@ -25,11 +25,13 @@ func (s *OpsSuite) SetupTest() {
 		age int not null
 	)`)
 	s.Nil(err)
+
 	_, err = s.db.Exec(`CREATE TABLE slices (
 		id uuid PRIMARY KEY,
 		elems bigint[]
 	)`)
 	s.Nil(err)
+
 	s.store = NewStore(s.db)
 }
 
