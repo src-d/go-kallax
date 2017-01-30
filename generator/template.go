@@ -122,7 +122,7 @@ func (td *TemplateData) GenModelSchema(model *Model) string {
 func (td *TemplateData) genFieldsSchema(buf *bytes.Buffer, parent string, fields []*Field) {
 	for _, f := range fields {
 		if f.Kind == Relationship {
-			return
+			continue
 		}
 
 		if f.Inline() {
@@ -196,7 +196,7 @@ func (td *TemplateData) GenSchemaInit(model *Model) string {
 func (td *TemplateData) genFieldsInit(buf *bytes.Buffer, parent string, fields []*Field, root bool) {
 	for _, f := range fields {
 		if f.Kind == Relationship {
-			return
+			continue
 		}
 
 		if f.Inline() {
