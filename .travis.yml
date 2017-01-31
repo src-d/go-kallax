@@ -8,6 +8,9 @@ matrix:
     allow_failures:
         - go: tip
 
+addons:
+  postgresql: "9.4"
+
 env:
   - DBNAME=kallax_test DBUSER=postgres DBPASS=''
 
