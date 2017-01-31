@@ -211,7 +211,7 @@ func (p *Processor) processFields(s *types.Struct, done []*types.Struct, root bo
 
 	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)
-		if !f.Exported() {
+		if !f.Exported() || isIgnoredField(s, i) {
 			continue
 		}
 
@@ -435,4 +435,9 @@ var goPath = os.Getenv("GOPATH")
 
 func typeName(typ types.Type) string {
 	return strings.Replace(typ.String(), goPath+"/src/", "", -1)
+}
+
+func isIgnoredField(s *types.Struct, idx int) bool {
+	tag := reflect.StructTag(s.Tag(idx))
+	return strings.Split(tag.Get("kallax"), ",")[0] == "-"
 }
