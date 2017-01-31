@@ -19,7 +19,7 @@ func TestQuerySuite(t *testing.T) {
 			foo varchar(10)
 		)`,
 	}
-	suite.Run(t, &QuerySuite{BaseTestSuite{initQueries: schema}})
+	suite.Run(t, &QuerySuite{NewBaseSuite(schema, "query")})
 }
 
 func (s *QuerySuite) TestQuery() {

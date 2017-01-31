@@ -19,7 +19,7 @@ func TestResulsetSuite(t *testing.T) {
 			foo varchar(10)
 		)`,
 	}
-	suite.Run(t, &ResulsetSuite{BaseTestSuite{initQueries: schema}})
+	suite.Run(t, &ResulsetSuite{NewBaseSuite(schema, "resultset")})
 }
 
 func (s *ResulsetSuite) TestResultSetAll() {

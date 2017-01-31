@@ -30,7 +30,7 @@ func TestStoreSuite(t *testing.T) {
 			_end timestamp
 		)`,
 	}
-	suite.Run(t, &StoreSuite{BaseTestSuite{initQueries: schema}})
+	suite.Run(t, &StoreSuite{NewBaseSuite(schema, "store_construct", "store", "store_new", "query")})
 }
 
 type StoreSuite struct {

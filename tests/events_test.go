@@ -21,7 +21,7 @@ func TestEventsSuite(t *testing.T) {
 			must_fail_after JSON
 		)`,
 	}
-	suite.Run(t, &EventsSuite{BaseTestSuite{initQueries: schema}})
+	suite.Run(t, &EventsSuite{NewBaseSuite(schema, "event")})
 }
 
 type eventsCheck map[string]bool

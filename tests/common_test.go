@@ -19,8 +19,16 @@ var (
 
 type BaseTestSuite struct {
 	suite.Suite
-	db          *sql.DB
-	initQueries []string
+	db      *sql.DB
+	schemas []string
+	tables  []string
+}
+
+func NewBaseSuite(schemas []string, tables ...string) BaseTestSuite {
+	return BaseTestSuite{
+		schemas: schemas,
+		tables:  tables,
+	}
 }
 
 func (s *BaseTestSuite) SetupSuite() {
@@ -34,10 +42,6 @@ func (s *BaseTestSuite) SetupSuite() {
 	}
 
 	s.db = db
-
-	if !s.resetSchema() {
-		s.Require().FailNow("Tests can not be run because database Schema can not be accessed")
-	}
 }
 
 func (s *BaseTestSuite) TearDownSuite() {
@@ -45,13 +49,22 @@ func (s *BaseTestSuite) TearDownSuite() {
 }
 
 func (s *BaseTestSuite) SetupTest() {
-	if len(s.initQueries) > 0 {
-		s.QuerySucceed(s.initQueries...)
+	if len(s.tables) == 0 {
+		return
 	}
+
+	s.QuerySucceed(s.schemas...)
 }
 
 func (s *BaseTestSuite) TearDownTest() {
-	s.resetSchema()
+	if len(s.tables) == 0 {
+		return
+	}
+	var queries []string
+	for _, t := range s.tables {
+		queries = append(queries, fmt.Sprintf("DROP TABLE %s", t))
+	}
+	s.QuerySucceed(queries...)
 }
 
 func (s *BaseTestSuite) QuerySucceed(queries ...string) bool {
@@ -80,13 +93,6 @@ func (s *BaseTestSuite) QueryFails(queries ...string) bool {
 	}
 
 	return success
-}
-
-func (s *BaseTestSuite) resetSchema() bool {
-	return s.QuerySucceed(
-		fmt.Sprintf(`DROP SCHEMA IF EXISTS %s CASCADE;`, database),
-		fmt.Sprintf(`CREATE SCHEMA %s;`, database),
-	)
 }
 
 func (s *BaseTestSuite) resultOrError(res interface{}, err error) bool {

@@ -28,11 +28,7 @@ func TestRelationships(t *testing.T) {
 			owner_id uuid references persons(id)
 		)`,
 	}
-	suite.Run(t, &RelationshipsSuite{
-		BaseTestSuite{
-			initQueries: schemas,
-		},
-	})
+	suite.Run(t, &RelationshipsSuite{NewBaseSuite(schemas, "cars", "pets", "persons")})
 }
 
 func (s *RelationshipsSuite) TestInsertFind() {
