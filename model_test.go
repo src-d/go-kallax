@@ -28,4 +28,7 @@ func (s *ModelSuite) TestID_ThreeNewIDsAreDifferent() {
 	s.NotEqual(id1, id2)
 	s.NotEqual(id1, id3)
 	s.NotEqual(id2, id3)
+
+	s.True(id1 == id1)
+	s.False(id1 == id2)
 }

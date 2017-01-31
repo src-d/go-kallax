@@ -1,12 +1,6 @@
 package tests
 
-import (
-	"errors"
-	"testing"
-
-	"github.com/stretchr/testify/suite"
-)
-
+/*
 type EventsSuite struct {
 	BaseTestSuite
 }
@@ -144,3 +138,4 @@ func (s *EventsSuite) TestEventsSaveSave() {
 		"AfterSave":   true,
 	}, doc.Checks)
 }
+*/

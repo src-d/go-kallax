@@ -15,78 +15,118 @@ import (
 var _ types.SQLType
 var _ fmt.Formatter
 
-// NewEventsFixture returns a new instance of EventsFixture.
-func NewEventsFixture() (record *EventsFixture) {
-	record = newEventsFixture()
+// NewCar returns a new instance of Car.
+func NewCar(model string, owner *Person) (record *Car) {
+	record = newCar(model, owner)
 	if record != nil {
 		record.SetID(kallax.NewID())
 	}
 	return
 }
 
-func (r *EventsFixture) ColumnAddress(col string) (interface{}, error) {
+func (r *Car) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return &r.Model.ID, nil
-	case "checks":
-		return types.JSON(&r.Checks), nil
-	case "must_fail_before":
-		return types.JSON(&r.MustFailBefore), nil
-	case "must_fail_after":
-		return types.JSON(&r.MustFailAfter), nil
+	case "owner_id":
+		return kallax.VirtualColumn("owner_id", r), nil
+	case "model_name":
+		return &r.ModelName, nil
 
 	default:
-		return nil, fmt.Errorf("kallax: invalid column in EventsFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in Car: %s", col)
 	}
 }
 
-func (r *EventsFixture) Value(col string) (interface{}, error) {
+func (r *Car) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return r.Model.ID, nil
-	case "checks":
-		return types.JSON(r.Checks), nil
-	case "must_fail_before":
-		return types.JSON(r.MustFailBefore), nil
-	case "must_fail_after":
-		return types.JSON(r.MustFailAfter), nil
+	case "owner_id":
+		return r.Model.VirtualColumn(col), nil
+	case "model_name":
+		return r.ModelName, nil
 
 	default:
-		return nil, fmt.Errorf("kallax: invalid column in EventsFixture: %s", col)
+		return nil, fmt.Errorf("kallax: invalid column in Car: %s", col)
 	}
 }
 
-func (r *EventsFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
+func (r *Car) NewRelationshipRecord(field string) (kallax.Record, error) {
 	switch field {
+	case "Owner":
+		return new(Person), nil
 
 	}
-	return nil, fmt.Errorf("kallax: model EventsFixture has no relationship %s", field)
+	return nil, fmt.Errorf("kallax: model Car has no relationship %s", field)
 }
 
-func (r *EventsFixture) SetRelationship(field string, rel interface{}) error {
+func (r *Car) SetRelationship(field string, rel interface{}) error {
 	switch field {
+	case "Owner":
+		val, ok := rel.(*Person)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Owner", rel)
+		}
+		if !val.Model.ID.IsEmpty() {
+			r.Owner = val
+		}
+
+		return nil
 
 	}
-	return fmt.Errorf("kallax: model EventsFixture has no relationship %s", field)
+	return fmt.Errorf("kallax: model Car has no relationship %s", field)
 }
 
-// EventsFixtureStore is the entity to access the records of the type EventsFixture
+// CarStore is the entity to access the records of the type Car
 // in the database.
-type EventsFixtureStore struct {
+type CarStore struct {
 	*kallax.Store
 }
 
-// NewEventsFixtureStore creates a new instance of EventsFixtureStore
+// NewCarStore creates a new instance of CarStore
 // using a SQL database.
-func NewEventsFixtureStore(db *sql.DB) *EventsFixtureStore {
-	return &EventsFixtureStore{kallax.NewStore(db, Schema.EventsFixture.BaseSchema)}
+func NewCarStore(db *sql.DB) *CarStore {
+	return &CarStore{kallax.NewStore(db)}
 }
 
-// Insert inserts a EventsFixture in the database. A non-persisted object is
-// required for this operation.
-func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
+func (s *CarStore) relationshipRecords(record *Car) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
 
-	return s.Store.Insert(record)
+	if record.Owner != nil {
+		record.AddVirtualColumn("owner_id", record.Owner.ID)
+		records = append(records, kallax.RecordWithSchema{
+			Schema.Person.BaseSchema,
+			record.Owner,
+		})
+	}
+
+	return records
+}
+
+// Insert inserts a Car in the database. A non-persisted object is
+// required for this operation.
+func (s *CarStore) Insert(record *Car) error {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			if err := s.Insert(Schema.Car.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.Car.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -95,55 +135,83 @@ func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *EventsFixtureStore) Update(record *EventsFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			updated, err = s.Update(Schema.Car.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return updated, err
+	}
+
+	return s.Store.Update(Schema.Car.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
-func (s *EventsFixtureStore) Save(record *EventsFixture) (updated bool, err error) {
+func (s *CarStore) Save(record *Car) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
-func (s *EventsFixtureStore) Delete(record *EventsFixture) error {
-	return s.Store.Delete(record)
+func (s *CarStore) Delete(record *Car) error {
+	return s.Store.Delete(Schema.Car.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
-func (s *EventsFixtureStore) Find(q *EventsFixtureQuery) (*EventsFixtureResultSet, error) {
+func (s *CarStore) Find(q *CarQuery) (*CarResultSet, error) {
 	rs, err := s.Store.Find(q)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewEventsFixtureResultSet(rs), nil
+	return NewCarResultSet(rs), nil
 }
 
 // MustFind returns the set of results for the given query, but panics if there
 // is any error.
-func (s *EventsFixtureStore) MustFind(q *EventsFixtureQuery) *EventsFixtureResultSet {
-	return NewEventsFixtureResultSet(s.Store.MustFind(q))
+func (s *CarStore) MustFind(q *CarQuery) *CarResultSet {
+	return NewCarResultSet(s.Store.MustFind(q))
 }
 
 // Count returns the number of rows that would be retrieved with the given
 // query.
-func (s *EventsFixtureStore) Count(q *EventsFixtureQuery) (int64, error) {
+func (s *CarStore) Count(q *CarQuery) (int64, error) {
 	return s.Store.Count(q)
 }
 
 // MustCount returns the number of rows that would be retrieved with the given
 // query, but panics if there is an error.
-func (s *EventsFixtureStore) MustCount(q *EventsFixtureQuery) int64 {
+func (s *CarStore) MustCount(q *CarQuery) int64 {
 	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
 // `sql.ErrNoRows` is returned if there are no results.
-func (s *EventsFixtureStore) FindOne(q *EventsFixtureQuery) (*EventsFixture, error) {
+func (s *CarStore) FindOne(q *CarQuery) (*Car, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -167,7 +235,7 @@ func (s *EventsFixtureStore) FindOne(q *EventsFixtureQuery) (*EventsFixture, err
 
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
-func (s *EventsFixtureStore) MustFindOne(q *EventsFixtureQuery) *EventsFixture {
+func (s *CarStore) MustFindOne(q *CarQuery) *Car {
 	record, err := s.FindOne(q)
 	if err != nil {
 		panic(err)
@@ -175,41 +243,41 @@ func (s *EventsFixtureStore) MustFindOne(q *EventsFixtureQuery) *EventsFixture {
 	return record
 }
 
-// Reload refreshes the EventsFixture with the data in the database and
+// Reload refreshes the Car with the data in the database and
 // makes it writable.
-func (s *EventsFixtureStore) Reload(record *EventsFixture) error {
-	return s.Store.Reload(record)
+func (s *CarStore) Reload(record *Car) error {
+	return s.Store.Reload(Schema.Car.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
 // an error is returned.
 // The transaction is only open in the store passed as a parameter to the
 // callback.
-func (s *EventsFixtureStore) Transaction(callback func(*EventsFixtureStore) error) error {
+func (s *CarStore) Transaction(callback func(*CarStore) error) error {
 	if callback == nil {
 		return kallax.ErrInvalidTxCallback
 	}
 
 	return s.Store.Transaction(func(store *kallax.Store) error {
-		return callback(&EventsFixtureStore{store})
+		return callback(&CarStore{store})
 	})
 }
 
-// EventsFixtureQuery is the object used to create queries for the EventsFixture
+// CarQuery is the object used to create queries for the Car
 // entity.
-type EventsFixtureQuery struct {
+type CarQuery struct {
 	*kallax.BaseQuery
 }
 
-// NewEventsFixtureQuery returns a new instance of EventsFixtureQuery.
-func NewEventsFixtureQuery() *EventsFixtureQuery {
-	return &EventsFixtureQuery{
-		BaseQuery: kallax.NewBaseQuery(Schema.EventsFixture.BaseSchema),
+// NewCarQuery returns a new instance of CarQuery.
+func NewCarQuery() *CarQuery {
+	return &CarQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.Car.BaseSchema),
 	}
 }
 
 // Select adds columns to select in the query.
-func (q *EventsFixtureQuery) Select(columns ...kallax.SchemaField) *EventsFixtureQuery {
+func (q *CarQuery) Select(columns ...kallax.SchemaField) *CarQuery {
 	if len(columns) == 0 {
 		return q
 	}
@@ -218,83 +286,88 @@ func (q *EventsFixtureQuery) Select(columns ...kallax.SchemaField) *EventsFixtur
 }
 
 // SelectNot excludes columns from being selected in the query.
-func (q *EventsFixtureQuery) SelectNot(columns ...kallax.SchemaField) *EventsFixtureQuery {
+func (q *CarQuery) SelectNot(columns ...kallax.SchemaField) *CarQuery {
 	q.BaseQuery.SelectNot(columns...)
 	return q
 }
 
 // Copy returns a new identical copy of the query. Remember queries are mutable
 // so make a copy any time you need to reuse them.
-func (q *EventsFixtureQuery) Copy() *EventsFixtureQuery {
-	return &EventsFixtureQuery{
+func (q *CarQuery) Copy() *CarQuery {
+	return &CarQuery{
 		BaseQuery: q.BaseQuery.Copy(),
 	}
 }
 
 // Order adds order clauses to the query for the given columns.
-func (q *EventsFixtureQuery) Order(cols ...kallax.ColumnOrder) *EventsFixtureQuery {
+func (q *CarQuery) Order(cols ...kallax.ColumnOrder) *CarQuery {
 	q.BaseQuery.Order(cols...)
 	return q
 }
 
 // BatchSize sets the number of items to fetch per batch when there are 1:N
 // relationships selected in the query.
-func (q *EventsFixtureQuery) BatchSize(size uint64) *EventsFixtureQuery {
+func (q *CarQuery) BatchSize(size uint64) *CarQuery {
 	q.BaseQuery.BatchSize(size)
 	return q
 }
 
 // Limit sets the max number of items to retrieve.
-func (q *EventsFixtureQuery) Limit(n uint64) *EventsFixtureQuery {
+func (q *CarQuery) Limit(n uint64) *CarQuery {
 	q.BaseQuery.Limit(n)
 	return q
 }
 
 // Offset sets the number of items to skip from the result set of items.
-func (q *EventsFixtureQuery) Offset(n uint64) *EventsFixtureQuery {
+func (q *CarQuery) Offset(n uint64) *CarQuery {
 	q.BaseQuery.Offset(n)
 	return q
 }
 
 // Where adds a condition to the query. All conditions added are concatenated
 // using a logical AND.
-func (q *EventsFixtureQuery) Where(cond kallax.Condition) *EventsFixtureQuery {
+func (q *CarQuery) Where(cond kallax.Condition) *CarQuery {
 	q.BaseQuery.Where(cond)
 	return q
 }
 
-// EventsFixtureResultSet is the set of results returned by a query to the
+func (q *CarQuery) WithOwner() *CarQuery {
+	q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
+	return q
+}
+
+// CarResultSet is the set of results returned by a query to the
 // database.
-type EventsFixtureResultSet struct {
+type CarResultSet struct {
 	ResultSet kallax.ResultSet
-	last      *EventsFixture
+	last      *Car
 	lastErr   error
 }
 
-// NewEventsFixtureResultSet creates a new result set for rows of the type
-// EventsFixture.
-func NewEventsFixtureResultSet(rs kallax.ResultSet) *EventsFixtureResultSet {
-	return &EventsFixtureResultSet{ResultSet: rs}
+// NewCarResultSet creates a new result set for rows of the type
+// Car.
+func NewCarResultSet(rs kallax.ResultSet) *CarResultSet {
+	return &CarResultSet{ResultSet: rs}
 }
 
 // Next fetches the next item in the result set and returns true if there is
 // a next item.
 // The result set is closed automatically when there are no more items.
-func (rs *EventsFixtureResultSet) Next() bool {
+func (rs *CarResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.Car.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
-		rs.last, ok = record.(*EventsFixture)
+		rs.last, ok = record.(*Car)
 		if !ok {
-			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *EventsFixture")
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *Car")
 			rs.last = nil
 		}
 	}
@@ -303,7 +376,7 @@ func (rs *EventsFixtureResultSet) Next() bool {
 }
 
 // Get retrieves the last fetched item from the result set and the last error.
-func (rs *EventsFixtureResultSet) Get() (*EventsFixture, error) {
+func (rs *CarResultSet) Get() (*Car, error) {
 	return rs.last, rs.lastErr
 }
 
@@ -311,7 +384,7 @@ func (rs *EventsFixtureResultSet) Get() (*EventsFixture, error) {
 // the given callback. It is possible to stop the iteration by returning
 // `kallax.ErrStop` in the callback.
 // Result set is always closed at the end.
-func (rs *EventsFixtureResultSet) ForEach(fn func(*EventsFixture) error) error {
+func (rs *CarResultSet) ForEach(fn func(*Car) error) error {
 	for rs.Next() {
 		record, err := rs.Get()
 		if err != nil {
@@ -330,8 +403,8 @@ func (rs *EventsFixtureResultSet) ForEach(fn func(*EventsFixture) error) error {
 }
 
 // All returns all records on the result set and closes the result set.
-func (rs *EventsFixtureResultSet) All() ([]*EventsFixture, error) {
-	var result []*EventsFixture
+func (rs *CarResultSet) All() ([]*Car, error) {
+	var result []*Car
 	for rs.Next() {
 		record, err := rs.Get()
 		if err != nil {
@@ -343,7 +416,7 @@ func (rs *EventsFixtureResultSet) All() ([]*EventsFixture, error) {
 }
 
 // One returns the first record on the result set and closes the result set.
-func (rs *EventsFixtureResultSet) One() (*EventsFixture, error) {
+func (rs *CarResultSet) One() (*Car, error) {
 	if !rs.Next() {
 		return nil, sql.ErrNoRows
 	}
@@ -361,367 +434,12 @@ func (rs *EventsFixtureResultSet) One() (*EventsFixture, error) {
 }
 
 // Err returns the last error occurred.
-func (rs *EventsFixtureResultSet) Err() error {
+func (rs *CarResultSet) Err() error {
 	return rs.lastErr
 }
 
 // Close closes the result set.
-func (rs *EventsFixtureResultSet) Close() error {
-	return rs.ResultSet.Close()
-}
-
-// NewEventsSaveFixture returns a new instance of EventsSaveFixture.
-func NewEventsSaveFixture() (record *EventsSaveFixture) {
-	record = newEventsSaveFixture()
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
-}
-
-func (r *EventsSaveFixture) ColumnAddress(col string) (interface{}, error) {
-	switch col {
-	case "id":
-		return &r.Model.ID, nil
-	case "checks":
-		return types.JSON(&r.Checks), nil
-	case "must_fail_before":
-		return types.JSON(&r.MustFailBefore), nil
-	case "must_fail_after":
-		return types.JSON(&r.MustFailAfter), nil
-
-	default:
-		return nil, fmt.Errorf("kallax: invalid column in EventsSaveFixture: %s", col)
-	}
-}
-
-func (r *EventsSaveFixture) Value(col string) (interface{}, error) {
-	switch col {
-	case "id":
-		return r.Model.ID, nil
-	case "checks":
-		return types.JSON(r.Checks), nil
-	case "must_fail_before":
-		return types.JSON(r.MustFailBefore), nil
-	case "must_fail_after":
-		return types.JSON(r.MustFailAfter), nil
-
-	default:
-		return nil, fmt.Errorf("kallax: invalid column in EventsSaveFixture: %s", col)
-	}
-}
-
-func (r *EventsSaveFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
-	switch field {
-
-	}
-	return nil, fmt.Errorf("kallax: model EventsSaveFixture has no relationship %s", field)
-}
-
-func (r *EventsSaveFixture) SetRelationship(field string, rel interface{}) error {
-	switch field {
-
-	}
-	return fmt.Errorf("kallax: model EventsSaveFixture has no relationship %s", field)
-}
-
-// EventsSaveFixtureStore is the entity to access the records of the type EventsSaveFixture
-// in the database.
-type EventsSaveFixtureStore struct {
-	*kallax.Store
-}
-
-// NewEventsSaveFixtureStore creates a new instance of EventsSaveFixtureStore
-// using a SQL database.
-func NewEventsSaveFixtureStore(db *sql.DB) *EventsSaveFixtureStore {
-	return &EventsSaveFixtureStore{kallax.NewStore(db, Schema.EventsSaveFixture.BaseSchema)}
-}
-
-// Insert inserts a EventsSaveFixture in the database. A non-persisted object is
-// required for this operation.
-func (s *EventsSaveFixtureStore) Insert(record *EventsSaveFixture) error {
-
-	return s.Store.Insert(record)
-}
-
-// Update updates the given record on the database. If the columns are given,
-// only these columns will be updated. Otherwise all of them will be.
-// Be very careful with this, as you will have a potentially different object
-// in memory but not on the database.
-// Only writable records can be updated. Writable objects are those that have
-// been just inserted or retrieved using a query with no custom select fields.
-func (s *EventsSaveFixtureStore) Update(record *EventsSaveFixture, cols ...kallax.SchemaField) (int64, error) {
-
-	return s.Store.Update(record, cols...)
-}
-
-// Save inserts the object if the record is not persisted, otherwise it updates
-// it. Same rules of Update and Insert apply depending on the case.
-func (s *EventsSaveFixtureStore) Save(record *EventsSaveFixture) (updated bool, err error) {
-
-	return s.Store.Save(record)
-}
-
-// Delete removes the given record from the database.
-func (s *EventsSaveFixtureStore) Delete(record *EventsSaveFixture) error {
-	return s.Store.Delete(record)
-}
-
-// Find returns the set of results for the given query.
-func (s *EventsSaveFixtureStore) Find(q *EventsSaveFixtureQuery) (*EventsSaveFixtureResultSet, error) {
-	rs, err := s.Store.Find(q)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewEventsSaveFixtureResultSet(rs), nil
-}
-
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *EventsSaveFixtureStore) MustFind(q *EventsSaveFixtureQuery) *EventsSaveFixtureResultSet {
-	return NewEventsSaveFixtureResultSet(s.Store.MustFind(q))
-}
-
-// Count returns the number of rows that would be retrieved with the given
-// query.
-func (s *EventsSaveFixtureStore) Count(q *EventsSaveFixtureQuery) (int64, error) {
-	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *EventsSaveFixtureStore) MustCount(q *EventsSaveFixtureQuery) int64 {
-	return s.Store.MustCount(q)
-}
-
-// FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
-func (s *EventsSaveFixtureStore) FindOne(q *EventsSaveFixtureQuery) (*EventsSaveFixture, error) {
-	q.Limit(1)
-	rs, err := s.Find(q)
-	if err != nil {
-		return nil, err
-	}
-
-	if !rs.Next() {
-		return nil, sql.ErrNoRows
-	}
-
-	record, err := rs.Get()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := rs.Close(); err != nil {
-		return nil, err
-	}
-
-	return record, nil
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *EventsSaveFixtureStore) MustFindOne(q *EventsSaveFixtureQuery) *EventsSaveFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
-}
-
-// Reload refreshes the EventsSaveFixture with the data in the database and
-// makes it writable.
-func (s *EventsSaveFixtureStore) Reload(record *EventsSaveFixture) error {
-	return s.Store.Reload(record)
-}
-
-// Transaction executes the given callback in a transaction and rollbacks if
-// an error is returned.
-// The transaction is only open in the store passed as a parameter to the
-// callback.
-func (s *EventsSaveFixtureStore) Transaction(callback func(*EventsSaveFixtureStore) error) error {
-	if callback == nil {
-		return kallax.ErrInvalidTxCallback
-	}
-
-	return s.Store.Transaction(func(store *kallax.Store) error {
-		return callback(&EventsSaveFixtureStore{store})
-	})
-}
-
-// EventsSaveFixtureQuery is the object used to create queries for the EventsSaveFixture
-// entity.
-type EventsSaveFixtureQuery struct {
-	*kallax.BaseQuery
-}
-
-// NewEventsSaveFixtureQuery returns a new instance of EventsSaveFixtureQuery.
-func NewEventsSaveFixtureQuery() *EventsSaveFixtureQuery {
-	return &EventsSaveFixtureQuery{
-		BaseQuery: kallax.NewBaseQuery(Schema.EventsSaveFixture.BaseSchema),
-	}
-}
-
-// Select adds columns to select in the query.
-func (q *EventsSaveFixtureQuery) Select(columns ...kallax.SchemaField) *EventsSaveFixtureQuery {
-	if len(columns) == 0 {
-		return q
-	}
-	q.BaseQuery.Select(columns...)
-	return q
-}
-
-// SelectNot excludes columns from being selected in the query.
-func (q *EventsSaveFixtureQuery) SelectNot(columns ...kallax.SchemaField) *EventsSaveFixtureQuery {
-	q.BaseQuery.SelectNot(columns...)
-	return q
-}
-
-// Copy returns a new identical copy of the query. Remember queries are mutable
-// so make a copy any time you need to reuse them.
-func (q *EventsSaveFixtureQuery) Copy() *EventsSaveFixtureQuery {
-	return &EventsSaveFixtureQuery{
-		BaseQuery: q.BaseQuery.Copy(),
-	}
-}
-
-// Order adds order clauses to the query for the given columns.
-func (q *EventsSaveFixtureQuery) Order(cols ...kallax.ColumnOrder) *EventsSaveFixtureQuery {
-	q.BaseQuery.Order(cols...)
-	return q
-}
-
-// BatchSize sets the number of items to fetch per batch when there are 1:N
-// relationships selected in the query.
-func (q *EventsSaveFixtureQuery) BatchSize(size uint64) *EventsSaveFixtureQuery {
-	q.BaseQuery.BatchSize(size)
-	return q
-}
-
-// Limit sets the max number of items to retrieve.
-func (q *EventsSaveFixtureQuery) Limit(n uint64) *EventsSaveFixtureQuery {
-	q.BaseQuery.Limit(n)
-	return q
-}
-
-// Offset sets the number of items to skip from the result set of items.
-func (q *EventsSaveFixtureQuery) Offset(n uint64) *EventsSaveFixtureQuery {
-	q.BaseQuery.Offset(n)
-	return q
-}
-
-// Where adds a condition to the query. All conditions added are concatenated
-// using a logical AND.
-func (q *EventsSaveFixtureQuery) Where(cond kallax.Condition) *EventsSaveFixtureQuery {
-	q.BaseQuery.Where(cond)
-	return q
-}
-
-// EventsSaveFixtureResultSet is the set of results returned by a query to the
-// database.
-type EventsSaveFixtureResultSet struct {
-	ResultSet kallax.ResultSet
-	last      *EventsSaveFixture
-	lastErr   error
-}
-
-// NewEventsSaveFixtureResultSet creates a new result set for rows of the type
-// EventsSaveFixture.
-func NewEventsSaveFixtureResultSet(rs kallax.ResultSet) *EventsSaveFixtureResultSet {
-	return &EventsSaveFixtureResultSet{ResultSet: rs}
-}
-
-// Next fetches the next item in the result set and returns true if there is
-// a next item.
-// The result set is closed automatically when there are no more items.
-func (rs *EventsSaveFixtureResultSet) Next() bool {
-	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
-		return false
-	}
-
-	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
-		rs.last = nil
-	} else {
-		var ok bool
-		rs.last, ok = record.(*EventsSaveFixture)
-		if !ok {
-			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *EventsSaveFixture")
-			rs.last = nil
-		}
-	}
-
-	return true
-}
-
-// Get retrieves the last fetched item from the result set and the last error.
-func (rs *EventsSaveFixtureResultSet) Get() (*EventsSaveFixture, error) {
-	return rs.last, rs.lastErr
-}
-
-// ForEach iterates over the complete result set passing every record found to
-// the given callback. It is possible to stop the iteration by returning
-// `kallax.ErrStop` in the callback.
-// Result set is always closed at the end.
-func (rs *EventsSaveFixtureResultSet) ForEach(fn func(*EventsSaveFixture) error) error {
-	for rs.Next() {
-		record, err := rs.Get()
-		if err != nil {
-			return err
-		}
-
-		if err := fn(record); err != nil {
-			if err == kallax.ErrStop {
-				return rs.Close()
-			}
-
-			return err
-		}
-	}
-	return nil
-}
-
-// All returns all records on the result set and closes the result set.
-func (rs *EventsSaveFixtureResultSet) All() ([]*EventsSaveFixture, error) {
-	var result []*EventsSaveFixture
-	for rs.Next() {
-		record, err := rs.Get()
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, record)
-	}
-	return result, nil
-}
-
-// One returns the first record on the result set and closes the result set.
-func (rs *EventsSaveFixtureResultSet) One() (*EventsSaveFixture, error) {
-	if !rs.Next() {
-		return nil, sql.ErrNoRows
-	}
-
-	record, err := rs.Get()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := rs.Close(); err != nil {
-		return nil, err
-	}
-
-	return record, nil
-}
-
-// Err returns the last error occurred.
-func (rs *EventsSaveFixtureResultSet) Err() error {
-	return rs.lastErr
-}
-
-// Close closes the result set.
-func (rs *EventsSaveFixtureResultSet) Close() error {
+func (rs *CarResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
@@ -789,14 +507,14 @@ type MultiKeySortFixtureStore struct {
 // NewMultiKeySortFixtureStore creates a new instance of MultiKeySortFixtureStore
 // using a SQL database.
 func NewMultiKeySortFixtureStore(db *sql.DB) *MultiKeySortFixtureStore {
-	return &MultiKeySortFixtureStore{kallax.NewStore(db, Schema.MultiKeySortFixture.BaseSchema)}
+	return &MultiKeySortFixtureStore{kallax.NewStore(db)}
 }
 
 // Insert inserts a MultiKeySortFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *MultiKeySortFixtureStore) Insert(record *MultiKeySortFixture) error {
 
-	return s.Store.Insert(record)
+	return s.Store.Insert(Schema.MultiKeySortFixture.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -805,21 +523,30 @@ func (s *MultiKeySortFixtureStore) Insert(record *MultiKeySortFixture) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *MultiKeySortFixtureStore) Update(record *MultiKeySortFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *MultiKeySortFixtureStore) Update(record *MultiKeySortFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	return s.Store.Update(Schema.MultiKeySortFixture.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *MultiKeySortFixtureStore) Save(record *MultiKeySortFixture) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *MultiKeySortFixtureStore) Delete(record *MultiKeySortFixture) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.MultiKeySortFixture.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -854,6 +581,7 @@ func (s *MultiKeySortFixtureStore) MustCount(q *MultiKeySortFixtureQuery) int64 
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *MultiKeySortFixtureStore) FindOne(q *MultiKeySortFixtureQuery) (*MultiKeySortFixture, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -888,7 +616,7 @@ func (s *MultiKeySortFixtureStore) MustFindOne(q *MultiKeySortFixtureQuery) *Mul
 // Reload refreshes the MultiKeySortFixture with the data in the database and
 // makes it writable.
 func (s *MultiKeySortFixtureStore) Reload(record *MultiKeySortFixture) error {
-	return s.Store.Reload(record)
+	return s.Store.Reload(Schema.MultiKeySortFixture.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -992,13 +720,13 @@ func NewMultiKeySortFixtureResultSet(rs kallax.ResultSet) *MultiKeySortFixtureRe
 // The result set is closed automatically when there are no more items.
 func (rs *MultiKeySortFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.MultiKeySortFixture.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
@@ -1080,6 +808,960 @@ func (rs *MultiKeySortFixtureResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
+// NewPerson returns a new instance of Person.
+func NewPerson(name string) (record *Person) {
+	record = newPerson(name)
+	if record != nil {
+		record.SetID(kallax.NewID())
+	}
+	return
+}
+
+func (r *Person) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return &r.Model.ID, nil
+	case "name":
+		return &r.Name, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in Person: %s", col)
+	}
+}
+
+func (r *Person) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.Model.ID, nil
+	case "name":
+		return r.Name, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in Person: %s", col)
+	}
+}
+
+func (r *Person) NewRelationshipRecord(field string) (kallax.Record, error) {
+	switch field {
+	case "Pets":
+		return new(Pet), nil
+	case "Car":
+		return new(Car), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model Person has no relationship %s", field)
+}
+
+func (r *Person) SetRelationship(field string, rel interface{}) error {
+	switch field {
+	case "Pets":
+		records, ok := rel.([]kallax.Record)
+		if !ok {
+			return fmt.Errorf("kallax: relationship field %s needs a collection of records, not %T", field, rel)
+		}
+
+		r.Pets = make([]*Pet, len(records))
+		for i, record := range records {
+			rel, ok := record.(*Pet)
+			if !ok {
+				return fmt.Errorf("kallax: element of type %T cannot be added to relationship %s", record, field)
+			}
+			r.Pets[i] = rel
+		}
+		return nil
+	case "Car":
+		val, ok := rel.(*Car)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Car", rel)
+		}
+		if !val.Model.ID.IsEmpty() {
+			r.Car = val
+		}
+
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model Person has no relationship %s", field)
+}
+
+// PersonStore is the entity to access the records of the type Person
+// in the database.
+type PersonStore struct {
+	*kallax.Store
+}
+
+// NewPersonStore creates a new instance of PersonStore
+// using a SQL database.
+func NewPersonStore(db *sql.DB) *PersonStore {
+	return &PersonStore{kallax.NewStore(db)}
+}
+
+func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
+
+	for _, rec := range record.Pets {
+		rec.ClearVirtualColumns()
+		rec.AddVirtualColumn("owner_id", record.ID)
+		records = append(records, kallax.RecordWithSchema{
+			Schema.Pet.BaseSchema,
+			rec,
+		})
+	}
+
+	if record.Car != nil {
+		record.Car.ClearVirtualColumns()
+		record.Car.AddVirtualColumn("owner_id", record.ID)
+		records = append(records, kallax.RecordWithSchema{
+			Schema.Car.BaseSchema,
+			record.Car,
+		})
+	}
+
+	return records
+}
+
+// Insert inserts a Person in the database. A non-persisted object is
+// required for this operation.
+func (s *PersonStore) Insert(record *Person) error {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			if err := s.Insert(Schema.Person.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.Person.BaseSchema, record)
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			updated, err = s.Update(Schema.Person.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return updated, err
+	}
+
+	return s.Store.Update(Schema.Person.BaseSchema, record, cols...)
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *PersonStore) Save(record *Person) (updated bool, err error) {
+
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *PersonStore) Delete(record *Person) error {
+	return s.Store.Delete(Schema.Person.BaseSchema, record)
+}
+
+// Find returns the set of results for the given query.
+func (s *PersonStore) Find(q *PersonQuery) (*PersonResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewPersonResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *PersonStore) MustFind(q *PersonQuery) *PersonResultSet {
+	return NewPersonResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *PersonStore) Count(q *PersonQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *PersonStore) MustCount(q *PersonQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `sql.ErrNoRows` is returned if there are no results.
+func (s *PersonStore) FindOne(q *PersonQuery) (*Person, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *PersonStore) MustFindOne(q *PersonQuery) *Person {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the Person with the data in the database and
+// makes it writable.
+func (s *PersonStore) Reload(record *Person) error {
+	return s.Store.Reload(Schema.Person.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *PersonStore) Transaction(callback func(*PersonStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&PersonStore{store})
+	})
+}
+
+// RemovePets removes the given items of the Pets field of the
+// model. If no items are given, it removes all of them.
+// The items will also be removed from the passed record inside this method.
+func (s *PersonStore) RemovePets(record *Person, deleted ...*Pet) error {
+	var updated []*Pet
+	var clear bool
+	if len(deleted) == 0 {
+		clear = true
+		deleted = record.Pets
+		if len(deleted) == 0 {
+			return nil
+		}
+	}
+
+	if len(deleted) > 1 {
+		err := s.Store.Transaction(func(s *kallax.Store) error {
+			for _, d := range deleted {
+				if err := s.Delete(Schema.Pet.BaseSchema, d); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if clear {
+			record.Pets = nil
+			return nil
+		}
+	} else {
+		if err := s.Store.Delete(Schema.Pet.BaseSchema, deleted[0]); err != nil {
+			return err
+		}
+	}
+
+	for _, r := range record.Pets {
+		var found bool
+		for _, d := range deleted {
+			if d.ID == r.ID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			updated = append(updated, r)
+		}
+	}
+	record.Pets = updated
+	return nil
+}
+
+// RemoveCar removes from the database the given relationship of the
+// model. It also resets the field Car of the model.
+func (s *PersonStore) RemoveCar(record *Person) error {
+	err := s.Store.Delete(Schema.Car.BaseSchema, record.Car)
+	if err != nil {
+		return err
+	}
+
+	record.Car = nil
+	return nil
+}
+
+// PersonQuery is the object used to create queries for the Person
+// entity.
+type PersonQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewPersonQuery returns a new instance of PersonQuery.
+func NewPersonQuery() *PersonQuery {
+	return &PersonQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.Person.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *PersonQuery) Select(columns ...kallax.SchemaField) *PersonQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *PersonQuery) SelectNot(columns ...kallax.SchemaField) *PersonQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *PersonQuery) Copy() *PersonQuery {
+	return &PersonQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *PersonQuery) Order(cols ...kallax.ColumnOrder) *PersonQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *PersonQuery) BatchSize(size uint64) *PersonQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *PersonQuery) Limit(n uint64) *PersonQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *PersonQuery) Offset(n uint64) *PersonQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *PersonQuery) Where(cond kallax.Condition) *PersonQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+func (q *PersonQuery) WithPets(cond kallax.Condition) *PersonQuery {
+	q.AddRelation(Schema.Pet.BaseSchema, "Pets", kallax.OneToMany, cond)
+	return q
+}
+
+func (q *PersonQuery) WithCar() *PersonQuery {
+	q.AddRelation(Schema.Car.BaseSchema, "Car", kallax.OneToOne, nil)
+	return q
+}
+
+// PersonResultSet is the set of results returned by a query to the
+// database.
+type PersonResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *Person
+	lastErr   error
+}
+
+// NewPersonResultSet creates a new result set for rows of the type
+// Person.
+func NewPersonResultSet(rs kallax.ResultSet) *PersonResultSet {
+	return &PersonResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *PersonResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.Person.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*Person)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *Person")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *PersonResultSet) Get() (*Person, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *PersonResultSet) ForEach(fn func(*Person) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *PersonResultSet) All() ([]*Person, error) {
+	var result []*Person
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *PersonResultSet) One() (*Person, error) {
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *PersonResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *PersonResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
+// NewPet returns a new instance of Pet.
+func NewPet(name string, kind string, owner *Person) (record *Pet) {
+	record = newPet(name, kind, owner)
+	if record != nil {
+		record.SetID(kallax.NewID())
+	}
+	return
+}
+
+func (r *Pet) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return &r.Model.ID, nil
+	case "name":
+		return &r.Name, nil
+	case "kind":
+		return &r.Kind, nil
+	case "owner_id":
+		return kallax.VirtualColumn("owner_id", r), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in Pet: %s", col)
+	}
+}
+
+func (r *Pet) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.Model.ID, nil
+	case "name":
+		return r.Name, nil
+	case "kind":
+		return r.Kind, nil
+	case "owner_id":
+		return r.Model.VirtualColumn(col), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in Pet: %s", col)
+	}
+}
+
+func (r *Pet) NewRelationshipRecord(field string) (kallax.Record, error) {
+	switch field {
+	case "Owner":
+		return new(Person), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model Pet has no relationship %s", field)
+}
+
+func (r *Pet) SetRelationship(field string, rel interface{}) error {
+	switch field {
+	case "Owner":
+		val, ok := rel.(*Person)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Owner", rel)
+		}
+		if !val.Model.ID.IsEmpty() {
+			r.Owner = val
+		}
+
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model Pet has no relationship %s", field)
+}
+
+// PetStore is the entity to access the records of the type Pet
+// in the database.
+type PetStore struct {
+	*kallax.Store
+}
+
+// NewPetStore creates a new instance of PetStore
+// using a SQL database.
+func NewPetStore(db *sql.DB) *PetStore {
+	return &PetStore{kallax.NewStore(db)}
+}
+
+func (s *PetStore) relationshipRecords(record *Pet) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
+
+	if record.Owner != nil {
+		record.AddVirtualColumn("owner_id", record.Owner.ID)
+		records = append(records, kallax.RecordWithSchema{
+			Schema.Person.BaseSchema,
+			record.Owner,
+		})
+	}
+
+	return records
+}
+
+// Insert inserts a Pet in the database. A non-persisted object is
+// required for this operation.
+func (s *PetStore) Insert(record *Pet) error {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			if err := s.Insert(Schema.Pet.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.Pet.BaseSchema, record)
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			updated, err = s.Update(Schema.Pet.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return updated, err
+	}
+
+	return s.Store.Update(Schema.Pet.BaseSchema, record, cols...)
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *PetStore) Save(record *Pet) (updated bool, err error) {
+
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *PetStore) Delete(record *Pet) error {
+	return s.Store.Delete(Schema.Pet.BaseSchema, record)
+}
+
+// Find returns the set of results for the given query.
+func (s *PetStore) Find(q *PetQuery) (*PetResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewPetResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *PetStore) MustFind(q *PetQuery) *PetResultSet {
+	return NewPetResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *PetStore) Count(q *PetQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *PetStore) MustCount(q *PetQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `sql.ErrNoRows` is returned if there are no results.
+func (s *PetStore) FindOne(q *PetQuery) (*Pet, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *PetStore) MustFindOne(q *PetQuery) *Pet {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the Pet with the data in the database and
+// makes it writable.
+func (s *PetStore) Reload(record *Pet) error {
+	return s.Store.Reload(Schema.Pet.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *PetStore) Transaction(callback func(*PetStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&PetStore{store})
+	})
+}
+
+// PetQuery is the object used to create queries for the Pet
+// entity.
+type PetQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewPetQuery returns a new instance of PetQuery.
+func NewPetQuery() *PetQuery {
+	return &PetQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.Pet.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *PetQuery) Select(columns ...kallax.SchemaField) *PetQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *PetQuery) SelectNot(columns ...kallax.SchemaField) *PetQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *PetQuery) Copy() *PetQuery {
+	return &PetQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *PetQuery) Order(cols ...kallax.ColumnOrder) *PetQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *PetQuery) BatchSize(size uint64) *PetQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *PetQuery) Limit(n uint64) *PetQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *PetQuery) Offset(n uint64) *PetQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *PetQuery) Where(cond kallax.Condition) *PetQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+func (q *PetQuery) WithOwner() *PetQuery {
+	q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
+	return q
+}
+
+// PetResultSet is the set of results returned by a query to the
+// database.
+type PetResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *Pet
+	lastErr   error
+}
+
+// NewPetResultSet creates a new result set for rows of the type
+// Pet.
+func NewPetResultSet(rs kallax.ResultSet) *PetResultSet {
+	return &PetResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *PetResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.Pet.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*Pet)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *Pet")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *PetResultSet) Get() (*Pet, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *PetResultSet) ForEach(fn func(*Pet) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *PetResultSet) All() ([]*Pet, error) {
+	var result []*Pet
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *PetResultSet) One() (*Pet, error) {
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *PetResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *PetResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewQueryFixture returns a new instance of QueryFixture.
 func NewQueryFixture(f string) (record *QueryFixture) {
 	record = newQueryFixture(f)
@@ -1136,14 +1818,14 @@ type QueryFixtureStore struct {
 // NewQueryFixtureStore creates a new instance of QueryFixtureStore
 // using a SQL database.
 func NewQueryFixtureStore(db *sql.DB) *QueryFixtureStore {
-	return &QueryFixtureStore{kallax.NewStore(db, Schema.QueryFixture.BaseSchema)}
+	return &QueryFixtureStore{kallax.NewStore(db)}
 }
 
 // Insert inserts a QueryFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 
-	return s.Store.Insert(record)
+	return s.Store.Insert(Schema.QueryFixture.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -1152,21 +1834,30 @@ func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	return s.Store.Update(Schema.QueryFixture.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *QueryFixtureStore) Save(record *QueryFixture) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *QueryFixtureStore) Delete(record *QueryFixture) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.QueryFixture.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -1201,6 +1892,7 @@ func (s *QueryFixtureStore) MustCount(q *QueryFixtureQuery) int64 {
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *QueryFixtureStore) FindOne(q *QueryFixtureQuery) (*QueryFixture, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -1235,7 +1927,7 @@ func (s *QueryFixtureStore) MustFindOne(q *QueryFixtureQuery) *QueryFixture {
 // Reload refreshes the QueryFixture with the data in the database and
 // makes it writable.
 func (s *QueryFixtureStore) Reload(record *QueryFixture) error {
-	return s.Store.Reload(record)
+	return s.Store.Reload(Schema.QueryFixture.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -1339,13 +2031,13 @@ func NewQueryFixtureResultSet(rs kallax.ResultSet) *QueryFixtureResultSet {
 // The result set is closed automatically when there are no more items.
 func (rs *QueryFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.QueryFixture.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
@@ -1483,14 +2175,14 @@ type ResultSetFixtureStore struct {
 // NewResultSetFixtureStore creates a new instance of ResultSetFixtureStore
 // using a SQL database.
 func NewResultSetFixtureStore(db *sql.DB) *ResultSetFixtureStore {
-	return &ResultSetFixtureStore{kallax.NewStore(db, Schema.ResultSetFixture.BaseSchema)}
+	return &ResultSetFixtureStore{kallax.NewStore(db)}
 }
 
 // Insert inserts a ResultSetFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
 
-	return s.Store.Insert(record)
+	return s.Store.Insert(Schema.ResultSetFixture.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -1499,21 +2191,30 @@ func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *ResultSetFixtureStore) Update(record *ResultSetFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *ResultSetFixtureStore) Update(record *ResultSetFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	return s.Store.Update(Schema.ResultSetFixture.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *ResultSetFixtureStore) Save(record *ResultSetFixture) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *ResultSetFixtureStore) Delete(record *ResultSetFixture) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.ResultSetFixture.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -1548,6 +2249,7 @@ func (s *ResultSetFixtureStore) MustCount(q *ResultSetFixtureQuery) int64 {
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *ResultSetFixtureStore) FindOne(q *ResultSetFixtureQuery) (*ResultSetFixture, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -1582,7 +2284,7 @@ func (s *ResultSetFixtureStore) MustFindOne(q *ResultSetFixtureQuery) *ResultSet
 // Reload refreshes the ResultSetFixture with the data in the database and
 // makes it writable.
 func (s *ResultSetFixtureStore) Reload(record *ResultSetFixture) error {
-	return s.Store.Reload(record)
+	return s.Store.Reload(Schema.ResultSetFixture.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -1686,13 +2388,13 @@ func NewResultSetFixtureResultSet(rs kallax.ResultSet) *ResultSetFixtureResultSe
 // The result set is closed automatically when there are no more items.
 func (rs *ResultSetFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.ResultSetFixture.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
@@ -1830,14 +2532,14 @@ type ResultSetInitFixtureStore struct {
 // NewResultSetInitFixtureStore creates a new instance of ResultSetInitFixtureStore
 // using a SQL database.
 func NewResultSetInitFixtureStore(db *sql.DB) *ResultSetInitFixtureStore {
-	return &ResultSetInitFixtureStore{kallax.NewStore(db, Schema.ResultSetInitFixture.BaseSchema)}
+	return &ResultSetInitFixtureStore{kallax.NewStore(db)}
 }
 
 // Insert inserts a ResultSetInitFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *ResultSetInitFixtureStore) Insert(record *ResultSetInitFixture) error {
 
-	return s.Store.Insert(record)
+	return s.Store.Insert(Schema.ResultSetInitFixture.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -1846,21 +2548,30 @@ func (s *ResultSetInitFixtureStore) Insert(record *ResultSetInitFixture) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *ResultSetInitFixtureStore) Update(record *ResultSetInitFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *ResultSetInitFixtureStore) Update(record *ResultSetInitFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	return s.Store.Update(Schema.ResultSetInitFixture.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *ResultSetInitFixtureStore) Save(record *ResultSetInitFixture) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *ResultSetInitFixtureStore) Delete(record *ResultSetInitFixture) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.ResultSetInitFixture.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -1895,6 +2606,7 @@ func (s *ResultSetInitFixtureStore) MustCount(q *ResultSetInitFixtureQuery) int6
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *ResultSetInitFixtureStore) FindOne(q *ResultSetInitFixtureQuery) (*ResultSetInitFixture, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -1929,7 +2641,7 @@ func (s *ResultSetInitFixtureStore) MustFindOne(q *ResultSetInitFixtureQuery) *R
 // Reload refreshes the ResultSetInitFixture with the data in the database and
 // makes it writable.
 func (s *ResultSetInitFixtureStore) Reload(record *ResultSetInitFixture) error {
-	return s.Store.Reload(record)
+	return s.Store.Reload(Schema.ResultSetInitFixture.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -2033,13 +2745,13 @@ func NewResultSetInitFixtureResultSet(rs kallax.ResultSet) *ResultSetInitFixture
 // The result set is closed automatically when there are no more items.
 func (rs *ResultSetInitFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.ResultSetInitFixture.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
@@ -2190,7 +2902,10 @@ func (r *SchemaFixture) SetRelationship(field string, rel interface{}) error {
 		if !ok {
 			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Nested", rel)
 		}
-		r.Nested = val
+		if !val.Model.ID.IsEmpty() {
+			r.Nested = val
+		}
+
 		return nil
 
 	}
@@ -2206,14 +2921,47 @@ type SchemaFixtureStore struct {
 // NewSchemaFixtureStore creates a new instance of SchemaFixtureStore
 // using a SQL database.
 func NewSchemaFixtureStore(db *sql.DB) *SchemaFixtureStore {
-	return &SchemaFixtureStore{kallax.NewStore(db, Schema.SchemaFixture.BaseSchema)}
+	return &SchemaFixtureStore{kallax.NewStore(db)}
+}
+
+func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
+
+	if record.Nested != nil {
+		record.Nested.ClearVirtualColumns()
+		record.Nested.AddVirtualColumn("schema_fixture_id", record.ID)
+		records = append(records, kallax.RecordWithSchema{
+			Schema.SchemaFixture.BaseSchema,
+			record.Nested,
+		})
+	}
+
+	return records
 }
 
 // Insert inserts a SchemaFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 
-	return s.Store.Insert(record)
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			if err := s.Insert(Schema.SchemaFixture.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.SchemaFixture.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2222,21 +2970,48 @@ func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *SchemaFixtureStore) Update(record *SchemaFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *SchemaFixtureStore) Update(record *SchemaFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			updated, err = s.Update(Schema.SchemaFixture.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return updated, err
+	}
+
+	return s.Store.Update(Schema.SchemaFixture.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *SchemaFixtureStore) Save(record *SchemaFixture) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *SchemaFixtureStore) Delete(record *SchemaFixture) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.SchemaFixture.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -2271,6 +3046,7 @@ func (s *SchemaFixtureStore) MustCount(q *SchemaFixtureQuery) int64 {
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *SchemaFixtureStore) FindOne(q *SchemaFixtureQuery) (*SchemaFixture, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -2305,7 +3081,7 @@ func (s *SchemaFixtureStore) MustFindOne(q *SchemaFixtureQuery) *SchemaFixture {
 // Reload refreshes the SchemaFixture with the data in the database and
 // makes it writable.
 func (s *SchemaFixtureStore) Reload(record *SchemaFixture) error {
-	return s.Store.Reload(record)
+	return s.Store.Reload(Schema.SchemaFixture.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -2320,6 +3096,18 @@ func (s *SchemaFixtureStore) Transaction(callback func(*SchemaFixtureStore) erro
 	return s.Store.Transaction(func(store *kallax.Store) error {
 		return callback(&SchemaFixtureStore{store})
 	})
+}
+
+// RemoveNested removes from the database the given relationship of the
+// model. It also resets the field Nested of the model.
+func (s *SchemaFixtureStore) RemoveNested(record *SchemaFixture) error {
+	err := s.Store.Delete(Schema.SchemaFixture.BaseSchema, record.Nested)
+	if err != nil {
+		return err
+	}
+
+	record.Nested = nil
+	return nil
 }
 
 // SchemaFixtureQuery is the object used to create queries for the SchemaFixture
@@ -2414,13 +3202,13 @@ func NewSchemaFixtureResultSet(rs kallax.ResultSet) *SchemaFixtureResultSet {
 // The result set is closed automatically when there are no more items.
 func (rs *SchemaFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.SchemaFixture.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
@@ -2558,14 +3346,14 @@ type StoreFixtureStore struct {
 // NewStoreFixtureStore creates a new instance of StoreFixtureStore
 // using a SQL database.
 func NewStoreFixtureStore(db *sql.DB) *StoreFixtureStore {
-	return &StoreFixtureStore{kallax.NewStore(db, Schema.StoreFixture.BaseSchema)}
+	return &StoreFixtureStore{kallax.NewStore(db)}
 }
 
 // Insert inserts a StoreFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreFixtureStore) Insert(record *StoreFixture) error {
 
-	return s.Store.Insert(record)
+	return s.Store.Insert(Schema.StoreFixture.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2574,21 +3362,30 @@ func (s *StoreFixtureStore) Insert(record *StoreFixture) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *StoreFixtureStore) Update(record *StoreFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *StoreFixtureStore) Update(record *StoreFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	return s.Store.Update(Schema.StoreFixture.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *StoreFixtureStore) Save(record *StoreFixture) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *StoreFixtureStore) Delete(record *StoreFixture) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.StoreFixture.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -2623,6 +3420,7 @@ func (s *StoreFixtureStore) MustCount(q *StoreFixtureQuery) int64 {
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *StoreFixtureStore) FindOne(q *StoreFixtureQuery) (*StoreFixture, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -2657,7 +3455,7 @@ func (s *StoreFixtureStore) MustFindOne(q *StoreFixtureQuery) *StoreFixture {
 // Reload refreshes the StoreFixture with the data in the database and
 // makes it writable.
 func (s *StoreFixtureStore) Reload(record *StoreFixture) error {
-	return s.Store.Reload(record)
+	return s.Store.Reload(Schema.StoreFixture.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -2761,13 +3559,13 @@ func NewStoreFixtureResultSet(rs kallax.ResultSet) *StoreFixtureResultSet {
 // The result set is closed automatically when there are no more items.
 func (rs *StoreFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.StoreFixture.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
@@ -2905,14 +3703,14 @@ type StoreWithConstructFixtureStore struct {
 // NewStoreWithConstructFixtureStore creates a new instance of StoreWithConstructFixtureStore
 // using a SQL database.
 func NewStoreWithConstructFixtureStore(db *sql.DB) *StoreWithConstructFixtureStore {
-	return &StoreWithConstructFixtureStore{kallax.NewStore(db, Schema.StoreWithConstructFixture.BaseSchema)}
+	return &StoreWithConstructFixtureStore{kallax.NewStore(db)}
 }
 
 // Insert inserts a StoreWithConstructFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixture) error {
 
-	return s.Store.Insert(record)
+	return s.Store.Insert(Schema.StoreWithConstructFixture.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2921,21 +3719,30 @@ func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixtur
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *StoreWithConstructFixtureStore) Update(record *StoreWithConstructFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *StoreWithConstructFixtureStore) Update(record *StoreWithConstructFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	return s.Store.Update(Schema.StoreWithConstructFixture.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *StoreWithConstructFixtureStore) Save(record *StoreWithConstructFixture) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *StoreWithConstructFixtureStore) Delete(record *StoreWithConstructFixture) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.StoreWithConstructFixture.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -2970,6 +3777,7 @@ func (s *StoreWithConstructFixtureStore) MustCount(q *StoreWithConstructFixtureQ
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *StoreWithConstructFixtureStore) FindOne(q *StoreWithConstructFixtureQuery) (*StoreWithConstructFixture, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -3004,7 +3812,7 @@ func (s *StoreWithConstructFixtureStore) MustFindOne(q *StoreWithConstructFixtur
 // Reload refreshes the StoreWithConstructFixture with the data in the database and
 // makes it writable.
 func (s *StoreWithConstructFixtureStore) Reload(record *StoreWithConstructFixture) error {
-	return s.Store.Reload(record)
+	return s.Store.Reload(Schema.StoreWithConstructFixture.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -3108,13 +3916,13 @@ func NewStoreWithConstructFixtureResultSet(rs kallax.ResultSet) *StoreWithConstr
 // The result set is closed automatically when there are no more items.
 func (rs *StoreWithConstructFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.StoreWithConstructFixture.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
@@ -3256,14 +4064,14 @@ type StoreWithNewFixtureStore struct {
 // NewStoreWithNewFixtureStore creates a new instance of StoreWithNewFixtureStore
 // using a SQL database.
 func NewStoreWithNewFixtureStore(db *sql.DB) *StoreWithNewFixtureStore {
-	return &StoreWithNewFixtureStore{kallax.NewStore(db, Schema.StoreWithNewFixture.BaseSchema)}
+	return &StoreWithNewFixtureStore{kallax.NewStore(db)}
 }
 
 // Insert inserts a StoreWithNewFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreWithNewFixtureStore) Insert(record *StoreWithNewFixture) error {
 
-	return s.Store.Insert(record)
+	return s.Store.Insert(Schema.StoreWithNewFixture.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -3272,21 +4080,30 @@ func (s *StoreWithNewFixtureStore) Insert(record *StoreWithNewFixture) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *StoreWithNewFixtureStore) Update(record *StoreWithNewFixture, cols ...kallax.SchemaField) (int64, error) {
+func (s *StoreWithNewFixtureStore) Update(record *StoreWithNewFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	return s.Store.Update(record, cols...)
+	return s.Store.Update(Schema.StoreWithNewFixture.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *StoreWithNewFixtureStore) Save(record *StoreWithNewFixture) (updated bool, err error) {
 
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *StoreWithNewFixtureStore) Delete(record *StoreWithNewFixture) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.StoreWithNewFixture.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -3321,6 +4138,7 @@ func (s *StoreWithNewFixtureStore) MustCount(q *StoreWithNewFixtureQuery) int64 
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *StoreWithNewFixtureStore) FindOne(q *StoreWithNewFixtureQuery) (*StoreWithNewFixture, error) {
 	q.Limit(1)
+	q.Offset(0)
 	rs, err := s.Find(q)
 	if err != nil {
 		return nil, err
@@ -3355,7 +4173,7 @@ func (s *StoreWithNewFixtureStore) MustFindOne(q *StoreWithNewFixtureQuery) *Sto
 // Reload refreshes the StoreWithNewFixture with the data in the database and
 // makes it writable.
 func (s *StoreWithNewFixtureStore) Reload(record *StoreWithNewFixture) error {
-	return s.Store.Reload(record)
+	return s.Store.Reload(Schema.StoreWithNewFixture.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -3459,13 +4277,13 @@ func NewStoreWithNewFixtureResultSet(rs kallax.ResultSet) *StoreWithNewFixtureRe
 // The result set is closed automatically when there are no more items.
 func (rs *StoreWithNewFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
-		rs.lastErr = rs.Close()
+		rs.lastErr = rs.ResultSet.Close()
 		return false
 	}
 
 	var record kallax.Record
-	record, rs.lastErr = rs.Get()
-	if rs.lastErr == nil {
+	record, rs.lastErr = rs.ResultSet.Get(Schema.StoreWithNewFixture.BaseSchema)
+	if rs.lastErr != nil {
 		rs.last = nil
 	} else {
 		var ok bool
@@ -3548,9 +4366,10 @@ func (rs *StoreWithNewFixtureResultSet) Close() error {
 }
 
 type schema struct {
-	EventsFixture             *schemaEventsFixture
-	EventsSaveFixture         *schemaEventsSaveFixture
+	Car                       *schemaCar
 	MultiKeySortFixture       *schemaMultiKeySortFixture
+	Person                    *schemaPerson
+	Pet                       *schemaPet
 	QueryFixture              *schemaQueryFixture
 	ResultSetFixture          *schemaResultSetFixture
 	ResultSetInitFixture      *schemaResultSetInitFixture
@@ -3560,20 +4379,9 @@ type schema struct {
 	StoreWithNewFixture       *schemaStoreWithNewFixture
 }
 
-type schemaEventsFixture struct {
+type schemaCar struct {
 	*kallax.BaseSchema
-	ID             kallax.SchemaField
-	Checks         kallax.SchemaField
-	MustFailBefore kallax.SchemaField
-	MustFailAfter  kallax.SchemaField
-}
-
-type schemaEventsSaveFixture struct {
-	*kallax.BaseSchema
-	ID             kallax.SchemaField
-	Checks         kallax.SchemaField
-	MustFailBefore kallax.SchemaField
-	MustFailAfter  kallax.SchemaField
+	ID kallax.SchemaField
 }
 
 type schemaMultiKeySortFixture struct {
@@ -3582,6 +4390,19 @@ type schemaMultiKeySortFixture struct {
 	Name  kallax.SchemaField
 	Start kallax.SchemaField
 	End   kallax.SchemaField
+}
+
+type schemaPerson struct {
+	*kallax.BaseSchema
+	ID   kallax.SchemaField
+	Name kallax.SchemaField
+}
+
+type schemaPet struct {
+	*kallax.BaseSchema
+	ID   kallax.SchemaField
+	Name kallax.SchemaField
+	Kind kallax.SchemaField
 }
 
 type schemaQueryFixture struct {
@@ -3629,43 +4450,22 @@ type schemaStoreWithNewFixture struct {
 }
 
 var Schema = &schema{
-	EventsFixture: &schemaEventsFixture{
+	Car: &schemaCar{
 		BaseSchema: kallax.NewBaseSchema(
-			"event",
-			"__eventsfixture",
+			"cars",
+			"__car",
 			kallax.NewSchemaField("id"),
-			kallax.ForeignKeys{},
+			kallax.ForeignKeys{
+				"Owner": kallax.NewForeignKey("owner_id", true),
+			},
 			func() kallax.Record {
-				return new(EventsFixture)
+				return new(Car)
 			},
 			kallax.NewSchemaField("id"),
-			kallax.NewSchemaField("checks"),
-			kallax.NewSchemaField("must_fail_before"),
-			kallax.NewSchemaField("must_fail_after"),
+			kallax.NewSchemaField("owner_id"),
+			kallax.NewSchemaField("model_name"),
 		),
-		ID:             kallax.NewSchemaField("id"),
-		Checks:         kallax.NewSchemaField("checks"),
-		MustFailBefore: kallax.NewSchemaField("must_fail_before"),
-		MustFailAfter:  kallax.NewSchemaField("must_fail_after"),
-	},
-	EventsSaveFixture: &schemaEventsSaveFixture{
-		BaseSchema: kallax.NewBaseSchema(
-			"event",
-			"__eventssavefixture",
-			kallax.NewSchemaField("id"),
-			kallax.ForeignKeys{},
-			func() kallax.Record {
-				return new(EventsSaveFixture)
-			},
-			kallax.NewSchemaField("id"),
-			kallax.NewSchemaField("checks"),
-			kallax.NewSchemaField("must_fail_before"),
-			kallax.NewSchemaField("must_fail_after"),
-		),
-		ID:             kallax.NewSchemaField("id"),
-		Checks:         kallax.NewSchemaField("checks"),
-		MustFailBefore: kallax.NewSchemaField("must_fail_before"),
-		MustFailAfter:  kallax.NewSchemaField("must_fail_after"),
+		ID: kallax.NewSchemaField("id"),
 	},
 	MultiKeySortFixture: &schemaMultiKeySortFixture{
 		BaseSchema: kallax.NewBaseSchema(
@@ -3685,6 +4485,44 @@ var Schema = &schema{
 		Name:  kallax.NewSchemaField("name"),
 		Start: kallax.NewSchemaField("start"),
 		End:   kallax.NewSchemaField("_end"),
+	},
+	Person: &schemaPerson{
+		BaseSchema: kallax.NewBaseSchema(
+			"persons",
+			"__person",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{
+				"Pets": kallax.NewForeignKey("owner_id", false),
+				"Car":  kallax.NewForeignKey("owner_id", false),
+			},
+			func() kallax.Record {
+				return new(Person)
+			},
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("name"),
+		),
+		ID:   kallax.NewSchemaField("id"),
+		Name: kallax.NewSchemaField("name"),
+	},
+	Pet: &schemaPet{
+		BaseSchema: kallax.NewBaseSchema(
+			"pets",
+			"__pet",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{
+				"Owner": kallax.NewForeignKey("owner_id", true),
+			},
+			func() kallax.Record {
+				return new(Pet)
+			},
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("name"),
+			kallax.NewSchemaField("kind"),
+			kallax.NewSchemaField("owner_id"),
+		),
+		ID:   kallax.NewSchemaField("id"),
+		Name: kallax.NewSchemaField("name"),
+		Kind: kallax.NewSchemaField("kind"),
 	},
 	QueryFixture: &schemaQueryFixture{
 		BaseSchema: kallax.NewBaseSchema(
@@ -3737,7 +4575,7 @@ var Schema = &schema{
 			"__schemafixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Nested": kallax.NewSchemaField("schema_fixture_id"),
+				"Nested": kallax.NewForeignKey("schema_fixture_id", false),
 			},
 			func() kallax.Record {
 				return new(SchemaFixture)

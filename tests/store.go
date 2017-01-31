@@ -29,12 +29,6 @@ type StoreWithNewFixture struct {
 	Bar          string
 }
 
-func (s *StoreWithNewFixtureStore) New(f, b string) *StoreWithNewFixture {
-	doc := &StoreWithNewFixture{Foo: f, Bar: b}
-	doc.SetID(kallax.NewID())
-	return doc
-}
-
 type MultiKeySortFixture struct {
 	kallax.Model `table:"query"`
 	Name         string

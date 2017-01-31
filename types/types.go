@@ -7,9 +7,131 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"time"
 
 	"github.com/lib/pq"
 )
+
+// Nullable gives the ability to scan nil values to the given type
+// only if they implement sql.Scanner.
+func Nullable(typ interface{}) interface{} {
+	// TODO(erizocosmico): implement the rest of go basic types
+	switch typ := typ.(type) {
+	case *string:
+		return &nullString{typ}
+	case *bool:
+		return &nullBool{typ}
+	case *int64:
+		return &nullInt64{typ}
+	case *float64:
+		return &nullFloat64{typ}
+	case *time.Time:
+		return &nullTime{typ}
+	case *time.Duration:
+		return &nullDuration{typ}
+	case sql.Scanner:
+		return &nullable{typ}
+	}
+
+	return &nullableErr{typ}
+}
+
+type nullableErr struct {
+	v interface{}
+}
+
+func (n *nullableErr) Scan(_ interface{}) error {
+	return fmt.Errorf("type %T is not nullable", n.v)
+}
+
+type nullable struct {
+	typ sql.Scanner
+}
+
+func (n *nullable) Scan(v interface{}) error {
+	if v == nil {
+		return nil
+	}
+	return n.typ.Scan(v)
+}
+
+type nullString struct {
+	v *string
+}
+
+func (n *nullString) Scan(v interface{}) error {
+	ns := new(sql.NullString)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = ns.String
+	return nil
+}
+
+type nullBool struct {
+	v *bool
+}
+
+func (n *nullBool) Scan(v interface{}) error {
+	ns := new(sql.NullBool)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = ns.Bool
+	return nil
+}
+
+type nullInt64 struct {
+	v *int64
+}
+
+func (n *nullInt64) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = ns.Int64
+	return nil
+}
+
+type nullFloat64 struct {
+	v *float64
+}
+
+func (n *nullFloat64) Scan(v interface{}) error {
+	ns := new(sql.NullFloat64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = ns.Float64
+	return nil
+}
+
+type nullTime struct {
+	v *time.Time
+}
+
+func (n *nullTime) Scan(v interface{}) error {
+	ns := new(pq.NullTime)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = ns.Time
+	return nil
+}
+
+type nullDuration struct {
+	v *time.Duration
+}
+
+func (n *nullDuration) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = time.Duration(ns.Int64)
+	return nil
+}
 
 // URL is a wrapper of url.URL that implements SQLType interface.
 type URL url.URL

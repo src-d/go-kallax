@@ -57,6 +57,8 @@ case "url":
 return (*types.URL)(r.URL), nil
 case "url_no_ptr":
 return (*types.URL)(&r.UrlNoPtr), nil
+case "foo_id":
+return kallax.VirtualColumn("foo_id", r), nil
 `
 
 const baseTpl = `
@@ -83,6 +85,7 @@ const baseTpl = `
 		JSON JSON
 		URL *url.URL
 		UrlNoPtr url.URL
+		RelInverse Rel ` + "`fk:\",inverse\"`" + `
 	}
 `
 
@@ -110,6 +113,8 @@ case "url":
 return (*types.URL)(r.URL), nil
 case "url_no_ptr":
 return (*types.URL)(&r.UrlNoPtr), nil
+case "foo_id":
+return r.Model.VirtualColumn(col), nil
 `
 
 func (s *TemplateSuite) TestGenColumnValues() {
@@ -140,6 +145,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 		JSON JSON
 		URL *url.URL
 		UrlNoPtr url.URL
+		RelInverse Rel ` + "`fk:\",inverse\"`" + `
 	}
 	`)
 
@@ -155,6 +161,7 @@ kallax.NewSchemaField("arr"),
 kallax.NewSchemaField("json"),
 kallax.NewSchemaField("url"),
 kallax.NewSchemaField("url_no_ptr"),
+kallax.NewSchemaField("foo_id"),
 `
 
 func (s *TemplateSuite) TestGenModelColumns() {

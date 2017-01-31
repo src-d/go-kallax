@@ -182,6 +182,8 @@ func (r *batchQueryRunner) getRecordRelationships(ids []interface{}, rel Relatio
 			return nil, err
 		}
 
+		rec.setPersisted()
+		rec.setWritable(true)
 		indexedResults[val] = append(indexedResults[val], rec)
 	}
 

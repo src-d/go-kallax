@@ -41,7 +41,10 @@ func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
                 if !ok {
                         return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", rel)
                 }
-                r.{{.Name}} = {{if or (not .IsPtr) .IsOneToManyRelationship}}*{{end}}val
+                {{if .IsPtr}}if !val.Model.ID.IsEmpty() {
+                        r.{{.Name}} = val
+                }
+                {{else}}r.{{.Name}} = *val{{end}}
                 return nil
         {{else}}case "{{.Name}}":
                 records, ok := rel.([]kallax.Record) 
@@ -72,8 +75,45 @@ type {{.StoreName}} struct {
 // New{{.StoreName}} creates a new instance of {{.StoreName}}
 // using a SQL database.
 func New{{.StoreName}}(db *sql.DB) *{{.StoreName}} {
-	return &{{.StoreName}}{kallax.NewStore(db, Schema.{{.Name}}.BaseSchema)}
+	return &{{.StoreName}}{kallax.NewStore(db)}
 }
+
+{{if .HasRelationships}}
+func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordWithSchema {
+        record.ClearVirtualColumns()
+        var records []kallax.RecordWithSchema
+        {{range .Relationships}}
+        {{if .IsInverse}}
+        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.ID.IsEmpty(){{end}} {
+                record.AddVirtualColumn("{{.ForeignKey}}", record.{{.Name}}.ID)
+                records = append(records, kallax.RecordWithSchema{
+                        Schema.{{.TypeSchemaName}}.BaseSchema,
+                        {{if not .IsPtr}}&{{end}}record.{{.Name}},
+                })
+        }
+        {{else if .IsOneToManyRelationship}}
+        for _, rec := range record.{{.Name}} {
+                rec.ClearVirtualColumns()
+                rec.AddVirtualColumn("{{.ForeignKey}}", record.ID)
+                records = append(records, kallax.RecordWithSchema{
+                        Schema.{{.TypeSchemaName}}.BaseSchema,
+                        {{if not ($.IsPtrSlice .)}}&{{end}}rec,
+                })
+        }
+        {{else}}
+        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.ID.IsEmpty(){{end}} {
+                record.{{.Name}}.ClearVirtualColumns()
+                record.{{.Name}}.AddVirtualColumn("{{.ForeignKey}}", record.ID)
+                records = append(records, kallax.RecordWithSchema{
+                        Schema.{{.TypeSchemaName}}.BaseSchema,
+                        {{if not .IsPtr}}&{{end}}record.{{.Name}},
+                })
+        }
+        {{end}}
+        {{end}}
+        return records
+}
+{{end}}
 
 // Insert inserts a {{.Name}} in the database. A non-persisted object is
 // required for this operation.
@@ -87,7 +127,25 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
         if err := record.BeforeInsert(); err != nil {
         }
         {{end}}
-	return s.Store.Insert(record)
+        {{if .HasRelationships}}
+        records := s.relationshipRecords(record)
+        if len(records) > 0 {
+                return s.Store.Transaction(func(s *kallax.Store) error {
+                        if err := s.Insert(Schema.{{.Name}}.BaseSchema, record); err != nil {
+                                return err
+                        }
+
+                        for _, r := range records {
+                                if _, err := s.Save(r.Schema, r.Record); err != nil {
+                                        return err
+                                }
+                        }
+
+                        return nil
+                })
+        }
+        {{end}}
+        return s.Store.Insert(Schema.{{.Name}}.BaseSchema, record)
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -96,7 +154,7 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
 // in memory but not on the database.
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
-func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (int64, error) {
+func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (updated int64, err error) {
         {{if .Events.Has "BeforeSave"}}
         if err := record.BeforeSave(); err != nil {
                 return 0, err
@@ -107,7 +165,26 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
                 return 0, err
         }
         {{end}}
-	return s.Store.Update(record, cols...)
+        {{if .HasRelationships}}
+        records := s.relationshipRecords(record)
+        if len(records) > 0 {
+                err = s.Store.Transaction(func(s *kallax.Store) error {
+                        updated, err = s.Update(Schema.{{.Name}}.BaseSchema, record, cols...)
+                        if err != nil {
+                                return err
+                        }
+
+                        for _, r := range records {
+                                if _, err := s.Save(r.Schema, r.Record); err != nil {
+                                        return err
+                                }
+                        }
+                        return nil
+                })
+                return updated, err
+        }
+        {{end}}
+	return s.Store.Update(Schema.{{.Name}}.BaseSchema, record, cols...)
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -132,12 +209,21 @@ func (s *{{.StoreName}}) Save(record *{{.Name}}) (updated bool,  err error) {
                 }
         }
         {{end}}
-	return s.Store.Save(record)
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
 }
 
 // Delete removes the given record from the database.
 func (s *{{.StoreName}}) Delete(record *{{.Name}}) error {
-	return s.Store.Delete(record)
+	return s.Store.Delete(Schema.{{.Name}}.BaseSchema, record)
 }
 
 // Find returns the set of results for the given query.
@@ -172,6 +258,7 @@ func (s *{{.StoreName}}) MustCount(q *{{.QueryName}}) int64 {
 // `sql.ErrNoRows` is returned if there are no results.
 func (s *{{.StoreName}}) FindOne(q *{{.QueryName}}) (*{{.Name}}, error) {
 	q.Limit(1)
+        q.Offset(0)
         rs, err := s.Find(q)
         if err != nil {
                 return nil, err
@@ -206,7 +293,7 @@ func (s *{{.StoreName}}) MustFindOne(q *{{.QueryName}}) *{{.Name}} {
 // Reload refreshes the {{.Name}} with the data in the database and
 // makes it writable.
 func (s *{{.StoreName}}) Reload(record *{{.Name}}) error {
-        return s.Store.Reload(record)
+        return s.Store.Reload(Schema.{{.Name}}.BaseSchema, record)
 }
 
 // Transaction executes the given callback in a transaction and rollbacks if
@@ -222,6 +309,75 @@ func (s *{{.StoreName}}) Transaction(callback func(*{{.StoreName}}) error) error
                 return callback(&{{.StoreName}}{store})
         })
 }
+
+{{range .Relationships}}{{if .IsOneToManyRelationship}}
+// Remove{{.Name}} removes the given items of the {{.Name}} field of the
+// model. If no items are given, it removes all of them.
+// The items will also be removed from the passed record inside this method.
+func (s *{{.Model.StoreName}}) Remove{{.Name}}(record *{{.Model.Name}}, deleted ...{{if $.IsPtrSlice .}}*{{end}}{{$.GenTypeName .}}) error {
+        var updated []{{if $.IsPtrSlice .}}*{{end}}{{$.GenTypeName .}}
+        var clear bool
+        if len(deleted) == 0 {
+                clear = true
+                deleted = record.{{.Name}}
+                if len(deleted) == 0 {
+                        return nil
+                }
+        }
+
+        if len(deleted) > 1 {
+                err := s.Store.Transaction(func(s *kallax.Store) error {
+                        for _, d := range deleted {
+                                if err := s.Delete(Schema.{{.TypeSchemaName}}.BaseSchema, {{if not ($.IsPtrSlice .)}}&{{end}}d); err != nil {
+                                        return err
+                                }
+                        }
+                        return nil
+                })
+
+                if err != nil {
+                        return err
+                }
+
+                if clear {
+                        record.{{.Name}} = nil
+                        return nil
+                }
+        } else {
+                if err := s.Store.Delete(Schema.{{.TypeSchemaName}}.BaseSchema, {{if not ($.IsPtrSlice .)}}&{{end}}deleted[0]); err != nil {
+                        return err
+                }
+        }
+
+        
+        for _, r := range record.{{.Name}} {
+                var found bool
+                for _, d := range deleted {
+                        if d.ID == r.ID {
+                                found = true
+                                break
+                        }
+                }
+                if !found {
+                        updated = append(updated, r)
+                }
+        }
+        record.{{.Name}} = updated
+        return nil
+}
+{{else if not .IsInverse}}
+// Remove{{.Name}} removes from the database the given relationship of the
+// model. It also resets the field {{.Name}} of the model.
+func (s *{{.Model.StoreName}}) Remove{{.Name}}(record *{{.Model.Name}}) error {
+        err := s.Store.Delete(Schema.{{.TypeSchemaName}}.BaseSchema, {{if not .IsPtr}}&{{end}}record.{{.Name}})
+        if err != nil {
+                return err
+        }
+
+        record.{{.Name}} = {{if .IsPtr}}nil{{else}}{{$.GenTypeName .}}{}{{end}}
+        return nil
+}
+{{end}}{{end}}
 
 {{template "query" .}}
 

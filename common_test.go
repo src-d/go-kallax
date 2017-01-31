@@ -149,8 +149,8 @@ var ModelSchema = &BaseSchema{
 	table: "model",
 	id:    f("id"),
 	foreignKeys: ForeignKeys{
-		"rel":  NewSchemaField("model_id"),
-		"rels": NewSchemaField("model_id"),
+		"rel":  NewForeignKey("model_id", false),
+		"rels": NewForeignKey("model_id", false),
 	},
 	constructor: func() Record {
 		return new(model)
