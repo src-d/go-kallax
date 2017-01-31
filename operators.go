@@ -2,7 +2,9 @@ package kallax
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/src-d/go-kallax/types"
 
@@ -175,6 +177,71 @@ func ArrayOverlap(col SchemaField, values ...interface{}) Condition {
 	}
 }
 
+// JSONIsObject returns a condition that will be true when `col` is a JSON
+// object.
+func JSONIsObject(col SchemaField) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colUnaryOp{col.QualifiedName(schema), " @> '{}'"}
+	}
+}
+
+// JSONIsArray returns a condition that will be true when `col` is a JSON
+// array.
+func JSONIsArray(col SchemaField) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colUnaryOp{col.QualifiedName(schema), " @> '[]'"}
+	}
+}
+
+// JSONContains returns a condition that will be true when `col` contains
+// the given element converted to JSON.
+func JSONContains(col SchemaField, elem interface{}) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "@>", types.JSON(elem)}
+	}
+}
+
+// JSONContainsAny returns a condition that will be true when `col` contains
+// any of the given elements converted to json.
+// Giving no elements will cause an error to be returned when the condition is
+// evaluated.
+func JSONContainsAny(col SchemaField, elems ...interface{}) Condition {
+	if len(elems) == 1 {
+		return JSONContains(col, elems[0])
+	}
+	return func(schema Schema) squirrel.Sqlizer {
+		if len(elems) == 0 {
+			return &errOp{"can't check if json contains 0 elements"}
+		}
+		return &containsAny{col.QualifiedName(schema), elems}
+	}
+}
+
+// JSONContainedBy returns a condition that will be true when `col` is
+// contained by the given element converted to JSON.
+func JSONContainedBy(col SchemaField, elem interface{}) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "<@", types.JSON(elem)}
+	}
+}
+
+// JSONContainsAnyKey returns a condition that will be true when `col` contains
+// any of the given keys. Will also match elements if the column is an array.
+func JSONContainsAnyKey(col SchemaField, keys ...string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "??|", types.Slice(keys)}
+	}
+}
+
+// JSONContainsAllKeys returns a condition that will be true when `col`
+// contains all the given keys. Will also match elements if the column is an
+// array.
+func JSONContainsAllKeys(col SchemaField, keys ...string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "??&", types.Slice(keys)}
+	}
+}
+
 type (
 	not struct {
 		cond squirrel.Sqlizer
@@ -184,6 +251,20 @@ type (
 		col    string
 		op     string
 		valuer driver.Valuer
+	}
+
+	colUnaryOp struct {
+		col string
+		op  string
+	}
+
+	errOp struct {
+		msg string
+	}
+
+	containsAny struct {
+		col    string
+		values []interface{}
 	}
 )
 
@@ -198,6 +279,28 @@ func (n not) ToSql() (string, []interface{}, error) {
 
 func (o colOp) ToSql() (string, []interface{}, error) {
 	return fmt.Sprintf("%s %s ?", o.col, o.op), []interface{}{o.valuer}, nil
+}
+
+func (o colUnaryOp) ToSql() (string, []interface{}, error) {
+	return fmt.Sprintf("%s %s", o.col, o.op), nil, nil
+}
+
+func (o errOp) ToSql() (string, []interface{}, error) {
+	return "", nil, errors.New(o.msg)
+}
+
+func (o containsAny) ToSql() (string, []interface{}, error) {
+	var placeholders = make([]string, len(o.values))
+	var args = make([]interface{}, len(o.values))
+	for i, el := range o.values {
+		args[i] = types.JSON(el)
+		placeholders[i] = "?"
+	}
+	return fmt.Sprintf(
+		"%s @> ANY (ARRAY [%s]::jsonb[])",
+		o.col,
+		strings.Join(placeholders, ", "),
+	), args, nil
 }
 
 func condsToSqlizers(conds []Condition, schema Schema) []squirrel.Sqlizer {

@@ -1,6 +1,9 @@
 package kallax
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Schema represents a table schema in the database. Contains some information
 // like the table name, its columns, its identifier and so on.
@@ -121,6 +124,92 @@ type ForeignKey struct {
 // NewForeignKey creates a new Foreign key with the given name.
 func NewForeignKey(name string, inverse bool) *ForeignKey {
 	return &ForeignKey{&BaseSchemaField{name}, inverse}
+}
+
+// JSONSchemaKey is a SchemaField that represents a key in a JSON object.
+type JSONSchemaKey struct {
+	typ   JSONKeyType
+	field string
+	paths []string
+}
+
+// JSONSchemaArray is a SchemaField that represents a JSON array.
+type JSONSchemaArray struct {
+	key *JSONSchemaKey
+}
+
+// JSONKeyType is the type of an object key in a JSON.
+type JSONKeyType string
+
+const (
+	// JSONAny represents a type that can't be casted.
+	JSONAny JSONKeyType = ""
+	// JSONText is a text json type.
+	JSONText JSONKeyType = "text"
+	// JSONInt is a numeric json type.
+	JSONInt JSONKeyType = "bigint"
+	// JSONFloat is a floating point json type.
+	JSONFloat JSONKeyType = "decimal"
+	// JSONBool is a boolean json type.
+	JSONBool JSONKeyType = "bool"
+)
+
+// ArraySchemaField is an interface that defines if a field is a JSON
+// array.
+type ArraySchemaField interface {
+	SchemaField
+	isArraySchemaField()
+}
+
+// NewJSONSchemaArray creates a new SchemaField that is a json array.
+func NewJSONSchemaArray(field string, paths ...string) *JSONSchemaArray {
+	return &JSONSchemaArray{NewJSONSchemaKey(JSONAny, field, paths...)}
+}
+
+func (f *JSONSchemaArray) QualifiedName(schema Schema) string {
+	return f.key.QualifiedName(schema)
+}
+
+func (f *JSONSchemaArray) String() string {
+	return f.key.String()
+}
+
+// NewJSONSchemaKey creates a new SchemaField that is a json key.
+func NewJSONSchemaKey(typ JSONKeyType, field string, paths ...string) *JSONSchemaKey {
+	return &JSONSchemaKey{typ, field, paths}
+}
+
+func (f *JSONSchemaKey) QualifiedName(schema Schema) string {
+	op := "#>"
+	format := "%s%s %s'{%s}'"
+	if f.typ == JSONText {
+		op = "#>>"
+	} else if f.typ != JSONAny {
+		op = "#>>"
+		format = "CAST(%s%s %s'{%s}' as " + string(f.typ) + ")"
+	}
+
+	var alias string
+	if schema != nil && schema.Alias() != "" {
+		alias = schema.Alias() + "."
+	}
+
+	return fmt.Sprintf(format, alias, f.field, op, strings.Join(f.paths, ","))
+	return fmt.Sprintf("%s.%s", schema.Alias(), f)
+}
+
+func (f *JSONSchemaKey) String() string {
+	return f.QualifiedName(nil)
+}
+
+func (*JSONSchemaKey) isSchemaField()        {}
+func (*JSONSchemaArray) isSchemaField()      {}
+func (*JSONSchemaArray) isArraySchemaField() {}
+
+// AtJSONPath returns the schema field to query an arbitrary JSON element at
+// the given path.
+func AtJSONPath(field SchemaField, typ JSONKeyType, path ...string) SchemaField {
+	return NewJSONSchemaKey(typ, field.String(), path...)
 }
 
 // Relationship is a relationship with its schema and the field of te relation

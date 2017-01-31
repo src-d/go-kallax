@@ -552,6 +552,16 @@ func (f *Field) Inline() bool {
 	return false
 }
 
+// JSONName returns the name of the field or its JSON name specified in the
+// JSON struct tag.
+func (f *Field) JSONName() string {
+	tag := strings.Split(f.Tag.Get("json"), ",")[0]
+	if tag == "" {
+		tag = f.Name
+	}
+	return tag
+}
+
 func (f *Field) String() string {
 	return f.Name
 }

@@ -51,6 +51,11 @@ func (td *TemplateData) GenColumnAddresses(model *Model) string {
 	return buf.String()
 }
 
+const initNilPtrTpl = `if r.%s == nil {
+r.%s = new(%s)
+}
+`
+
 func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Field) {
 	for _, f := range fields {
 		if f.Inline() {
@@ -60,6 +65,10 @@ func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Fi
 			buf.WriteString(fmt.Sprintf("return kallax.VirtualColumn(\"%s\", r), nil\n", f.ForeignKey()))
 		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
+			// can't scan a json if is nil
+			if f.IsJSON && f.IsPtr {
+				buf.WriteString(fmt.Sprintf(initNilPtrTpl, f.Name, f.Name, td.GenTypeName(f)))
+			}
 			buf.WriteString(fmt.Sprintf("return %s\n", f.Address()))
 		}
 	}
@@ -174,11 +183,92 @@ func (td *TemplateData) GenSubSchemas() string {
 	var buf bytes.Buffer
 	for parent, field := range td.subschemas {
 		buf.WriteString("type schema" + parent + " struct {\n")
-		buf.WriteString("*kallax.BaseSchemaField\n")
+		if isSliceOrArray(field) {
+			buf.WriteString("*kallax.JSONSchemaArray\n")
+		} else {
+			buf.WriteString("*kallax.BaseSchemaField\n")
+		}
 		td.genFieldsSchema(&buf, parent, field.Fields)
 		buf.WriteString("}\n\n")
+
+		if isSliceOrArray(field) {
+			td.genArraySchemaAtFunc(&buf, parent, field)
+		}
 	}
 	return buf.String()
+}
+
+// genArraySchemaAtFunc generates the `At` func for an array field schema.
+func (td *TemplateData) genArraySchemaAtFunc(buf *bytes.Buffer, parent string, f *Field) {
+	buf.WriteString(fmt.Sprintf("func (s *schema%s) At(n int) *schema%s {\n", parent, parent))
+	buf.WriteString(fmt.Sprintf("return &schema%s{\n", parent))
+	buf.WriteString(fmt.Sprintf("JSONSchemaArray: kallax.NewJSONSchemaArray(%s),\n", td.genSchemaPath(f, "")))
+	td.genSubschemaFieldsInit(buf, parent, f.Fields, "fmt.Sprint(n)")
+	buf.WriteString("}\n}\n\n")
+}
+
+// genSchemaPath generates the path needed to access the given field in JSON.
+// If prependLast is given, it will add it before the last element of the path.
+func (td *TemplateData) genSchemaPath(f *Field, prependLast string) string {
+	var result string
+	for f.Parent != nil {
+		if !f.Inline() {
+			if result == "" {
+				result = fmt.Sprintf("%q", f.JSONName())
+				if prependLast != "" {
+					result = fmt.Sprintf("%s, %s", prependLast, result)
+				}
+			} else {
+				result = fmt.Sprintf("%q, %s", f.JSONName(), result)
+			}
+		}
+
+		f = f.Parent
+	}
+
+	result = fmt.Sprintf("%q, %s", f.ColumnName(), result)
+	return strings.TrimRight(strings.TrimSpace(result), ",")
+}
+
+// genSubschemaFieldsInit generates the initialization of the subschema fields.
+// If prependLast is given, all field paths will have prependLast before the
+// last element of its path.
+func (td *TemplateData) genSubschemaFieldsInit(buf *bytes.Buffer, parent string, fields []*Field, prependLast string) {
+	for _, f := range fields {
+		if f.Inline() {
+			td.genSubschemaFieldsInit(buf, parent, f.Fields, "")
+		} else {
+			buf.WriteString(fmt.Sprintf("%s:", f.Name))
+			if f.IsJSON && len(f.Fields) > 0 {
+				td.genSubschemaInit(buf, parent, f)
+			} else if strings.HasPrefix(f.Type, "[") {
+				buf.WriteString(fmt.Sprintf("kallax.NewJSONSchemaArray(%s)", td.genSchemaPath(f, prependLast)))
+			} else {
+				buf.WriteString(fmt.Sprintf(
+					"kallax.NewJSONSchemaKey(%s, %s)",
+					td.genJSONType(f),
+					td.genSchemaPath(f, prependLast),
+				))
+			}
+			buf.WriteString(",\n")
+		}
+	}
+}
+
+// genSubschemaInit generates the initialization for a subschema.
+func (td *TemplateData) genSubschemaInit(buf *bytes.Buffer, parent string, f *Field) {
+	buf.WriteString(fmt.Sprintf("&schema%s%s{\n", parent, f.Name))
+	if isSliceOrArray(f) {
+		buf.WriteString(fmt.Sprintf("JSONSchemaArray: kallax.NewJSONSchemaArray(%s),\n", td.genSchemaPath(f, "")))
+	} else {
+		buf.WriteString(fmt.Sprintf(
+			"JSONSchemaKey: kallax.NewJSONSchemaKey(%s),\n",
+			td.genJSONType(f),
+			td.genSchemaPath(f, ""),
+		))
+	}
+	td.genSubschemaFieldsInit(buf, parent+f.Name, f.Fields, "")
+	buf.WriteString("}")
 }
 
 // GenSchemaInit generates the code to initialize all fields in the schema
@@ -207,7 +297,7 @@ func (td *TemplateData) genFieldsInit(buf *bytes.Buffer, parent string, fields [
 			if f.IsJSON && len(f.Fields) > 0 {
 				buf.WriteString(fmt.Sprintf("&schema%s%s{\n", parent, f.Name))
 				buf.WriteString(fmt.Sprintf(`BaseSchemaField: kallax.NewSchemaField("%s").(*kallax.BaseSchemaField),`+"\n", schemaName))
-				td.genFieldsInit(buf, parent+f.Name, f.Fields, false)
+				td.genSubschemaFieldsInit(buf, parent+f.Name, f.Fields, "")
 				buf.WriteString("},")
 			} else {
 				buf.WriteString(fmt.Sprintf(`kallax.NewSchemaField("%s"),`, schemaName))
@@ -216,6 +306,29 @@ func (td *TemplateData) genFieldsInit(buf *bytes.Buffer, parent string, fields [
 			buf.WriteRune('\n')
 		}
 	}
+}
+
+func (td *TemplateData) genJSONType(f *Field) string {
+	if f.Kind != Basic {
+		return "kallax.JSONAny"
+	}
+
+	switch f.Type {
+	case "string":
+		return "kallax.JSONText"
+	case "int8", "uint8", "byte", "int16", "uint16", "int32", "uint32", "int", "uint", "int64", "uint64":
+		return "kallax.JSONInt"
+	case "float64", "float32":
+		return "kallax.JSONFloat"
+	case "bool":
+		return "kallax.JSONBool"
+	default:
+		return "kallax.JSONAny"
+	}
+}
+
+func isSliceOrArray(f *Field) bool {
+	return strings.HasPrefix(f.Type, "[")
 }
 
 func prettyfy(input []byte, wr io.Writer) error {
