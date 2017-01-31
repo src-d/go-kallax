@@ -356,6 +356,7 @@ func NewCarResultSet(rs kallax.ResultSet) *CarResultSet {
 func (rs *CarResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -735,6 +736,7 @@ func NewEventsFixtureResultSet(rs kallax.ResultSet) *EventsFixtureResultSet {
 func (rs *EventsFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -1106,6 +1108,7 @@ func NewEventsSaveFixtureResultSet(rs kallax.ResultSet) *EventsSaveFixtureResult
 func (rs *EventsSaveFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -1465,6 +1468,7 @@ func NewMultiKeySortFixtureResultSet(rs kallax.ResultSet) *MultiKeySortFixtureRe
 func (rs *MultiKeySortFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -1987,6 +1991,7 @@ func NewPersonResultSet(rs kallax.ResultSet) *PersonResultSet {
 func (rs *PersonResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -2419,6 +2424,7 @@ func NewPetResultSet(rs kallax.ResultSet) *PetResultSet {
 func (rs *PetResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -2770,6 +2776,7 @@ func NewQueryFixtureResultSet(rs kallax.ResultSet) *QueryFixtureResultSet {
 func (rs *QueryFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -3121,6 +3128,7 @@ func NewResultSetFixtureResultSet(rs kallax.ResultSet) *ResultSetFixtureResultSe
 func (rs *ResultSetFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -3582,6 +3590,7 @@ func NewSchemaFixtureResultSet(rs kallax.ResultSet) *SchemaFixtureResultSet {
 func (rs *SchemaFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -3933,6 +3942,7 @@ func NewStoreFixtureResultSet(rs kallax.ResultSet) *StoreFixtureResultSet {
 func (rs *StoreFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -4284,6 +4294,7 @@ func NewStoreWithConstructFixtureResultSet(rs kallax.ResultSet) *StoreWithConstr
 func (rs *StoreWithConstructFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -4639,6 +4650,7 @@ func NewStoreWithNewFixtureResultSet(rs kallax.ResultSet) *StoreWithNewFixtureRe
 func (rs *StoreWithNewFixtureResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 

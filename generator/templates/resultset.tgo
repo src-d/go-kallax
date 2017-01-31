@@ -19,6 +19,7 @@ func New{{.ResultSetName}}(rs kallax.ResultSet) *{{.ResultSetName}} {
 func (rs *{{.ResultSetName}}) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
