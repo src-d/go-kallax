@@ -3229,8 +3229,6 @@ func (r *SchemaFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return &r.Model.ID, nil
-	case "should_ignore":
-		return &r.ShouldIgnore, nil
 	case "string":
 		return &r.String, nil
 	case "int":
@@ -3253,8 +3251,6 @@ func (r *SchemaFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return r.Model.ID, nil
-	case "should_ignore":
-		return r.ShouldIgnore, nil
 	case "string":
 		return r.String, nil
 	case "int":
@@ -4811,7 +4807,6 @@ type schemaResultSetFixture struct {
 type schemaSchemaFixture struct {
 	*kallax.BaseSchema
 	ID             kallax.SchemaField
-	ShouldIgnore   kallax.SchemaField
 	String         kallax.SchemaField
 	Int            kallax.SchemaField
 	Inline         kallax.SchemaField
@@ -4995,7 +4990,6 @@ var Schema = &schema{
 				return new(SchemaFixture)
 			},
 			kallax.NewSchemaField("id"),
-			kallax.NewSchemaField("should_ignore"),
 			kallax.NewSchemaField("string"),
 			kallax.NewSchemaField("int"),
 			kallax.NewSchemaField("inline"),
@@ -5004,7 +4998,6 @@ var Schema = &schema{
 			kallax.NewSchemaField("map_of_some_type"),
 		),
 		ID:             kallax.NewSchemaField("id"),
-		ShouldIgnore:   kallax.NewSchemaField("should_ignore"),
 		String:         kallax.NewSchemaField("string"),
 		Int:            kallax.NewSchemaField("int"),
 		Inline:         kallax.NewSchemaField("inline"),

@@ -46,5 +46,5 @@ func (s *SchemaSuite) TestSchemaMapOfInterface() {
 func (s *SchemaSuite) TestSchemaIgnored() {
 	schema := reflect.ValueOf(Schema.SchemaFixture)
 	field := reflect.Indirect(schema).FieldByName("ShouldIgnore")
-	s.False(field.IsValid(), "TODO: https://github.com/src-d/go-kallax/issues/59")
+	s.False(field.IsValid())
 }
