@@ -86,7 +86,7 @@ func (s *StoreSuite) TestStoreInsertUpdateMustFind() {
 	s.Nil(err)
 	s.NotPanics(func() {
 		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
+	})
 
 	doc.Foo = "bar"
 	updatedRows, err := store.Update(doc)
@@ -94,7 +94,7 @@ func (s *StoreSuite) TestStoreInsertUpdateMustFind() {
 	s.True(updatedRows > 0)
 	s.NotPanics(func() {
 		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
+	})
 }
 
 func (s *StoreSuite) TestStoreSave() {
@@ -107,7 +107,7 @@ func (s *StoreSuite) TestStoreSave() {
 	s.True(doc.IsPersisted())
 	s.NotPanics(func() {
 		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
+	})
 
 	doc.Foo = "bar"
 	updated, err = store.Save(doc)
@@ -115,7 +115,7 @@ func (s *StoreSuite) TestStoreSave() {
 	s.True(updated)
 	s.NotPanics(func() {
 		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
-	}, "TODO: https://github.com/src-d/go-kallax/issues/49")
+	})
 }
 
 func (s *StoreSuite) TestMultiKeySort() {
@@ -169,16 +169,13 @@ func (s *StoreSuite) TestMultiKeySort() {
 	s.Len(documents, 4)
 	success := true
 	for _, doc := range documents {
-		if !s.NotNil(doc, "TODO: https://github.com/src-d/go-kallax/issues/49") {
+		if !s.NotNil(doc) {
 			success = false
 		}
 	}
 
 	if !success {
-		s.Fail(
-			`Testcase aborted. All retrieved Documents should be not-nil
-			TODO: https://github.com/src-d/go-kallax/issues/49`,
-		)
+		s.Fail("Testcase aborted. All retrieved Documents should be not-nil")
 		return
 	}
 
@@ -188,7 +185,6 @@ func (s *StoreSuite) TestMultiKeySort() {
 	s.Equal("2001-2012", documents[3].Name)
 }
 
-// TODO: https://github.com/src-d/go-kallax/issues/49
 func (s *StoreSuite) TestFindOne() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 
@@ -198,7 +194,7 @@ func (s *StoreSuite) TestFindOne() {
 	query := NewStoreWithConstructFixtureQuery()
 	docFound, err := store.FindOne(query)
 	s.resultOrError(docFound, err)
-	if s.NotNil(docFound, "TODO: https://github.com/src-d/go-kallax/issues/49") {
+	if s.NotNil(docFound) {
 		s.Equal(docInserted.Foo, docFound.Foo)
 	}
 }
