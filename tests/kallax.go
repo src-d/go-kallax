@@ -1471,6 +1471,7 @@ func NewJSONModelResultSet(rs kallax.ResultSet) *JSONModelResultSet {
 func (rs *JSONModelResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 

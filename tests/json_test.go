@@ -20,11 +20,7 @@ func TestJSON(t *testing.T) {
 			baz jsonb
 		)`,
 	}
-	suite.Run(t, &JSONSuite{
-		BaseTestSuite{
-			initQueries: schema,
-		},
-	})
+	suite.Run(t, &JSONSuite{NewBaseSuite(schema, "jsons")})
 }
 
 func (s *JSONSuite) TestSearchByField() {
