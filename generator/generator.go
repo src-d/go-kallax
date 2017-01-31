@@ -1,6 +1,9 @@
 package generator
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 // Generator is in charge of generating files for packages.
 type Generator struct {
@@ -17,12 +20,20 @@ func (g *Generator) Generate(pkg *Package) error {
 	return g.writeFile(pkg)
 }
 
-func (g *Generator) writeFile(pkg *Package) error {
+func (g *Generator) writeFile(pkg *Package) (err error) {
 	file, err := os.Create(g.filename)
 	if err != nil {
 		return err
 	}
 
-	defer file.Close()
+	defer func() {
+		file.Close()
+		if err != nil {
+			fmt.Println()
+			fmt.Println("kallax: No file generated due to an occurred error:")
+			os.Remove(g.filename)
+		}
+	}()
+
 	return Base.Execute(file, pkg)
 }
