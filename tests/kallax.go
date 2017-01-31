@@ -1193,6 +1193,368 @@ func (rs *EventsSaveFixtureResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
+// NewJSONModel returns a new instance of JSONModel.
+func NewJSONModel() (record *JSONModel) {
+	record = newJSONModel()
+	if record != nil {
+		record.SetID(kallax.NewID())
+	}
+	return
+}
+
+func (r *JSONModel) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return &r.Model.ID, nil
+	case "foo":
+		return &r.Foo, nil
+	case "bar":
+		if r.Bar == nil {
+			r.Bar = new(Bar)
+		}
+		return types.JSON(r.Bar), nil
+	case "baz":
+		return types.JSON(&r.Baz), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in JSONModel: %s", col)
+	}
+}
+
+func (r *JSONModel) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.Model.ID, nil
+	case "foo":
+		return r.Foo, nil
+	case "bar":
+		return types.JSON(r.Bar), nil
+	case "baz":
+		return types.JSON(r.Baz), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in JSONModel: %s", col)
+	}
+}
+
+func (r *JSONModel) NewRelationshipRecord(field string) (kallax.Record, error) {
+	return nil, fmt.Errorf("kallax: model JSONModel has no relationships")
+}
+
+func (r *JSONModel) SetRelationship(field string, rel interface{}) error {
+	return fmt.Errorf("kallax: model JSONModel has no relationships")
+}
+
+// JSONModelStore is the entity to access the records of the type JSONModel
+// in the database.
+type JSONModelStore struct {
+	*kallax.Store
+}
+
+// NewJSONModelStore creates a new instance of JSONModelStore
+// using a SQL database.
+func NewJSONModelStore(db *sql.DB) *JSONModelStore {
+	return &JSONModelStore{kallax.NewStore(db)}
+}
+
+// Insert inserts a JSONModel in the database. A non-persisted object is
+// required for this operation.
+func (s *JSONModelStore) Insert(record *JSONModel) error {
+
+	return s.Store.Insert(Schema.JSONModel.BaseSchema, record)
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *JSONModelStore) Update(record *JSONModel, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	return s.Store.Update(Schema.JSONModel.BaseSchema, record, cols...)
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *JSONModelStore) Save(record *JSONModel) (updated bool, err error) {
+
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *JSONModelStore) Delete(record *JSONModel) error {
+	return s.Store.Delete(Schema.JSONModel.BaseSchema, record)
+}
+
+// Find returns the set of results for the given query.
+func (s *JSONModelStore) Find(q *JSONModelQuery) (*JSONModelResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewJSONModelResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *JSONModelStore) MustFind(q *JSONModelQuery) *JSONModelResultSet {
+	return NewJSONModelResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *JSONModelStore) Count(q *JSONModelQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *JSONModelStore) MustCount(q *JSONModelQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `sql.ErrNoRows` is returned if there are no results.
+func (s *JSONModelStore) FindOne(q *JSONModelQuery) (*JSONModel, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *JSONModelStore) MustFindOne(q *JSONModelQuery) *JSONModel {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the JSONModel with the data in the database and
+// makes it writable.
+func (s *JSONModelStore) Reload(record *JSONModel) error {
+	return s.Store.Reload(Schema.JSONModel.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *JSONModelStore) Transaction(callback func(*JSONModelStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&JSONModelStore{store})
+	})
+}
+
+// JSONModelQuery is the object used to create queries for the JSONModel
+// entity.
+type JSONModelQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewJSONModelQuery returns a new instance of JSONModelQuery.
+func NewJSONModelQuery() *JSONModelQuery {
+	return &JSONModelQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.JSONModel.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *JSONModelQuery) Select(columns ...kallax.SchemaField) *JSONModelQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *JSONModelQuery) SelectNot(columns ...kallax.SchemaField) *JSONModelQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *JSONModelQuery) Copy() *JSONModelQuery {
+	return &JSONModelQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *JSONModelQuery) Order(cols ...kallax.ColumnOrder) *JSONModelQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *JSONModelQuery) BatchSize(size uint64) *JSONModelQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *JSONModelQuery) Limit(n uint64) *JSONModelQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *JSONModelQuery) Offset(n uint64) *JSONModelQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *JSONModelQuery) Where(cond kallax.Condition) *JSONModelQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// JSONModelResultSet is the set of results returned by a query to the
+// database.
+type JSONModelResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *JSONModel
+	lastErr   error
+}
+
+// NewJSONModelResultSet creates a new result set for rows of the type
+// JSONModel.
+func NewJSONModelResultSet(rs kallax.ResultSet) *JSONModelResultSet {
+	return &JSONModelResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *JSONModelResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.JSONModel.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*JSONModel)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *JSONModel")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *JSONModelResultSet) Get() (*JSONModel, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *JSONModelResultSet) ForEach(fn func(*JSONModel) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *JSONModelResultSet) All() ([]*JSONModel, error) {
+	var result []*JSONModel
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *JSONModelResultSet) One() (*JSONModel, error) {
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *JSONModelResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *JSONModelResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewMultiKeySortFixture returns a new instance of MultiKeySortFixture.
 func NewMultiKeySortFixture() (record *MultiKeySortFixture) {
 	record = &MultiKeySortFixture{}
@@ -4730,6 +5092,7 @@ type schema struct {
 	Car                       *schemaCar
 	EventsFixture             *schemaEventsFixture
 	EventsSaveFixture         *schemaEventsSaveFixture
+	JSONModel                 *schemaJSONModel
 	MultiKeySortFixture       *schemaMultiKeySortFixture
 	Person                    *schemaPerson
 	Pet                       *schemaPet
@@ -4761,6 +5124,14 @@ type schemaEventsSaveFixture struct {
 	Checks         kallax.SchemaField
 	MustFailBefore kallax.SchemaField
 	MustFailAfter  kallax.SchemaField
+}
+
+type schemaJSONModel struct {
+	*kallax.BaseSchema
+	ID  kallax.SchemaField
+	Foo kallax.SchemaField
+	Bar *schemaJSONModelBar
+	Baz kallax.SchemaField
 }
 
 type schemaMultiKeySortFixture struct {
@@ -4827,6 +5198,28 @@ type schemaStoreWithNewFixture struct {
 	Bar kallax.SchemaField
 }
 
+type schemaJSONModelBar struct {
+	*kallax.BaseSchemaField
+	Qux *schemaJSONModelBarQux
+	Mux kallax.SchemaField
+}
+
+type schemaJSONModelBarQux struct {
+	*kallax.JSONSchemaArray
+	Schnooga kallax.SchemaField
+	Balooga  kallax.SchemaField
+	Boo      kallax.SchemaField
+}
+
+func (s *schemaJSONModelBarQux) At(n int) *schemaJSONModelBarQux {
+	return &schemaJSONModelBarQux{
+		JSONSchemaArray: kallax.NewJSONSchemaArray("bar", "Qux"),
+		Schnooga:        kallax.NewJSONSchemaKey(kallax.JSONText, "bar", "Qux", fmt.Sprint(n), "Schnooga"),
+		Balooga:         kallax.NewJSONSchemaKey(kallax.JSONInt, "bar", "Qux", fmt.Sprint(n), "Balooga"),
+		Boo:             kallax.NewJSONSchemaKey(kallax.JSONFloat, "bar", "Qux", fmt.Sprint(n), "Boo"),
+	}
+}
+
 var Schema = &schema{
 	Car: &schemaCar{
 		BaseSchema: kallax.NewBaseSchema(
@@ -4883,6 +5276,34 @@ var Schema = &schema{
 		Checks:         kallax.NewSchemaField("checks"),
 		MustFailBefore: kallax.NewSchemaField("must_fail_before"),
 		MustFailAfter:  kallax.NewSchemaField("must_fail_after"),
+	},
+	JSONModel: &schemaJSONModel{
+		BaseSchema: kallax.NewBaseSchema(
+			"jsons",
+			"__jsonmodel",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(JSONModel)
+			},
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("foo"),
+			kallax.NewSchemaField("bar"),
+			kallax.NewSchemaField("baz"),
+		),
+		ID:  kallax.NewSchemaField("id"),
+		Foo: kallax.NewSchemaField("foo"),
+		Bar: &schemaJSONModelBar{
+			BaseSchemaField: kallax.NewSchemaField("bar").(*kallax.BaseSchemaField),
+			Qux: &schemaJSONModelBarQux{
+				JSONSchemaArray: kallax.NewJSONSchemaArray("bar", "Qux"),
+				Schnooga:        kallax.NewJSONSchemaKey(kallax.JSONText, "bar", "Qux", "Schnooga"),
+				Balooga:         kallax.NewJSONSchemaKey(kallax.JSONInt, "bar", "Qux", "Balooga"),
+				Boo:             kallax.NewJSONSchemaKey(kallax.JSONFloat, "bar", "Qux", "Boo"),
+			},
+			Mux: kallax.NewJSONSchemaKey(kallax.JSONText, "bar", "Mux"),
+		},
+		Baz: kallax.NewSchemaField("baz"),
 	},
 	MultiKeySortFixture: &schemaMultiKeySortFixture{
 		BaseSchema: kallax.NewBaseSchema(

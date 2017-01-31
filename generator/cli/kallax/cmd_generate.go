@@ -19,7 +19,7 @@ func (c *CmdGenerate) Execute(args []string) error {
 		return fmt.Errorf("kallax: Input path should be a directory %s", c.Input)
 	}
 
-	p := generator.NewProcessor(c.Input, []string{c.Output})
+	p := generator.NewProcessor(c.Input, nil)
 	pkg, err := p.Do()
 	if err != nil {
 		return err

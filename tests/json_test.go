@@ -3,7 +3,6 @@ package tests
 import (
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	kallax "github.com/src-d/go-kallax"
 	"github.com/stretchr/testify/suite"
 )
@@ -17,8 +16,8 @@ func TestJSON(t *testing.T) {
 		`CREATE TABLE jsons (
 			id uuid primary key,
 			foo text,
-			bar json,
-			baz json
+			bar jsonb,
+			baz jsonb
 		)`,
 	}
 	suite.Run(t, &JSONSuite{
@@ -30,20 +29,39 @@ func TestJSON(t *testing.T) {
 
 func (s *JSONSuite) TestSearchByField() {
 	s.insertFixtures()
-	store := NewJSONModelStore(s.db)
 	q := NewJSONModelQuery().Where(
 		kallax.Eq(Schema.JSONModel.Bar.Mux, "mux1"),
 	)
+	s.assertFound(q, "1")
+}
 
+func (s *JSONSuite) TestSearchByCustomField() {
+	s.insertFixtures()
+	q := NewJSONModelQuery().Where(
+		kallax.Eq(kallax.AtJSONPath(Schema.JSONModel.Baz, kallax.JSONInt, "a", "0", "b"), 3),
+	)
+
+	s.assertFound(q, "2")
+
+	q = NewJSONModelQuery().Where(
+		kallax.Eq(kallax.AtJSONPath(Schema.JSONModel.Baz, kallax.JSONBool, "b"), true),
+	)
+
+	s.assertFound(q, "1")
+}
+
+func (s *JSONSuite) assertFound(q *JSONModelQuery, foos ...string) {
+	require := s.Require()
+	store := NewJSONModelStore(s.db)
 	rs, err := store.Find(q)
-	s.NoError(err)
+	require.NoError(err)
 
 	models, err := rs.All()
-	s.NoError(err)
-
-	s.Len(models, 1)
-	spew.Dump(models)
-	s.Equal("foo", models[0].Foo)
+	require.NoError(err)
+	require.Len(models, len(foos))
+	for i, f := range foos {
+		require.Equal(f, models[i].Foo)
+	}
 }
 
 func (s *JSONSuite) insertFixtures() {
@@ -60,6 +78,7 @@ func (s *JSONSuite) insertFixtures() {
 				"b": 2,
 			},
 		},
+		"b": true,
 	}
 	m.Bar = &Bar{
 		Qux: []Qux{
@@ -76,12 +95,13 @@ func (s *JSONSuite) insertFixtures() {
 	m.Baz = map[string]interface{}{
 		"a": []interface{}{
 			map[string]interface{}{
-				"c": 1,
+				"b": 3,
 			},
 			map[string]interface{}{
-				"c": 2,
+				"b": 4,
 			},
 		},
+		"b": false,
 	}
 	m.Bar = &Bar{
 		Qux: []Qux{

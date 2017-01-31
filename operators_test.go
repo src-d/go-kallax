@@ -18,32 +18,28 @@ func (s *OpsSuite) SetupTest() {
 	var err error
 	s.db, err = openTestDB()
 	s.Nil(err)
-	_, err = s.db.Exec(`CREATE TABLE model (
+	s.store = NewStore(s.db)
+}
+
+func (s *OpsSuite) create(sql string) {
+	_, err := s.db.Exec(sql)
+	s.NoError(err)
+}
+
+func (s *OpsSuite) remove(table string) {
+	_, err := s.db.Exec("DROP TABLE IF EXISTS " + table)
+	s.NoError(err)
+}
+
+func (s *OpsSuite) TestOperators() {
+	s.create(`CREATE TABLE model (
 		id uuid PRIMARY KEY,
 		name varchar(255) not null,
 		email varchar(255) not null,
 		age int not null
 	)`)
-	s.Nil(err)
+	defer s.remove("model")
 
-	_, err = s.db.Exec(`CREATE TABLE slices (
-		id uuid PRIMARY KEY,
-		elems bigint[]
-	)`)
-	s.Nil(err)
-
-	s.store = NewStore(s.db)
-}
-
-func (s *OpsSuite) TearDownTest() {
-	_, err := s.db.Exec("DROP TABLE slices")
-	s.NoError(err)
-
-	_, err = s.db.Exec("DROP TABLE model")
-	s.NoError(err)
-}
-
-func (s *OpsSuite) TestOperators() {
 	cases := []struct {
 		name  string
 		cond  Condition
@@ -75,6 +71,12 @@ func (s *OpsSuite) TestOperators() {
 }
 
 func (s *OpsSuite) TestArrayOperators() {
+	s.create(`CREATE TABLE slices (
+		id uuid PRIMARY KEY,
+		elems bigint[]
+	)`)
+	defer s.remove("slices")
+
 	f := f("elems")
 
 	cases := []struct {
@@ -118,6 +120,73 @@ func (s *OpsSuite) TestArrayOperators() {
 	}
 }
 
+type object map[string]interface{}
+
+type array []interface{}
+
+func (s *OpsSuite) TestJSONOperators() {
+	s.create(`CREATE TABLE jsons (
+		id uuid primary key,
+		elem jsonb
+	)`)
+	defer s.remove("jsons")
+
+	f := f("elem")
+	cases := []struct {
+		name string
+		cond Condition
+		n    int64
+	}{
+		{"JSONIsObject", JSONIsObject(f), 2},
+		{"JSONIsArray", JSONIsArray(f), 3},
+		{"JSONContains", JSONContains(f, object{"a": 1}), 1},
+		{"JSONContainedBy", JSONContainedBy(f, object{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+			"d": 1,
+		}), 1},
+		{"JSONContainsAnyKey with array match", JSONContainsAnyKey(f, "a", "c"), 3},
+		{"JSONContainsAnyKey", JSONContainsAnyKey(f, "b", "e"), 2},
+		{"JSONContainsAllKeys with array match", JSONContainsAllKeys(f, "a", "c"), 3},
+		{"JSONContainsAllKeys", JSONContainsAllKeys(f, "b", "e"), 0},
+		{"JSONContainsAllKeys only objects", JSONContainsAllKeys(f, "a", "b", "c"), 2},
+		{"JSONContainsAny", JSONContainsAny(f,
+			object{"a": 1},
+			object{"a": true},
+		), 2},
+	}
+
+	var records = []interface{}{
+		array{"a", "c", "d"},
+		object{
+			"a": true,
+			"b": array{1, 2, 3},
+			"c": object{"d": "foo"},
+		},
+		object{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+		},
+		array{.5, 1., 1.5},
+		array{1, 2, 3},
+	}
+
+	for _, r := range records {
+		_, err := s.db.Exec("INSERT INTO jsons (id,elem) VALUES ($1, $2)", NewID(), types.JSON(r))
+		s.NoError(err)
+	}
+
+	for _, c := range cases {
+		q := NewBaseQuery(JsonsSchema)
+		q.Where(c.cond)
+		cnt, err := s.store.Count(q)
+		s.NoError(err, c.name)
+		s.Equal(c.n, cnt, "should retrieve %d records: %s", c.n, c.name)
+	}
+}
+
 func TestOperators(t *testing.T) {
 	suite.Run(t, new(OpsSuite))
 }
@@ -129,5 +198,15 @@ var SlicesSchema = &BaseSchema{
 	columns: []SchemaField{
 		f("id"),
 		f("elems"),
+	},
+}
+
+var JsonsSchema = &BaseSchema{
+	alias: "_js",
+	table: "jsons",
+	id:    f("id"),
+	columns: []SchemaField{
+		f("id"),
+		f("elem"),
 	},
 }

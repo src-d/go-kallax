@@ -171,6 +171,39 @@ func (s *TemplateSuite) TestGenModelColumns() {
 	s.Equal(expectedColumns, result)
 }
 
+const jsonBaseTpl = `
+	package fixture
+
+	import "github.com/src-d/go-kallax"
+	import "net/url"
+
+	type Rel struct {
+		kallax.Model
+		Foo string
+	}
+
+	type Deep struct {
+		X int ` + "`json:\"redefined\"`" + `
+		Y int
+	}
+
+	type JSON struct {
+		Foo string
+		Arr []Deep
+	}
+
+	type Foo struct {
+		kallax.Model
+		Foo string
+		Bar *string
+		Arr []string
+		JSON JSON
+		URL *url.URL
+		UrlNoPtr url.URL
+		Rel Rel
+	}
+`
+
 const expectedSchema = `ID kallax.SchemaField
 Foo kallax.SchemaField
 Bar kallax.SchemaField
@@ -183,12 +216,27 @@ UrlNoPtr kallax.SchemaField
 const expectedSubSchemas = `type schemaFooJSON struct {
 *kallax.BaseSchemaField
 Foo kallax.SchemaField
+Arr *schemaFooJSONArr
+}
+
+type schemaFooJSONArr struct {
+*kallax.JSONSchemaArray
+X kallax.SchemaField
+Y kallax.SchemaField
+}
+
+func (s *schemaFooJSONArr) At(n int) *schemaFooJSONArr {
+return &schemaFooJSONArr{
+JSONSchemaArray: kallax.NewJSONSchemaArray("json", "Arr"),
+X:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", fmt.Sprint(n), "redefined"),
+Y:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", fmt.Sprint(n), "Y"),
+}
 }
 
 `
 
 func (s *TemplateSuite) TestGenModelSchema() {
-	s.processSource(baseTpl)
+	s.processSource(jsonBaseTpl)
 	m := findModel(s.td.Package, "Foo")
 	result := s.td.GenModelSchema(m)
 	s.Equal(expectedSchema, result)
@@ -201,14 +249,19 @@ Bar:kallax.NewSchemaField("bar"),
 Arr:kallax.NewSchemaField("arr"),
 JSON:&schemaFooJSON{
 BaseSchemaField: kallax.NewSchemaField("json").(*kallax.BaseSchemaField),
-Foo:kallax.NewSchemaField("Foo"),
+Foo:kallax.NewJSONSchemaKey(kallax.JSONText, "json", "Foo"),
+Arr:&schemaFooJSONArr{
+JSONSchemaArray: kallax.NewJSONSchemaArray("json", "Arr"),
+X:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", "redefined"),
+Y:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", "Y"),
+},
 },
 URL:kallax.NewSchemaField("url"),
 UrlNoPtr:kallax.NewSchemaField("url_no_ptr"),
 `
 
 func (s *TemplateSuite) TestGenSchemaInit() {
-	s.processSource(baseTpl)
+	s.processSource(jsonBaseTpl)
 	m := findModel(s.td.Package, "Foo")
 
 	s.Equal(expectedInit, s.td.GenSchemaInit(m))

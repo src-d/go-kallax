@@ -288,7 +288,7 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 			field.IsJSON = true
 		}
 		field.Kind = Array
-		field.Fields = underlying.Fields
+		field.SetFields(underlying.Fields)
 	case *types.Slice:
 		var underlying Field
 		p.processField(&underlying, typ.Elem(), done, root)
@@ -301,7 +301,7 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 			field.IsJSON = true
 		}
 		field.Kind = Slice
-		field.Fields = underlying.Fields
+		field.SetFields(underlying.Fields)
 	case *types.Map:
 		field.Kind = Map
 		field.IsJSON = true
