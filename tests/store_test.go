@@ -38,9 +38,10 @@ type StoreSuite struct {
 }
 
 func (s *StoreSuite) TestStoreNew() {
-	doc := NewStoreFixture()
+	doc := NewStoreWithConstructFixture("foo")
 	s.False(doc.IsPersisted())
 	s.False(doc.ID.IsEmpty())
+	s.Equal("foo", doc.Foo)
 }
 
 func (s *StoreSuite) TestStoreQuery() {
