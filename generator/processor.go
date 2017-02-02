@@ -187,7 +187,7 @@ func (p *Processor) processModel(name string, s *types.Struct, t *types.Named) *
 func (p *Processor) findEvents(node *types.Named) []Event {
 	var events []Event
 	all := []Event{
-		BeforeInsert, AfterInsert, BeforeUpdate, AfterUpdate, BeforeSave, AfterSave,
+		BeforeInsert, AfterInsert, BeforeUpdate, AfterUpdate, BeforeSave, AfterSave, BeforeDelete, AfterDelete,
 	}
 
 	for _, e := range all {

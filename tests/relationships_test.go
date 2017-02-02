@@ -87,17 +87,61 @@ func (s *RelationshipsSuite) TestInsertFindUpdate() {
 	s.assertPerson(p.Name, pers, car, cat, dog, pony)
 }
 
+func (s *RelationshipsSuite) TestEvents() {
+	p := NewPerson("Dolan")
+	car := NewCar("Tesla Model S", p)
+	cat := NewPet("Garfield", "cat", p)
+	dog := NewPet("Oddie", "dog", p)
+	reptar := NewPet("Reptar", "dinosaur", p)
+
+	store := NewPersonStore(s.db)
+	s.NoError(store.Insert(p))
+
+	s.assertEvents(p.events, "BeforeSave", "AfterSave")
+	s.assertEvents(car.events, "BeforeSave", "AfterSave")
+	s.assertEvents(cat.events, "BeforeSave", "AfterSave")
+	s.assertEvents(dog.events, "BeforeSave", "AfterSave")
+	s.assertEvents(reptar.events, "BeforeSave", "AfterSave")
+
+	s.NoError(store.RemovePets(p, dog))
+	s.assertNoEvents(cat.events, "BeforeDelete", "AfterDelete")
+	s.assertNoEvents(reptar.events, "BeforeDelete", "AfterDelete")
+	s.assertEvents(dog.events, "BeforeDelete", "AfterDelete")
+
+	s.NoError(store.RemovePets(p))
+	s.assertEvents(reptar.events, "BeforeDelete", "AfterDelete")
+	s.assertEvents(cat.events, "BeforeDelete", "AfterDelete")
+
+	s.NoError(store.RemoveCar(p))
+	s.assertEvents(car.events, "BeforeDelete", "AfterDelete")
+}
+
+func (s *RelationshipsSuite) assertEvents(evs map[string]int, events ...string) {
+	for _, e := range events {
+		s.Equal(1, evs[e])
+	}
+}
+
+func (s *RelationshipsSuite) assertNoEvents(evs map[string]int, events ...string) {
+	for _, e := range events {
+		s.Equal(0, evs[e])
+	}
+}
+
 func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, pets ...*Pet) {
 	s.Equal(name, pers.Name)
+	pers.events = nil
 	s.Len(pers.Pets, len(pets))
 
 	// Owner are set to nil to be able to deep equal in the tests.
 	// Records coming from relationships don't have their relationships
 	// case \"foo_id\":\nreturn kallax.VirtualColumn(\"foo_id\", r), nilpopulated, so it will always be nil.
+	// Same with events.
 	var petList = make([]*Pet, len(pets))
 	for i, pet := range pets {
 		p := *pet
 		p.Owner = nil
+		p.events = nil
 		petList[i] = &p
 	}
 
@@ -107,6 +151,7 @@ func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, p
 	} else {
 		c = *car
 		c.Owner = nil
+		c.events = nil
 		s.Equal(&c, pers.Car)
 	}
 	for i, p := range petList {

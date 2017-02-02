@@ -93,7 +93,6 @@ func NewCarStore(db *sql.DB) *CarStore {
 func (s *CarStore) relationshipRecords(record *Car) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
-
 	if record.Owner != nil {
 		record.AddVirtualColumn("owner_id", record.Owner.ID)
 		records = append(records, kallax.RecordWithSchema{
@@ -109,6 +108,10 @@ func (s *CarStore) relationshipRecords(record *Car) []kallax.RecordWithSchema {
 // required for this operation.
 func (s *CarStore) Insert(record *Car) error {
 
+	if err := record.BeforeSave(); err != nil {
+		return err
+	}
+
 	records := s.relationshipRecords(record)
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
@@ -117,16 +120,63 @@ func (s *CarStore) Insert(record *Car) error {
 			}
 
 			for _, r := range records {
+				switch rec := r.Record.(type) {
+				case kallax.BeforeSaver:
+					if err := rec.BeforeSave(); err != nil {
+						return err
+					}
+				case kallax.BeforeUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.BeforeUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.BeforeInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.BeforeInsert(); err != nil {
+							return err
+						}
+					}
+				}
+
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
+
+				switch rec := r.Record.(type) {
+				case kallax.AfterSaver:
+					if err := rec.AfterSave(); err != nil {
+						return err
+					}
+				case kallax.AfterUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.AfterUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.AfterInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.AfterInsert(); err != nil {
+							return err
+						}
+					}
+				}
 			}
 
-			return nil
+			return record.AfterSave()
+
 		})
 	}
 
-	return s.Store.Insert(Schema.Car.BaseSchema, record)
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		if err := s.Insert(Schema.Car.BaseSchema, record); err != nil {
+			return err
+		}
+
+		return record.AfterSave()
+
+	})
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -137,6 +187,10 @@ func (s *CarStore) Insert(record *Car) error {
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int64, err error) {
 
+	if err := record.BeforeSave(); err != nil {
+		return 0, err
+	}
+
 	records := s.relationshipRecords(record)
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
@@ -146,22 +200,79 @@ func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int6
 			}
 
 			for _, r := range records {
+				switch rec := r.Record.(type) {
+				case kallax.BeforeSaver:
+					if err := rec.BeforeSave(); err != nil {
+						return err
+					}
+				case kallax.BeforeUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.BeforeUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.BeforeInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.BeforeInsert(); err != nil {
+							return err
+						}
+					}
+				}
+
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
+
+				switch rec := r.Record.(type) {
+				case kallax.AfterSaver:
+					if err := rec.AfterSave(); err != nil {
+						return err
+					}
+				case kallax.AfterUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.AfterUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.AfterInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.AfterInsert(); err != nil {
+							return err
+						}
+					}
+				}
 			}
-			return nil
+
+			return record.AfterSave()
+
 		})
-		return updated, err
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
 	}
 
-	return s.Store.Update(Schema.Car.BaseSchema, record, cols...)
+	err = s.Store.Transaction(func(s *kallax.Store) error {
+		updated, err = s.Update(Schema.Car.BaseSchema, record, cols...)
+		if err != nil {
+			return err
+		}
+
+		return record.AfterSave()
+
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	return updated, nil
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *CarStore) Save(record *Car) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -176,7 +287,20 @@ func (s *CarStore) Save(record *Car) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *CarStore) Delete(record *Car) error {
-	return s.Store.Delete(Schema.Car.BaseSchema, record)
+
+	if err := record.BeforeDelete(); err != nil {
+		return err
+	}
+
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		err := s.Delete(Schema.Car.BaseSchema, record)
+		if err != nil {
+			return err
+		}
+
+		return record.AfterDelete()
+	})
+
 }
 
 // Find returns the set of results for the given query.
@@ -513,7 +637,15 @@ func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
 		return err
 	}
 
-	return s.Store.Insert(Schema.EventsFixture.BaseSchema, record)
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		if err := s.Insert(Schema.EventsFixture.BaseSchema, record); err != nil {
+			return err
+		}
+
+		return record.AfterInsert()
+
+	})
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -528,25 +660,26 @@ func (s *EventsFixtureStore) Update(record *EventsFixture, cols ...kallax.Schema
 		return 0, err
 	}
 
-	return s.Store.Update(Schema.EventsFixture.BaseSchema, record, cols...)
+	err = s.Store.Transaction(func(s *kallax.Store) error {
+		updated, err = s.Update(Schema.EventsFixture.BaseSchema, record, cols...)
+		if err != nil {
+			return err
+		}
+
+		return record.AfterUpdate()
+
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	return updated, nil
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *EventsFixtureStore) Save(record *EventsFixture) (updated bool, err error) {
-
-	if !record.IsPersisted() {
-		if err := record.BeforeInsert(); err != nil {
-			return false, err
-		}
-	}
-
-	if record.IsPersisted() {
-		if err := record.BeforeUpdate(); err != nil {
-			return false, err
-		}
-	}
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -561,7 +694,9 @@ func (s *EventsFixtureStore) Save(record *EventsFixture) (updated bool, err erro
 
 // Delete removes the given record from the database.
 func (s *EventsFixtureStore) Delete(record *EventsFixture) error {
+
 	return s.Store.Delete(Schema.EventsFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -893,7 +1028,15 @@ func (s *EventsSaveFixtureStore) Insert(record *EventsSaveFixture) error {
 		return err
 	}
 
-	return s.Store.Insert(Schema.EventsSaveFixture.BaseSchema, record)
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		if err := s.Insert(Schema.EventsSaveFixture.BaseSchema, record); err != nil {
+			return err
+		}
+
+		return record.AfterSave()
+
+	})
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -908,17 +1051,26 @@ func (s *EventsSaveFixtureStore) Update(record *EventsSaveFixture, cols ...kalla
 		return 0, err
 	}
 
-	return s.Store.Update(Schema.EventsSaveFixture.BaseSchema, record, cols...)
+	err = s.Store.Transaction(func(s *kallax.Store) error {
+		updated, err = s.Update(Schema.EventsSaveFixture.BaseSchema, record, cols...)
+		if err != nil {
+			return err
+		}
+
+		return record.AfterSave()
+
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	return updated, nil
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *EventsSaveFixtureStore) Save(record *EventsSaveFixture) (updated bool, err error) {
-
-	if err := record.BeforeSave(); err != nil {
-		return false, err
-	}
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -933,7 +1085,9 @@ func (s *EventsSaveFixtureStore) Save(record *EventsSaveFixture) (updated bool, 
 
 // Delete removes the given record from the database.
 func (s *EventsSaveFixtureStore) Delete(record *EventsSaveFixture) error {
+
 	return s.Store.Delete(Schema.EventsSaveFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -1265,6 +1419,7 @@ func NewJSONModelStore(db *sql.DB) *JSONModelStore {
 func (s *JSONModelStore) Insert(record *JSONModel) error {
 
 	return s.Store.Insert(Schema.JSONModel.BaseSchema, record)
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -1276,12 +1431,12 @@ func (s *JSONModelStore) Insert(record *JSONModel) error {
 func (s *JSONModelStore) Update(record *JSONModel, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	return s.Store.Update(Schema.JSONModel.BaseSchema, record, cols...)
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *JSONModelStore) Save(record *JSONModel) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -1296,7 +1451,9 @@ func (s *JSONModelStore) Save(record *JSONModel) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *JSONModelStore) Delete(record *JSONModel) error {
+
 	return s.Store.Delete(Schema.JSONModel.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -1471,6 +1628,7 @@ func NewJSONModelResultSet(rs kallax.ResultSet) *JSONModelResultSet {
 func (rs *JSONModelResultSet) Next() bool {
 	if !rs.ResultSet.Next() {
 		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
 		return false
 	}
 
@@ -1624,6 +1782,7 @@ func NewMultiKeySortFixtureStore(db *sql.DB) *MultiKeySortFixtureStore {
 func (s *MultiKeySortFixtureStore) Insert(record *MultiKeySortFixture) error {
 
 	return s.Store.Insert(Schema.MultiKeySortFixture.BaseSchema, record)
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -1635,12 +1794,12 @@ func (s *MultiKeySortFixtureStore) Insert(record *MultiKeySortFixture) error {
 func (s *MultiKeySortFixtureStore) Update(record *MultiKeySortFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	return s.Store.Update(Schema.MultiKeySortFixture.BaseSchema, record, cols...)
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *MultiKeySortFixtureStore) Save(record *MultiKeySortFixture) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -1655,7 +1814,9 @@ func (s *MultiKeySortFixtureStore) Save(record *MultiKeySortFixture) (updated bo
 
 // Delete removes the given record from the database.
 func (s *MultiKeySortFixtureStore) Delete(record *MultiKeySortFixture) error {
+
 	return s.Store.Delete(Schema.MultiKeySortFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -2035,6 +2196,10 @@ func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSch
 // required for this operation.
 func (s *PersonStore) Insert(record *Person) error {
 
+	if err := record.BeforeSave(); err != nil {
+		return err
+	}
+
 	records := s.relationshipRecords(record)
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
@@ -2043,16 +2208,63 @@ func (s *PersonStore) Insert(record *Person) error {
 			}
 
 			for _, r := range records {
+				switch rec := r.Record.(type) {
+				case kallax.BeforeSaver:
+					if err := rec.BeforeSave(); err != nil {
+						return err
+					}
+				case kallax.BeforeUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.BeforeUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.BeforeInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.BeforeInsert(); err != nil {
+							return err
+						}
+					}
+				}
+
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
+
+				switch rec := r.Record.(type) {
+				case kallax.AfterSaver:
+					if err := rec.AfterSave(); err != nil {
+						return err
+					}
+				case kallax.AfterUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.AfterUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.AfterInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.AfterInsert(); err != nil {
+							return err
+						}
+					}
+				}
 			}
 
-			return nil
+			return record.AfterSave()
+
 		})
 	}
 
-	return s.Store.Insert(Schema.Person.BaseSchema, record)
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		if err := s.Insert(Schema.Person.BaseSchema, record); err != nil {
+			return err
+		}
+
+		return record.AfterSave()
+
+	})
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2063,6 +2275,10 @@ func (s *PersonStore) Insert(record *Person) error {
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (updated int64, err error) {
 
+	if err := record.BeforeSave(); err != nil {
+		return 0, err
+	}
+
 	records := s.relationshipRecords(record)
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
@@ -2072,22 +2288,79 @@ func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (update
 			}
 
 			for _, r := range records {
+				switch rec := r.Record.(type) {
+				case kallax.BeforeSaver:
+					if err := rec.BeforeSave(); err != nil {
+						return err
+					}
+				case kallax.BeforeUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.BeforeUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.BeforeInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.BeforeInsert(); err != nil {
+							return err
+						}
+					}
+				}
+
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
+
+				switch rec := r.Record.(type) {
+				case kallax.AfterSaver:
+					if err := rec.AfterSave(); err != nil {
+						return err
+					}
+				case kallax.AfterUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.AfterUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.AfterInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.AfterInsert(); err != nil {
+							return err
+						}
+					}
+				}
 			}
-			return nil
+
+			return record.AfterSave()
+
 		})
-		return updated, err
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
 	}
 
-	return s.Store.Update(Schema.Person.BaseSchema, record, cols...)
+	err = s.Store.Transaction(func(s *kallax.Store) error {
+		updated, err = s.Update(Schema.Person.BaseSchema, record, cols...)
+		if err != nil {
+			return err
+		}
+
+		return record.AfterSave()
+
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	return updated, nil
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *PersonStore) Save(record *Person) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -2102,7 +2375,20 @@ func (s *PersonStore) Save(record *Person) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *PersonStore) Delete(record *Person) error {
-	return s.Store.Delete(Schema.Person.BaseSchema, record)
+
+	if err := record.BeforeDelete(); err != nil {
+		return err
+	}
+
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		err := s.Delete(Schema.Person.BaseSchema, record)
+		if err != nil {
+			return err
+		}
+
+		return record.AfterDelete()
+	})
+
 }
 
 // Find returns the set of results for the given query.
@@ -2206,8 +2492,22 @@ func (s *PersonStore) RemovePets(record *Person, deleted ...*Pet) error {
 	if len(deleted) > 1 {
 		err := s.Store.Transaction(func(s *kallax.Store) error {
 			for _, d := range deleted {
+				var r kallax.Record = d
+
+				if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+					if err := beforeDeleter.BeforeDelete(); err != nil {
+						return err
+					}
+				}
+
 				if err := s.Delete(Schema.Pet.BaseSchema, d); err != nil {
 					return err
+				}
+
+				if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+					if err := afterDeleter.AfterDelete(); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -2222,7 +2522,28 @@ func (s *PersonStore) RemovePets(record *Person, deleted ...*Pet) error {
 			return nil
 		}
 	} else {
-		if err := s.Store.Delete(Schema.Pet.BaseSchema, deleted[0]); err != nil {
+		var r kallax.Record = deleted[0]
+		if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+			if err := beforeDeleter.BeforeDelete(); err != nil {
+				return err
+			}
+		}
+
+		var err error
+		if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+			err = s.Store.Transaction(func(s *kallax.Store) error {
+				err := s.Delete(Schema.Pet.BaseSchema, r)
+				if err != nil {
+					return err
+				}
+
+				return afterDeleter.AfterDelete()
+			})
+		} else {
+			err = s.Store.Delete(Schema.Pet.BaseSchema, deleted[0])
+		}
+
+		if err != nil {
 			return err
 		}
 	}
@@ -2246,7 +2567,26 @@ func (s *PersonStore) RemovePets(record *Person, deleted ...*Pet) error {
 // RemoveCar removes from the database the given relationship of the
 // model. It also resets the field Car of the model.
 func (s *PersonStore) RemoveCar(record *Person) error {
-	err := s.Store.Delete(Schema.Car.BaseSchema, record.Car)
+	var r kallax.Record = record.Car
+	if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+		if err := beforeDeleter.BeforeDelete(); err != nil {
+			return err
+		}
+	}
+
+	var err error
+	if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			err := s.Delete(Schema.Car.BaseSchema, r)
+			if err != nil {
+				return err
+			}
+
+			return afterDeleter.AfterDelete()
+		})
+	} else {
+		err = s.Store.Delete(Schema.Car.BaseSchema, r)
+	}
 	if err != nil {
 		return err
 	}
@@ -2523,7 +2863,6 @@ func NewPetStore(db *sql.DB) *PetStore {
 func (s *PetStore) relationshipRecords(record *Pet) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
-
 	if record.Owner != nil {
 		record.AddVirtualColumn("owner_id", record.Owner.ID)
 		records = append(records, kallax.RecordWithSchema{
@@ -2539,6 +2878,10 @@ func (s *PetStore) relationshipRecords(record *Pet) []kallax.RecordWithSchema {
 // required for this operation.
 func (s *PetStore) Insert(record *Pet) error {
 
+	if err := record.BeforeSave(); err != nil {
+		return err
+	}
+
 	records := s.relationshipRecords(record)
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
@@ -2547,16 +2890,63 @@ func (s *PetStore) Insert(record *Pet) error {
 			}
 
 			for _, r := range records {
+				switch rec := r.Record.(type) {
+				case kallax.BeforeSaver:
+					if err := rec.BeforeSave(); err != nil {
+						return err
+					}
+				case kallax.BeforeUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.BeforeUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.BeforeInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.BeforeInsert(); err != nil {
+							return err
+						}
+					}
+				}
+
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
+
+				switch rec := r.Record.(type) {
+				case kallax.AfterSaver:
+					if err := rec.AfterSave(); err != nil {
+						return err
+					}
+				case kallax.AfterUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.AfterUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.AfterInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.AfterInsert(); err != nil {
+							return err
+						}
+					}
+				}
 			}
 
-			return nil
+			return record.AfterSave()
+
 		})
 	}
 
-	return s.Store.Insert(Schema.Pet.BaseSchema, record)
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		if err := s.Insert(Schema.Pet.BaseSchema, record); err != nil {
+			return err
+		}
+
+		return record.AfterSave()
+
+	})
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2567,6 +2957,10 @@ func (s *PetStore) Insert(record *Pet) error {
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int64, err error) {
 
+	if err := record.BeforeSave(); err != nil {
+		return 0, err
+	}
+
 	records := s.relationshipRecords(record)
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
@@ -2576,22 +2970,79 @@ func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int6
 			}
 
 			for _, r := range records {
+				switch rec := r.Record.(type) {
+				case kallax.BeforeSaver:
+					if err := rec.BeforeSave(); err != nil {
+						return err
+					}
+				case kallax.BeforeUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.BeforeUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.BeforeInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.BeforeInsert(); err != nil {
+							return err
+						}
+					}
+				}
+
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
+
+				switch rec := r.Record.(type) {
+				case kallax.AfterSaver:
+					if err := rec.AfterSave(); err != nil {
+						return err
+					}
+				case kallax.AfterUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.AfterUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.AfterInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.AfterInsert(); err != nil {
+							return err
+						}
+					}
+				}
 			}
-			return nil
+
+			return record.AfterSave()
+
 		})
-		return updated, err
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
 	}
 
-	return s.Store.Update(Schema.Pet.BaseSchema, record, cols...)
+	err = s.Store.Transaction(func(s *kallax.Store) error {
+		updated, err = s.Update(Schema.Pet.BaseSchema, record, cols...)
+		if err != nil {
+			return err
+		}
+
+		return record.AfterSave()
+
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	return updated, nil
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *PetStore) Save(record *Pet) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -2606,7 +3057,20 @@ func (s *PetStore) Save(record *Pet) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *PetStore) Delete(record *Pet) error {
-	return s.Store.Delete(Schema.Pet.BaseSchema, record)
+
+	if err := record.BeforeDelete(); err != nil {
+		return err
+	}
+
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		err := s.Delete(Schema.Pet.BaseSchema, record)
+		if err != nil {
+			return err
+		}
+
+		return record.AfterDelete()
+	})
+
 }
 
 // Find returns the set of results for the given query.
@@ -2932,6 +3396,7 @@ func NewQueryFixtureStore(db *sql.DB) *QueryFixtureStore {
 func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 
 	return s.Store.Insert(Schema.QueryFixture.BaseSchema, record)
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2943,12 +3408,12 @@ func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	return s.Store.Update(Schema.QueryFixture.BaseSchema, record, cols...)
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *QueryFixtureStore) Save(record *QueryFixture) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -2963,7 +3428,9 @@ func (s *QueryFixtureStore) Save(record *QueryFixture) (updated bool, err error)
 
 // Delete removes the given record from the database.
 func (s *QueryFixtureStore) Delete(record *QueryFixture) error {
+
 	return s.Store.Delete(Schema.QueryFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -3284,6 +3751,7 @@ func NewResultSetFixtureStore(db *sql.DB) *ResultSetFixtureStore {
 func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
 
 	return s.Store.Insert(Schema.ResultSetFixture.BaseSchema, record)
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -3295,12 +3763,12 @@ func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
 func (s *ResultSetFixtureStore) Update(record *ResultSetFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	return s.Store.Update(Schema.ResultSetFixture.BaseSchema, record, cols...)
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *ResultSetFixtureStore) Save(record *ResultSetFixture) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -3315,7 +3783,9 @@ func (s *ResultSetFixtureStore) Save(record *ResultSetFixture) (updated bool, er
 
 // Delete removes the given record from the database.
 func (s *ResultSetFixtureStore) Delete(record *ResultSetFixture) error {
+
 	return s.Store.Delete(Schema.ResultSetFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -3697,16 +4167,56 @@ func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 			}
 
 			for _, r := range records {
+				switch rec := r.Record.(type) {
+				case kallax.BeforeSaver:
+					if err := rec.BeforeSave(); err != nil {
+						return err
+					}
+				case kallax.BeforeUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.BeforeUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.BeforeInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.BeforeInsert(); err != nil {
+							return err
+						}
+					}
+				}
+
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
+				}
+
+				switch rec := r.Record.(type) {
+				case kallax.AfterSaver:
+					if err := rec.AfterSave(); err != nil {
+						return err
+					}
+				case kallax.AfterUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.AfterUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.AfterInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.AfterInsert(); err != nil {
+							return err
+						}
+					}
 				}
 			}
 
 			return nil
+
 		})
 	}
 
 	return s.Store.Insert(Schema.SchemaFixture.BaseSchema, record)
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -3726,22 +4236,66 @@ func (s *SchemaFixtureStore) Update(record *SchemaFixture, cols ...kallax.Schema
 			}
 
 			for _, r := range records {
+				switch rec := r.Record.(type) {
+				case kallax.BeforeSaver:
+					if err := rec.BeforeSave(); err != nil {
+						return err
+					}
+				case kallax.BeforeUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.BeforeUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.BeforeInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.BeforeInsert(); err != nil {
+							return err
+						}
+					}
+				}
+
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
+
+				switch rec := r.Record.(type) {
+				case kallax.AfterSaver:
+					if err := rec.AfterSave(); err != nil {
+						return err
+					}
+				case kallax.AfterUpdater:
+					if r.Record.IsPersisted() {
+						if err := rec.AfterUpdate(); err != nil {
+							return err
+						}
+					}
+				case kallax.AfterInserter:
+					if !r.Record.IsPersisted() {
+						if err := rec.AfterInsert(); err != nil {
+							return err
+						}
+					}
+				}
 			}
+
 			return nil
+
 		})
-		return updated, err
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
 	}
 
 	return s.Store.Update(Schema.SchemaFixture.BaseSchema, record, cols...)
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *SchemaFixtureStore) Save(record *SchemaFixture) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -3756,7 +4310,9 @@ func (s *SchemaFixtureStore) Save(record *SchemaFixture) (updated bool, err erro
 
 // Delete removes the given record from the database.
 func (s *SchemaFixtureStore) Delete(record *SchemaFixture) error {
+
 	return s.Store.Delete(Schema.SchemaFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -3846,7 +4402,26 @@ func (s *SchemaFixtureStore) Transaction(callback func(*SchemaFixtureStore) erro
 // RemoveNested removes from the database the given relationship of the
 // model. It also resets the field Nested of the model.
 func (s *SchemaFixtureStore) RemoveNested(record *SchemaFixture) error {
-	err := s.Store.Delete(Schema.SchemaFixture.BaseSchema, record.Nested)
+	var r kallax.Record = record.Nested
+	if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+		if err := beforeDeleter.BeforeDelete(); err != nil {
+			return err
+		}
+	}
+
+	var err error
+	if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			err := s.Delete(Schema.SchemaFixture.BaseSchema, r)
+			if err != nil {
+				return err
+			}
+
+			return afterDeleter.AfterDelete()
+		})
+	} else {
+		err = s.Store.Delete(Schema.SchemaFixture.BaseSchema, r)
+	}
 	if err != nil {
 		return err
 	}
@@ -4094,6 +4669,7 @@ func NewStoreFixtureStore(db *sql.DB) *StoreFixtureStore {
 func (s *StoreFixtureStore) Insert(record *StoreFixture) error {
 
 	return s.Store.Insert(Schema.StoreFixture.BaseSchema, record)
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -4105,12 +4681,12 @@ func (s *StoreFixtureStore) Insert(record *StoreFixture) error {
 func (s *StoreFixtureStore) Update(record *StoreFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	return s.Store.Update(Schema.StoreFixture.BaseSchema, record, cols...)
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *StoreFixtureStore) Save(record *StoreFixture) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -4125,7 +4701,9 @@ func (s *StoreFixtureStore) Save(record *StoreFixture) (updated bool, err error)
 
 // Delete removes the given record from the database.
 func (s *StoreFixtureStore) Delete(record *StoreFixture) error {
+
 	return s.Store.Delete(Schema.StoreFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -4446,6 +5024,7 @@ func NewStoreWithConstructFixtureStore(db *sql.DB) *StoreWithConstructFixtureSto
 func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixture) error {
 
 	return s.Store.Insert(Schema.StoreWithConstructFixture.BaseSchema, record)
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -4457,12 +5036,12 @@ func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixtur
 func (s *StoreWithConstructFixtureStore) Update(record *StoreWithConstructFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	return s.Store.Update(Schema.StoreWithConstructFixture.BaseSchema, record, cols...)
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *StoreWithConstructFixtureStore) Save(record *StoreWithConstructFixture) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -4477,7 +5056,9 @@ func (s *StoreWithConstructFixtureStore) Save(record *StoreWithConstructFixture)
 
 // Delete removes the given record from the database.
 func (s *StoreWithConstructFixtureStore) Delete(record *StoreWithConstructFixture) error {
+
 	return s.Store.Delete(Schema.StoreWithConstructFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -4802,6 +5383,7 @@ func NewStoreWithNewFixtureStore(db *sql.DB) *StoreWithNewFixtureStore {
 func (s *StoreWithNewFixtureStore) Insert(record *StoreWithNewFixture) error {
 
 	return s.Store.Insert(Schema.StoreWithNewFixture.BaseSchema, record)
+
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -4813,12 +5395,12 @@ func (s *StoreWithNewFixtureStore) Insert(record *StoreWithNewFixture) error {
 func (s *StoreWithNewFixtureStore) Update(record *StoreWithNewFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	return s.Store.Update(Schema.StoreWithNewFixture.BaseSchema, record, cols...)
+
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
 // it. Same rules of Update and Insert apply depending on the case.
 func (s *StoreWithNewFixtureStore) Save(record *StoreWithNewFixture) (updated bool, err error) {
-
 	if !record.IsPersisted() {
 		return false, s.Insert(record)
 	}
@@ -4833,7 +5415,9 @@ func (s *StoreWithNewFixtureStore) Save(record *StoreWithNewFixture) (updated bo
 
 // Delete removes the given record from the database.
 func (s *StoreWithNewFixtureStore) Delete(record *StoreWithNewFixture) error {
+
 	return s.Store.Delete(Schema.StoreWithNewFixture.BaseSchema, record)
+
 }
 
 // Find returns the set of results for the given query.
@@ -5205,12 +5789,6 @@ type schemaStoreWithNewFixture struct {
 	Bar kallax.SchemaField
 }
 
-type schemaJSONModelBar struct {
-	*kallax.BaseSchemaField
-	Qux *schemaJSONModelBarQux
-	Mux kallax.SchemaField
-}
-
 type schemaJSONModelBarQux struct {
 	*kallax.JSONSchemaArray
 	Schnooga kallax.SchemaField
@@ -5225,6 +5803,12 @@ func (s *schemaJSONModelBarQux) At(n int) *schemaJSONModelBarQux {
 		Balooga:         kallax.NewJSONSchemaKey(kallax.JSONInt, "bar", "Qux", fmt.Sprint(n), "Balooga"),
 		Boo:             kallax.NewJSONSchemaKey(kallax.JSONFloat, "bar", "Qux", fmt.Sprint(n), "Boo"),
 	}
+}
+
+type schemaJSONModelBar struct {
+	*kallax.BaseSchemaField
+	Qux *schemaJSONModelBarQux
+	Mux kallax.SchemaField
 }
 
 var Schema = &schema{

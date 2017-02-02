@@ -738,4 +738,8 @@ const (
 	// AfterSave is an event that will happen after Insert or Update
 	// operations. Conflicts with AfterInsert and AfterUpdate.
 	AfterSave Event = "AfterSave"
+	// BeforeDelete is an event that will happen before Delete.
+	BeforeDelete Event = "BeforeDelete"
+	// AfterDelete is an event that will happen after Delete.
+	AfterDelete Event = "AfterDelete"
 )
