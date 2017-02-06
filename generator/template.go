@@ -262,7 +262,7 @@ func (td *TemplateData) genSubschemaInit(buf *bytes.Buffer, parent string, f *Fi
 		buf.WriteString(fmt.Sprintf("JSONSchemaArray: kallax.NewJSONSchemaArray(%s),\n", td.genSchemaPath(f, "")))
 	} else {
 		buf.WriteString(fmt.Sprintf(
-			"JSONSchemaKey: kallax.NewJSONSchemaKey(%s),\n",
+			"JSONSchemaKey: kallax.NewJSONSchemaKey(%s, %s),\n",
 			td.genJSONType(f),
 			td.genSchemaPath(f, ""),
 		))
