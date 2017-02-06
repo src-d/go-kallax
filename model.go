@@ -168,7 +168,7 @@ type ID uuid.UUID
 
 // NewID returns a new kallax ID.
 func NewID() ID {
-	return ID(uuid.NewV1())
+	return ID(uuid.NewV4())
 }
 
 // Scan implements the Scanner interface.
