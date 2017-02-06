@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/types"
 	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -607,7 +608,7 @@ func (f *Field) wrapAddress(ptr string) string {
 	}
 
 	if f.Kind == Array {
-		return fmt.Sprintf("types.Array(%s), nil", ptr)
+		return fmt.Sprintf("types.Array(%s, %d), nil", ptr, arrayLen(f))
 	}
 
 	return fmt.Sprintf("%s, nil", ptr)
@@ -635,7 +636,7 @@ func (f *Field) Value() string {
 	case Slice:
 		return fmt.Sprintf("types.Slice(%s), nil", name)
 	case Array:
-		return fmt.Sprintf("types.Array(%s), nil", f.fieldVarAddress())
+		return fmt.Sprintf("types.Array(%s, %d), nil", f.fieldVarAddress(), arrayLen(f))
 	}
 
 	if f.IsJSON {
@@ -649,6 +650,16 @@ func (f *Field) Value() string {
 func (f *Field) TypeSchemaName() string {
 	parts := strings.Split(f.Type, ".")
 	return parts[len(parts)-1]
+}
+
+func arrayLen(f *Field) int {
+	if f.Kind != Array {
+		return 0
+	}
+
+	idx := strings.Index(f.Type, "]")
+	len, _ := strconv.Atoi(f.Type[1:idx])
+	return len
 }
 
 func isTypeOrPtrTo(ptr types.Type, named *types.Named) bool {
