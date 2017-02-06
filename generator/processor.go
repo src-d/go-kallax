@@ -184,13 +184,20 @@ func (p *Processor) processModel(name string, s *types.Struct, t *types.Named) *
 	return m
 }
 
+var allEvents = Events{
+	BeforeInsert,
+	AfterInsert,
+	BeforeUpdate,
+	AfterUpdate,
+	BeforeSave,
+	AfterSave,
+	BeforeDelete,
+	AfterDelete,
+}
+
 func (p *Processor) findEvents(node *types.Named) []Event {
 	var events []Event
-	all := []Event{
-		BeforeInsert, AfterInsert, BeforeUpdate, AfterUpdate, BeforeSave, AfterSave, BeforeDelete, AfterDelete,
-	}
-
-	for _, e := range all {
+	for _, e := range allEvents {
 		if p.isEventPresent(node, e) {
 			events = append(events, e)
 		}

@@ -120,51 +120,25 @@ func (s *CarStore) Insert(record *Car) error {
 			}
 
 			for _, r := range records {
-				switch rec := r.Record.(type) {
-				case kallax.BeforeSaver:
-					if err := rec.BeforeSave(); err != nil {
-						return err
-					}
-				case kallax.BeforeUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.BeforeUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.BeforeInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.BeforeInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
 				}
+				persisted := r.Record.IsPersisted()
 
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
 
-				switch rec := r.Record.(type) {
-				case kallax.AfterSaver:
-					if err := rec.AfterSave(); err != nil {
-						return err
-					}
-				case kallax.AfterUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.AfterUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.AfterInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.AfterInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
 				}
 			}
 
-			return record.AfterSave()
+			if err := record.AfterSave(); err != nil {
+				return err
+			}
 
+			return nil
 		})
 	}
 
@@ -173,8 +147,11 @@ func (s *CarStore) Insert(record *Car) error {
 			return err
 		}
 
-		return record.AfterSave()
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 }
@@ -200,51 +177,25 @@ func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int6
 			}
 
 			for _, r := range records {
-				switch rec := r.Record.(type) {
-				case kallax.BeforeSaver:
-					if err := rec.BeforeSave(); err != nil {
-						return err
-					}
-				case kallax.BeforeUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.BeforeUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.BeforeInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.BeforeInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
 				}
+				persisted := r.Record.IsPersisted()
 
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
 
-				switch rec := r.Record.(type) {
-				case kallax.AfterSaver:
-					if err := rec.AfterSave(); err != nil {
-						return err
-					}
-				case kallax.AfterUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.AfterUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.AfterInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.AfterInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
 				}
 			}
 
-			return record.AfterSave()
+			if err := record.AfterSave(); err != nil {
+				return err
+			}
 
+			return nil
 		})
 		if err != nil {
 			return 0, err
@@ -259,8 +210,11 @@ func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int6
 			return err
 		}
 
-		return record.AfterSave()
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 	if err != nil {
@@ -568,6 +522,419 @@ func (rs *CarResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
+// NewEventsAllFixture returns a new instance of EventsAllFixture.
+func NewEventsAllFixture() (record *EventsAllFixture) {
+	record = newEventsAllFixture()
+	if record != nil {
+		record.SetID(kallax.NewID())
+	}
+	return
+}
+
+func (r *EventsAllFixture) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return &r.Model.ID, nil
+	case "checks":
+		return types.JSON(&r.Checks), nil
+	case "must_fail_before":
+		return types.JSON(&r.MustFailBefore), nil
+	case "must_fail_after":
+		return types.JSON(&r.MustFailAfter), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in EventsAllFixture: %s", col)
+	}
+}
+
+func (r *EventsAllFixture) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.Model.ID, nil
+	case "checks":
+		return types.JSON(r.Checks), nil
+	case "must_fail_before":
+		return types.JSON(r.MustFailBefore), nil
+	case "must_fail_after":
+		return types.JSON(r.MustFailAfter), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in EventsAllFixture: %s", col)
+	}
+}
+
+func (r *EventsAllFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
+	return nil, fmt.Errorf("kallax: model EventsAllFixture has no relationships")
+}
+
+func (r *EventsAllFixture) SetRelationship(field string, rel interface{}) error {
+	return fmt.Errorf("kallax: model EventsAllFixture has no relationships")
+}
+
+// EventsAllFixtureStore is the entity to access the records of the type EventsAllFixture
+// in the database.
+type EventsAllFixtureStore struct {
+	*kallax.Store
+}
+
+// NewEventsAllFixtureStore creates a new instance of EventsAllFixtureStore
+// using a SQL database.
+func NewEventsAllFixtureStore(db *sql.DB) *EventsAllFixtureStore {
+	return &EventsAllFixtureStore{kallax.NewStore(db)}
+}
+
+// Insert inserts a EventsAllFixture in the database. A non-persisted object is
+// required for this operation.
+func (s *EventsAllFixtureStore) Insert(record *EventsAllFixture) error {
+
+	if err := record.BeforeSave(); err != nil {
+		return err
+	}
+
+	if err := record.BeforeInsert(); err != nil {
+		return err
+	}
+
+	return s.Store.Transaction(func(s *kallax.Store) error {
+		if err := s.Insert(Schema.EventsAllFixture.BaseSchema, record); err != nil {
+			return err
+		}
+
+		if err := record.AfterInsert(); err != nil {
+			return err
+		}
+
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *EventsAllFixtureStore) Update(record *EventsAllFixture, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	if err := record.BeforeSave(); err != nil {
+		return 0, err
+	}
+
+	if err := record.BeforeUpdate(); err != nil {
+		return 0, err
+	}
+
+	err = s.Store.Transaction(func(s *kallax.Store) error {
+		updated, err = s.Update(Schema.EventsAllFixture.BaseSchema, record, cols...)
+		if err != nil {
+			return err
+		}
+
+		if err := record.AfterUpdate(); err != nil {
+			return err
+		}
+
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	return updated, nil
+
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *EventsAllFixtureStore) Save(record *EventsAllFixture) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *EventsAllFixtureStore) Delete(record *EventsAllFixture) error {
+
+	return s.Store.Delete(Schema.EventsAllFixture.BaseSchema, record)
+
+}
+
+// Find returns the set of results for the given query.
+func (s *EventsAllFixtureStore) Find(q *EventsAllFixtureQuery) (*EventsAllFixtureResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewEventsAllFixtureResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *EventsAllFixtureStore) MustFind(q *EventsAllFixtureQuery) *EventsAllFixtureResultSet {
+	return NewEventsAllFixtureResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *EventsAllFixtureStore) Count(q *EventsAllFixtureQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *EventsAllFixtureStore) MustCount(q *EventsAllFixtureQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `sql.ErrNoRows` is returned if there are no results.
+func (s *EventsAllFixtureStore) FindOne(q *EventsAllFixtureQuery) (*EventsAllFixture, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *EventsAllFixtureStore) MustFindOne(q *EventsAllFixtureQuery) *EventsAllFixture {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the EventsAllFixture with the data in the database and
+// makes it writable.
+func (s *EventsAllFixtureStore) Reload(record *EventsAllFixture) error {
+	return s.Store.Reload(Schema.EventsAllFixture.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *EventsAllFixtureStore) Transaction(callback func(*EventsAllFixtureStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&EventsAllFixtureStore{store})
+	})
+}
+
+// EventsAllFixtureQuery is the object used to create queries for the EventsAllFixture
+// entity.
+type EventsAllFixtureQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewEventsAllFixtureQuery returns a new instance of EventsAllFixtureQuery.
+func NewEventsAllFixtureQuery() *EventsAllFixtureQuery {
+	return &EventsAllFixtureQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.EventsAllFixture.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *EventsAllFixtureQuery) Select(columns ...kallax.SchemaField) *EventsAllFixtureQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *EventsAllFixtureQuery) SelectNot(columns ...kallax.SchemaField) *EventsAllFixtureQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *EventsAllFixtureQuery) Copy() *EventsAllFixtureQuery {
+	return &EventsAllFixtureQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *EventsAllFixtureQuery) Order(cols ...kallax.ColumnOrder) *EventsAllFixtureQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *EventsAllFixtureQuery) BatchSize(size uint64) *EventsAllFixtureQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *EventsAllFixtureQuery) Limit(n uint64) *EventsAllFixtureQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *EventsAllFixtureQuery) Offset(n uint64) *EventsAllFixtureQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *EventsAllFixtureQuery) Where(cond kallax.Condition) *EventsAllFixtureQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// EventsAllFixtureResultSet is the set of results returned by a query to the
+// database.
+type EventsAllFixtureResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *EventsAllFixture
+	lastErr   error
+}
+
+// NewEventsAllFixtureResultSet creates a new result set for rows of the type
+// EventsAllFixture.
+func NewEventsAllFixtureResultSet(rs kallax.ResultSet) *EventsAllFixtureResultSet {
+	return &EventsAllFixtureResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *EventsAllFixtureResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.EventsAllFixture.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*EventsAllFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *EventsAllFixture")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *EventsAllFixtureResultSet) Get() (*EventsAllFixture, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *EventsAllFixtureResultSet) ForEach(fn func(*EventsAllFixture) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *EventsAllFixtureResultSet) All() ([]*EventsAllFixture, error) {
+	var result []*EventsAllFixture
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *EventsAllFixtureResultSet) One() (*EventsAllFixture, error) {
+	if !rs.Next() {
+		return nil, sql.ErrNoRows
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *EventsAllFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *EventsAllFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 // NewEventsFixture returns a new instance of EventsFixture.
 func NewEventsFixture() (record *EventsFixture) {
 	record = newEventsFixture()
@@ -642,8 +1009,11 @@ func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
 			return err
 		}
 
-		return record.AfterInsert()
+		if err := record.AfterInsert(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 }
@@ -666,8 +1036,11 @@ func (s *EventsFixtureStore) Update(record *EventsFixture, cols ...kallax.Schema
 			return err
 		}
 
-		return record.AfterUpdate()
+		if err := record.AfterUpdate(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 	if err != nil {
@@ -1033,8 +1406,11 @@ func (s *EventsSaveFixtureStore) Insert(record *EventsSaveFixture) error {
 			return err
 		}
 
-		return record.AfterSave()
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 }
@@ -1057,8 +1433,11 @@ func (s *EventsSaveFixtureStore) Update(record *EventsSaveFixture, cols ...kalla
 			return err
 		}
 
-		return record.AfterSave()
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 	if err != nil {
@@ -2208,51 +2587,25 @@ func (s *PersonStore) Insert(record *Person) error {
 			}
 
 			for _, r := range records {
-				switch rec := r.Record.(type) {
-				case kallax.BeforeSaver:
-					if err := rec.BeforeSave(); err != nil {
-						return err
-					}
-				case kallax.BeforeUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.BeforeUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.BeforeInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.BeforeInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
 				}
+				persisted := r.Record.IsPersisted()
 
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
 
-				switch rec := r.Record.(type) {
-				case kallax.AfterSaver:
-					if err := rec.AfterSave(); err != nil {
-						return err
-					}
-				case kallax.AfterUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.AfterUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.AfterInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.AfterInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
 				}
 			}
 
-			return record.AfterSave()
+			if err := record.AfterSave(); err != nil {
+				return err
+			}
 
+			return nil
 		})
 	}
 
@@ -2261,8 +2614,11 @@ func (s *PersonStore) Insert(record *Person) error {
 			return err
 		}
 
-		return record.AfterSave()
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 }
@@ -2288,51 +2644,25 @@ func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (update
 			}
 
 			for _, r := range records {
-				switch rec := r.Record.(type) {
-				case kallax.BeforeSaver:
-					if err := rec.BeforeSave(); err != nil {
-						return err
-					}
-				case kallax.BeforeUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.BeforeUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.BeforeInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.BeforeInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
 				}
+				persisted := r.Record.IsPersisted()
 
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
 
-				switch rec := r.Record.(type) {
-				case kallax.AfterSaver:
-					if err := rec.AfterSave(); err != nil {
-						return err
-					}
-				case kallax.AfterUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.AfterUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.AfterInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.AfterInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
 				}
 			}
 
-			return record.AfterSave()
+			if err := record.AfterSave(); err != nil {
+				return err
+			}
 
+			return nil
 		})
 		if err != nil {
 			return 0, err
@@ -2347,8 +2677,11 @@ func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (update
 			return err
 		}
 
-		return record.AfterSave()
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 	if err != nil {
@@ -2890,51 +3223,25 @@ func (s *PetStore) Insert(record *Pet) error {
 			}
 
 			for _, r := range records {
-				switch rec := r.Record.(type) {
-				case kallax.BeforeSaver:
-					if err := rec.BeforeSave(); err != nil {
-						return err
-					}
-				case kallax.BeforeUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.BeforeUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.BeforeInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.BeforeInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
 				}
+				persisted := r.Record.IsPersisted()
 
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
 
-				switch rec := r.Record.(type) {
-				case kallax.AfterSaver:
-					if err := rec.AfterSave(); err != nil {
-						return err
-					}
-				case kallax.AfterUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.AfterUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.AfterInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.AfterInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
 				}
 			}
 
-			return record.AfterSave()
+			if err := record.AfterSave(); err != nil {
+				return err
+			}
 
+			return nil
 		})
 	}
 
@@ -2943,8 +3250,11 @@ func (s *PetStore) Insert(record *Pet) error {
 			return err
 		}
 
-		return record.AfterSave()
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 }
@@ -2970,51 +3280,25 @@ func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int6
 			}
 
 			for _, r := range records {
-				switch rec := r.Record.(type) {
-				case kallax.BeforeSaver:
-					if err := rec.BeforeSave(); err != nil {
-						return err
-					}
-				case kallax.BeforeUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.BeforeUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.BeforeInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.BeforeInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
 				}
+				persisted := r.Record.IsPersisted()
 
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
 
-				switch rec := r.Record.(type) {
-				case kallax.AfterSaver:
-					if err := rec.AfterSave(); err != nil {
-						return err
-					}
-				case kallax.AfterUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.AfterUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.AfterInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.AfterInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
 				}
 			}
 
-			return record.AfterSave()
+			if err := record.AfterSave(); err != nil {
+				return err
+			}
 
+			return nil
 		})
 		if err != nil {
 			return 0, err
@@ -3029,8 +3313,11 @@ func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int6
 			return err
 		}
 
-		return record.AfterSave()
+		if err := record.AfterSave(); err != nil {
+			return err
+		}
 
+		return nil
 	})
 
 	if err != nil {
@@ -4167,51 +4454,21 @@ func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 			}
 
 			for _, r := range records {
-				switch rec := r.Record.(type) {
-				case kallax.BeforeSaver:
-					if err := rec.BeforeSave(); err != nil {
-						return err
-					}
-				case kallax.BeforeUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.BeforeUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.BeforeInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.BeforeInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
 				}
+				persisted := r.Record.IsPersisted()
 
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
 
-				switch rec := r.Record.(type) {
-				case kallax.AfterSaver:
-					if err := rec.AfterSave(); err != nil {
-						return err
-					}
-				case kallax.AfterUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.AfterUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.AfterInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.AfterInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
 				}
 			}
 
 			return nil
-
 		})
 	}
 
@@ -4236,51 +4493,21 @@ func (s *SchemaFixtureStore) Update(record *SchemaFixture, cols ...kallax.Schema
 			}
 
 			for _, r := range records {
-				switch rec := r.Record.(type) {
-				case kallax.BeforeSaver:
-					if err := rec.BeforeSave(); err != nil {
-						return err
-					}
-				case kallax.BeforeUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.BeforeUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.BeforeInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.BeforeInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
 				}
+				persisted := r.Record.IsPersisted()
 
 				if _, err := s.Save(r.Schema, r.Record); err != nil {
 					return err
 				}
 
-				switch rec := r.Record.(type) {
-				case kallax.AfterSaver:
-					if err := rec.AfterSave(); err != nil {
-						return err
-					}
-				case kallax.AfterUpdater:
-					if r.Record.IsPersisted() {
-						if err := rec.AfterUpdate(); err != nil {
-							return err
-						}
-					}
-				case kallax.AfterInserter:
-					if !r.Record.IsPersisted() {
-						if err := rec.AfterInsert(); err != nil {
-							return err
-						}
-					}
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
 				}
 			}
 
 			return nil
-
 		})
 		if err != nil {
 			return 0, err
@@ -5682,6 +5909,7 @@ func (rs *StoreWithNewFixtureResultSet) Close() error {
 
 type schema struct {
 	Car                       *schemaCar
+	EventsAllFixture          *schemaEventsAllFixture
 	EventsFixture             *schemaEventsFixture
 	EventsSaveFixture         *schemaEventsSaveFixture
 	JSONModel                 *schemaJSONModel
@@ -5700,6 +5928,14 @@ type schemaCar struct {
 	*kallax.BaseSchema
 	ID        kallax.SchemaField
 	ModelName kallax.SchemaField
+}
+
+type schemaEventsAllFixture struct {
+	*kallax.BaseSchema
+	ID             kallax.SchemaField
+	Checks         kallax.SchemaField
+	MustFailBefore kallax.SchemaField
+	MustFailAfter  kallax.SchemaField
 }
 
 type schemaEventsFixture struct {
@@ -5789,6 +6025,12 @@ type schemaStoreWithNewFixture struct {
 	Bar kallax.SchemaField
 }
 
+type schemaJSONModelBar struct {
+	*kallax.BaseSchemaField
+	Qux *schemaJSONModelBarQux
+	Mux kallax.SchemaField
+}
+
 type schemaJSONModelBarQux struct {
 	*kallax.JSONSchemaArray
 	Schnooga kallax.SchemaField
@@ -5803,12 +6045,6 @@ func (s *schemaJSONModelBarQux) At(n int) *schemaJSONModelBarQux {
 		Balooga:         kallax.NewJSONSchemaKey(kallax.JSONInt, "bar", "Qux", fmt.Sprint(n), "Balooga"),
 		Boo:             kallax.NewJSONSchemaKey(kallax.JSONFloat, "bar", "Qux", fmt.Sprint(n), "Boo"),
 	}
-}
-
-type schemaJSONModelBar struct {
-	*kallax.BaseSchemaField
-	Qux *schemaJSONModelBarQux
-	Mux kallax.SchemaField
 }
 
 var Schema = &schema{
@@ -5829,6 +6065,25 @@ var Schema = &schema{
 		),
 		ID:        kallax.NewSchemaField("id"),
 		ModelName: kallax.NewSchemaField("model_name"),
+	},
+	EventsAllFixture: &schemaEventsAllFixture{
+		BaseSchema: kallax.NewBaseSchema(
+			"event",
+			"__eventsallfixture",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(EventsAllFixture)
+			},
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("checks"),
+			kallax.NewSchemaField("must_fail_before"),
+			kallax.NewSchemaField("must_fail_after"),
+		),
+		ID:             kallax.NewSchemaField("id"),
+		Checks:         kallax.NewSchemaField("checks"),
+		MustFailBefore: kallax.NewSchemaField("must_fail_before"),
+		MustFailAfter:  kallax.NewSchemaField("must_fail_after"),
 	},
 	EventsFixture: &schemaEventsFixture{
 		BaseSchema: kallax.NewBaseSchema(

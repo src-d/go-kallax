@@ -135,7 +135,7 @@ func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, p
 
 	// Owner are set to nil to be able to deep equal in the tests.
 	// Records coming from relationships don't have their relationships
-	// case \"foo_id\":\nreturn kallax.VirtualColumn(\"foo_id\", r), nilpopulated, so it will always be nil.
+	// populated, so it will always be nil.
 	// Same with events.
 	var petList = make([]*Pet, len(pets))
 	for i, pet := range pets {

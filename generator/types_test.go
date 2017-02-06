@@ -236,32 +236,6 @@ func TestFieldForeignKey(t *testing.T) {
 	}
 }
 
-func TestModelValidateEvents(t *testing.T) {
-	require := require.New(t)
-	cases := []struct {
-		events Events
-		err    bool
-	}{
-		{Events{BeforeSave, AfterSave}, false},
-		{Events{BeforeSave, BeforeInsert}, true},
-		{Events{BeforeSave, BeforeUpdate}, true},
-		{Events{AfterSave, AfterInsert}, true},
-		{Events{AfterSave, AfterUpdate}, true},
-	}
-
-	for _, c := range cases {
-		m := &Model{Table: "foo", Events: c.events}
-
-		err := m.Validate()
-		if c.err {
-			require.NotNil(err, "%v", c.events)
-			require.Equal(ErrEventConflict, err, "%v", c.events)
-		} else {
-			require.Nil(err, "%v", c.events)
-		}
-	}
-}
-
 func TestModel(t *testing.T) {
 	suite.Run(t, new(ModelSuite))
 }

@@ -55,3 +55,45 @@ type AfterDeleter interface {
 	// returned, it will cause the delete to be rolled back.
 	AfterDelete() error
 }
+
+// ApplyBeforeEvents calls all the update, insert or save before events of the
+// record. Save events are always called before the insert or update event.
+func ApplyBeforeEvents(r Record) error {
+	if rec, ok := r.(BeforeSaver); ok {
+		if err := rec.BeforeSave(); err != nil {
+			return err
+		}
+	}
+
+	if rec, ok := r.(BeforeInserter); ok && !r.IsPersisted() {
+		return rec.BeforeInsert()
+	}
+
+	if rec, ok := r.(BeforeUpdater); ok && r.IsPersisted() {
+		return rec.BeforeUpdate()
+	}
+
+	return nil
+}
+
+// ApplyAfterEvents calls all the update, insert or save after events of the
+// record. Save events are always called after the insert or update event.
+func ApplyAfterEvents(r Record, wasPersisted bool) error {
+	if rec, ok := r.(AfterInserter); ok && !wasPersisted {
+		if err := rec.AfterInsert(); err != nil {
+			return err
+		}
+	}
+
+	if rec, ok := r.(AfterUpdater); ok && wasPersisted {
+		if err := rec.AfterUpdate(); err != nil {
+			return err
+		}
+	}
+
+	if rec, ok := r.(AfterSaver); ok {
+		return rec.AfterSave()
+	}
+
+	return nil
+}

@@ -130,7 +130,7 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
         if err := record.BeforeSave(); err != nil {
                 return err
         }
-        {{else if .Events.Has "BeforeInsert"}}
+        {{end}}{{if .Events.Has "BeforeInsert"}}
         if err := record.BeforeInsert(); err != nil {
                 return err
         }
@@ -144,56 +144,31 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
                         }
 
                         for _, r := range records {
-                                switch rec := r.Record.(type) {
-                                case kallax.BeforeSaver:
-                                        if err := rec.BeforeSave(); err != nil {
-                                                return err
-                                        }
-                                case kallax.BeforeUpdater:
-                                        if r.Record.IsPersisted() {
-                                                if err := rec.BeforeUpdate(); err != nil {
-                                                        return err
-                                                }
-                                        }
-                                case kallax.BeforeInserter:
-                                        if !r.Record.IsPersisted() {
-                                                if err := rec.BeforeInsert(); err != nil {
-                                                        return err
-                                                }
-                                        }
+                                if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+                                        return err
                                 }
+                                persisted := r.Record.IsPersisted()
 
                                 if _, err := s.Save(r.Schema, r.Record); err != nil {
                                         return err
                                 }
 
-                                switch rec := r.Record.(type) {
-                                case kallax.AfterSaver:
-                                        if err := rec.AfterSave(); err != nil {
-                                                return err
-                                        }
-                                case kallax.AfterUpdater:
-                                        if r.Record.IsPersisted() {
-                                                if err := rec.AfterUpdate(); err != nil {
-                                                        return err
-                                                }
-                                        }
-                                case kallax.AfterInserter:
-                                        if !r.Record.IsPersisted() {
-                                                if err := rec.AfterInsert(); err != nil {
-                                                        return err
-                                                }
-                                        }
+                                if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+                                        return err
                                 }
                         }
 
                         {{if .Events.Has "AfterInsert"}}
-                        return record.AfterInsert()
-                        {{else if .Events.Has "AfterSave"}}
-                        return record.AfterSave()
-                        {{else}}
-                        return nil
+                        if err := record.AfterInsert(); err != nil {
+                                return err
+                        }
                         {{end}}
+                        {{if .Events.Has "AfterSave"}}
+                        if err := record.AfterSave(); err != nil {
+                                return err
+                        }
+                        {{end}}
+                        return nil
                 })
         }
         {{end}}
@@ -205,10 +180,16 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
                 }
 
                 {{if .Events.Has "AfterInsert"}}
-                return record.AfterInsert()
-                {{else}}
-                return record.AfterSave()
+                if err := record.AfterInsert(); err != nil {
+                        return err
+                }
                 {{end}}
+                {{if .Events.Has "AfterSave"}}
+                if err := record.AfterSave(); err != nil {
+                        return err
+                }
+                {{end}}
+                return nil
         })
         {{else}}
         return s.Store.Insert(Schema.{{.Name}}.BaseSchema, record)
@@ -242,56 +223,31 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
                         }
 
                         for _, r := range records {
-                                switch rec := r.Record.(type) {
-                                case kallax.BeforeSaver:
-                                        if err := rec.BeforeSave(); err != nil {
-                                                return err
-                                        }
-                                case kallax.BeforeUpdater:
-                                        if r.Record.IsPersisted() {
-                                                if err := rec.BeforeUpdate(); err != nil {
-                                                        return err
-                                                }
-                                        }
-                                case kallax.BeforeInserter:
-                                        if !r.Record.IsPersisted() {
-                                                if err := rec.BeforeInsert(); err != nil {
-                                                        return err
-                                                }
-                                        }
+                                if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+                                        return err
                                 }
+                                persisted := r.Record.IsPersisted()
 
                                 if _, err := s.Save(r.Schema, r.Record); err != nil {
                                         return err
                                 }
 
-                                switch rec := r.Record.(type) {
-                                case kallax.AfterSaver:
-                                        if err := rec.AfterSave(); err != nil {
-                                                return err
-                                        }
-                                case kallax.AfterUpdater:
-                                        if r.Record.IsPersisted() {
-                                                if err := rec.AfterUpdate(); err != nil {
-                                                        return err
-                                                }
-                                        }
-                                case kallax.AfterInserter:
-                                        if !r.Record.IsPersisted() {
-                                                if err := rec.AfterInsert(); err != nil {
-                                                        return err
-                                                }
-                                        }
+                                if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+                                        return err
                                 }
                         }
 
                         {{if .Events.Has "AfterUpdate"}}
-                        return record.AfterUpdate()
-                        {{else if .Events.Has "AfterSave"}}
-                        return record.AfterSave()
-                        {{else}}
-                        return nil
+                        if err := record.AfterUpdate(); err != nil {
+                                return err
+                        }
                         {{end}}
+                        {{if .Events.Has "AfterSave"}}
+                        if err := record.AfterSave(); err != nil {
+                                return err
+                        }
+                        {{end}}
+                        return nil
                 })
                 if err != nil {
                         return 0, err
@@ -308,10 +264,16 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
                 }
 
                 {{if .Events.Has "AfterUpdate"}}
-                return record.AfterUpdate()
-                {{else}}
-                return record.AfterSave()
+                if err := record.AfterUpdate(); err != nil {
+                        return err
+                }
                 {{end}}
+                {{if .Events.Has "AfterSave"}}
+                if err := record.AfterSave(); err != nil {
+                        return err
+                }
+                {{end}}
+                return nil
         })
 
         if err != nil {
