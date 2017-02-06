@@ -81,3 +81,70 @@ func (s *EventsSaveFixture) AfterSave() error {
 	s.Checks["AfterSave"] = true
 	return nil
 }
+
+type EventsAllFixture struct {
+	kallax.Model   `table:"event"`
+	Checks         map[string]bool
+	MustFailBefore error
+	MustFailAfter  error
+}
+
+func newEventsAllFixture() *EventsAllFixture {
+	return &EventsAllFixture{
+		Checks: make(map[string]bool, 0),
+	}
+}
+
+func (s *EventsAllFixture) BeforeInsert() error {
+	if s.MustFailBefore != nil {
+		return s.MustFailBefore
+	}
+
+	s.Checks["BeforeInsert"] = true
+	return nil
+}
+
+func (s *EventsAllFixture) AfterInsert() error {
+	if s.MustFailAfter != nil {
+		return s.MustFailAfter
+	}
+
+	s.Checks["AfterInsert"] = true
+	return nil
+}
+
+func (s *EventsAllFixture) BeforeUpdate() error {
+	if s.MustFailBefore != nil {
+		return s.MustFailBefore
+	}
+
+	s.Checks["BeforeUpdate"] = true
+	return nil
+}
+
+func (s *EventsAllFixture) AfterUpdate() error {
+	if s.MustFailAfter != nil {
+		return s.MustFailAfter
+	}
+
+	s.Checks["AfterUpdate"] = true
+	return nil
+}
+
+func (s *EventsAllFixture) BeforeSave() error {
+	if s.MustFailBefore != nil {
+		return s.MustFailBefore
+	}
+
+	s.Checks["BeforeSave"] = true
+	return nil
+}
+
+func (s *EventsAllFixture) AfterSave() error {
+	if s.MustFailAfter != nil {
+		return s.MustFailAfter
+	}
+
+	s.Checks["AfterSave"] = true
+	return nil
+}

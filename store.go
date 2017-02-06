@@ -23,10 +23,8 @@ var (
 	ErrNotWritable = errors.New("kallax: record is not writable")
 	// ErrStop can be returned inside a ForEach callback to stop iteration.
 	ErrStop = errors.New("kallax: stopped ForEach execution")
-	// ErrTransactionInsideTransaction is returned when a transaction is run
-	// inside a transaction.
-	ErrTransactionInsideTransaction = errors.New("kallax: can't start a transaction inside a transaction")
-	ErrInvalidTxCallback            = errors.New("kallax: invalid transaction callback given")
+	// ErrInvalidTxCallback is returned when a nil callback is passed.
+	ErrInvalidTxCallback = errors.New("kallax: invalid transaction callback given")
 )
 
 // Store is a structure capable of retrieving records from a concrete table in
@@ -297,9 +295,11 @@ func (s *Store) MustCount(q Query) int64 {
 // an error is returned.
 // The transaction is only open in the store passed as a parameter to the
 // callback.
+// If a transaction is already opened in this store, instead of opening a new
+// one, the other will be reused.
 func (s *Store) Transaction(callback func(*Store) error) error {
 	if s.db == nil {
-		return ErrTransactionInsideTransaction
+		return callback(s)
 	}
 
 	tx, err := s.db.Begin()
@@ -323,6 +323,7 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 }
 
 // RecordWithSchema is a structure that contains both a record and its schema.
+// Only for internal purposes.
 type RecordWithSchema struct {
 	Schema Schema
 	Record Record

@@ -2,7 +2,6 @@ package generator
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"go/types"
 	"reflect"
@@ -242,15 +241,8 @@ func (m *Model) checkFieldColumns(fields []*Field, cols occurrences) {
 	}
 }
 
-// ErrEventConflict is returned whenever the model implements a Save event,
-// but also implements an Update or Insert event of the same kind.
-var ErrEventConflict = errors.New(
-	"kallax: Event conflict a *Save and a *Update or *Insert are present",
-)
-
 // Validate returns an error if the model is not valid. To be valid, a model
-// needs a non-empty table name, a non-repeated set of fields, and no
-// conflicting events.
+// needs a non-empty table name, a non-repeated set of fields.
 func (m *Model) Validate() error {
 	if fields := m.repeatedFields(); len(fields) > 0 {
 		return fmt.Errorf("kallax: the following fields are repeated: %v", fields)
@@ -262,22 +254,6 @@ func (m *Model) Validate() error {
 
 	if m.Table == "" {
 		return fmt.Errorf("kallax: model %s has no table", m.Name)
-	}
-
-	if m.Events.Has(BeforeSave) && m.Events.Has(BeforeInsert) {
-		return ErrEventConflict
-	}
-
-	if m.Events.Has(BeforeSave) && m.Events.Has(BeforeUpdate) {
-		return ErrEventConflict
-	}
-
-	if m.Events.Has(AfterSave) && m.Events.Has(AfterInsert) {
-		return ErrEventConflict
-	}
-
-	if m.Events.Has(AfterSave) && m.Events.Has(AfterUpdate) {
-		return ErrEventConflict
 	}
 
 	return nil
@@ -720,22 +696,22 @@ func (s Events) Has(e Event) bool {
 }
 
 const (
-	// BeforeInsert is an event that will happen before Insert opereations.
-	// Conflicts with BeforeSave.
+	// BeforeInsert is an event that will happen before Insert operations.
 	BeforeInsert Event = "BeforeInsert"
 	// AfterInsert is an event that will happen after Insert operations.
-	// Conflicts with AfterSave.
 	AfterInsert Event = "AfterInsert"
 	// BeforeUpdate is an event that will happen before Update operations.
-	// Conflicts with BeforeSave.
 	BeforeUpdate Event = "BeforeUpdate"
 	// AfterUpdate is an event that will happen after Update operations.
-	// Conflicts with AfterSave.
 	AfterUpdate Event = "AfterUpdate"
 	// BeforeSave is an event that will happen before Insert or Update
-	// operations. Conflicts with BeforeInsert and BeforeUpdate.
+	// operations.
 	BeforeSave Event = "BeforeSave"
 	// AfterSave is an event that will happen after Insert or Update
-	// operations. Conflicts with AfterInsert and AfterUpdate.
+	// operations.
 	AfterSave Event = "AfterSave"
+	// BeforeDelete is an event that will happen before Delete.
+	BeforeDelete Event = "BeforeDelete"
+	// AfterDelete is an event that will happen after Delete.
+	AfterDelete Event = "AfterDelete"
 )
