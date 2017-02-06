@@ -15,14 +15,33 @@ import (
 // Nullable gives the ability to scan nil values to the given type
 // only if they implement sql.Scanner.
 func Nullable(typ interface{}) interface{} {
-	// TODO(erizocosmico): implement the rest of go basic types
 	switch typ := typ.(type) {
 	case *string:
 		return &nullString{typ}
 	case *bool:
 		return &nullBool{typ}
+	case *int8:
+		return &nullInt8{typ}
+	case *uint8:
+		return &nullUint8{typ}
+	case *int16:
+		return &nullInt16{typ}
+	case *uint16:
+		return &nullUint16{typ}
+	case *uint:
+		return &nullUint{typ}
+	case *int:
+		return &nullInt{typ}
+	case *uint32:
+		return &nullUint32{typ}
+	case *int32:
+		return &nullInt32{typ}
+	case *uint64:
+		return &nullUint64{typ}
 	case *int64:
 		return &nullInt64{typ}
+	case *float32:
+		return &nullFloat32{typ}
 	case *float64:
 		return &nullFloat64{typ}
 	case *time.Time:
@@ -41,7 +60,7 @@ type nullableErr struct {
 }
 
 func (n *nullableErr) Scan(_ interface{}) error {
-	return fmt.Errorf("type %T is not nullable", n.v)
+	return fmt.Errorf("type %T is not nullable and cannot be scanned", n.v)
 }
 
 type nullable struct {
@@ -81,6 +100,126 @@ func (n *nullBool) Scan(v interface{}) error {
 	return nil
 }
 
+type nullInt8 struct {
+	v *int8
+}
+
+func (n *nullInt8) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = int8(ns.Int64)
+	return nil
+}
+
+type nullUint8 struct {
+	v *uint8
+}
+
+func (n *nullUint8) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = uint8(ns.Int64)
+	return nil
+}
+
+type nullInt16 struct {
+	v *int16
+}
+
+func (n *nullInt16) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = int16(ns.Int64)
+	return nil
+}
+
+type nullUint16 struct {
+	v *uint16
+}
+
+func (n *nullUint16) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = uint16(ns.Int64)
+	return nil
+}
+
+type nullInt32 struct {
+	v *int32
+}
+
+func (n *nullInt32) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = int32(ns.Int64)
+	return nil
+}
+
+type nullUint32 struct {
+	v *uint32
+}
+
+func (n *nullUint32) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = uint32(ns.Int64)
+	return nil
+}
+
+type nullInt struct {
+	v *int
+}
+
+func (n *nullInt) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = int(ns.Int64)
+	return nil
+}
+
+type nullUint struct {
+	v *uint
+}
+
+func (n *nullUint) Scan(v interface{}) error {
+	fmt.Printf("IS TYPE %T\n", v)
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	// TODO: better handling of this type
+	*n.v = uint(ns.Int64)
+	return nil
+}
+
+type nullUint64 struct {
+	v *uint64
+}
+
+func (n *nullUint64) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	// TODO: better handling of this type
+	*n.v = uint64(ns.Int64)
+	return nil
+}
+
 type nullInt64 struct {
 	v *int64
 }
@@ -91,6 +230,19 @@ func (n *nullInt64) Scan(v interface{}) error {
 		return err
 	}
 	*n.v = ns.Int64
+	return nil
+}
+
+type nullFloat32 struct {
+	v *float32
+}
+
+func (n *nullFloat32) Scan(v interface{}) error {
+	ns := new(sql.NullFloat64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	*n.v = float32(ns.Float64)
 	return nil
 }
 
@@ -152,7 +304,7 @@ func (u *URL) Scan(v interface{}) error {
 	return fmt.Errorf("kallax: cannot scan type %s into URL type", reflect.TypeOf(v))
 }
 
-func (u URL) Value() (interface{}, error) {
+func (u URL) Value() (driver.Value, error) {
 	url := url.URL(u)
 	return (&url).String(), nil
 }

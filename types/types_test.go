@@ -99,15 +99,30 @@ func TestArray(t *testing.T) {
 func TestNullable(t *testing.T) {
 	var (
 		Str      string
+		Int8     int8
+		Uint8    uint8
+		Byte     byte
+		Int16    int16
+		Uint16   uint16
+		Int32    int32
+		Uint32   uint32
+		Int      int
+		Uint     uint
 		Int64    int64
+		Uint64   uint64
+		Float32  float32
 		Float64  float64
 		Bool     bool
 		Time     time.Time
 		Duration time.Duration
+		Url      URL
 	)
 	tim := time.Now().UTC()
 	tim = time.Date(tim.Year(), tim.Month(), tim.Day(), tim.Hour(), tim.Minute(), tim.Second(), 0, tim.Location())
 	s := require.New(t)
+	url, err := url.Parse("http://foo.me")
+	s.NoError(err)
+
 	cases := []struct {
 		name         string
 		typ          string
@@ -121,10 +136,76 @@ func TestNullable(t *testing.T) {
 			&Str,
 		},
 		{
+			"int8",
+			"bigint",
+			int8(1),
+			&Int8,
+		},
+		{
+			"byte",
+			"bigint",
+			byte(1),
+			&Byte,
+		},
+		{
+			"int16",
+			"bigint",
+			int16(1),
+			&Int16,
+		},
+		{
+			"int32",
+			"bigint",
+			int32(1),
+			&Int32,
+		},
+		{
+			"int",
+			"bigint",
+			int(1),
+			&Int,
+		},
+		{
 			"int64",
 			"bigint",
 			int64(1),
 			&Int64,
+		},
+		{
+			"uint8",
+			"bigint",
+			uint8(1),
+			&Uint8,
+		},
+		{
+			"uint16",
+			"bigint",
+			uint16(1),
+			&Uint16,
+		},
+		{
+			"uint32",
+			"bigint",
+			uint32(1),
+			&Uint32,
+		},
+		{
+			"uint",
+			"bigint",
+			uint(1),
+			&Uint,
+		},
+		{
+			"uint64",
+			"bigint",
+			uint64(1),
+			&Uint64,
+		},
+		{
+			"float32",
+			"decimal",
+			float32(.5),
+			&Float32,
 		},
 		{
 			"float64",
@@ -149,6 +230,12 @@ func TestNullable(t *testing.T) {
 			"timestamptz",
 			tim,
 			&Time,
+		},
+		{
+			"URL",
+			"text",
+			URL(*url),
+			&Url,
 		},
 	}
 
