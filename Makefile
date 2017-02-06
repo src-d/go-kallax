@@ -9,7 +9,7 @@ test:
 		rm $(COVERAGE_PROFILE); \
 	fi; \
 	for dir in `find . -name "*.go" | grep -o '.*/' | sort -u | grep -v './tests/'`; do \
-		go test $$dir -coverprofile=$(COVERAGE_PROFILE) -covermode=$(COVERAGE_MODE); \
+		go test $$dir -coverprofile=$(COVERAGE_PROFILE) -covermode=$(COVERAGE_MODE) --p=1; \
 		if [ $$? != 0 ]; then \
 			exit 2; \
 		fi; \
@@ -24,4 +24,4 @@ test:
 		echo 'There are differences between the commited tests/kallax.go and the one generated right now'; \
 		exit 2; \
 	fi; \
-	go test -v ./tests/...;
+	go test -v ./tests/... --p=1;
