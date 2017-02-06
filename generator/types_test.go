@@ -66,41 +66,42 @@ func (s *FieldSuite) TestAddress() {
 		isJSON   bool
 		isPtr    bool
 		name     string
+		typeStr  string
 		parent   *Field
 		expected string
 	}{
 		{
-			Struct, true, false, "Foo", nil,
+			Struct, true, false, "Foo", "", nil,
 			"types.JSON(&r.Foo), nil",
 		},
 		{
-			Map, true, false, "Foo", nil,
+			Map, true, false, "Foo", "", nil,
 			"types.JSON(&r.Foo), nil",
 		},
 		{
-			Struct, false, false, "Foo", nil,
+			Struct, false, false, "Foo", "", nil,
 			"&r.Foo, nil",
 		},
 		{
-			Array, false, false, "Foo", nil,
-			`types.Array(&r.Foo), nil`,
+			Array, false, false, "Foo", "[5]string", nil,
+			`types.Array(&r.Foo, 5), nil`,
 		},
 		{
-			Slice, false, false, "Foo", nil,
+			Slice, false, false, "Foo", "", nil,
 			"types.Slice(&r.Foo), nil",
 		},
 		{
-			Basic, false, true, "Foo", nil,
+			Basic, false, true, "Foo", "", nil,
 			"r.Foo, nil",
 		},
 		{
-			Basic, false, true, "Foo", withParent(mkField("Bar", ""), mkField("Baz", "")),
+			Basic, false, true, "Foo", "", withParent(mkField("Bar", ""), mkField("Baz", "")),
 			"r.Baz.Bar.Foo, nil",
 		},
 	}
 
 	for i, c := range cases {
-		f := withKind(withParent(mkField(c.name, ""), c.parent), c.kind)
+		f := withKind(withParent(mkField(c.name, c.typeStr), c.parent), c.kind)
 		if c.isJSON {
 			f = withJSON(f)
 		}
@@ -135,8 +136,8 @@ func (s *FieldSuite) TestValue() {
 			"types.Slice(r.Foo), nil",
 		},
 		{
-			withKind(mkField("Foo", ""), Array),
-			`types.Array(&r.Foo), nil`,
+			withKind(mkField("Foo", "[5]string"), Array),
+			`types.Array(&r.Foo, 5), nil`,
 		},
 		{
 			withJSON(withKind(mkField("Foo", ""), Map)),
