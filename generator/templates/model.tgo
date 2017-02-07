@@ -350,7 +350,7 @@ func (s *{{.StoreName}}) MustCount(q *{{.QueryName}}) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *{{.StoreName}}) FindOne(q *{{.QueryName}}) (*{{.Name}}, error) {
 	q.Limit(1)
         q.Offset(0)
@@ -360,7 +360,7 @@ func (s *{{.StoreName}}) FindOne(q *{{.QueryName}}) (*{{.Name}}, error) {
         }
 
         if !rs.Next() {
-                return nil, sql.ErrNoRows
+                return nil, kallax.ErrNotFound
         }
 
         record, err := rs.Get()

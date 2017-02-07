@@ -82,7 +82,7 @@ func (rs *{{.ResultSetName}}) All() ([]*{{.Name}}, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *{{.ResultSetName}}) One() (*{{.Name}}, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
