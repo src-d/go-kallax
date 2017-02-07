@@ -10,20 +10,20 @@ import (
 
 func TestStoreSuite(t *testing.T) {
 	schema := []string{
-		`CREATE TABLE store_construct (
+		`CREATE TABLE IF NOT EXISTS store_construct (
 			id uuid primary key,
 			foo varchar(10)
 		)`,
-		`CREATE TABLE store (
+		`CREATE TABLE IF NOT EXISTS store (
 			id uuid primary key,
 			foo varchar(10)
 		)`,
-		`CREATE TABLE store_new (
+		`CREATE TABLE IF NOT EXISTS store_new (
 			id uuid primary key,
 			foo varchar(10),
 			bar varchar(10)
 		)`,
-		`CREATE TABLE query (
+		`CREATE TABLE IF NOT EXISTS query (
 			id uuid primary key,
 			name varchar(10),
 			start timestamp,

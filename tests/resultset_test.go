@@ -14,7 +14,7 @@ type ResulsetSuite struct {
 
 func TestResulsetSuite(t *testing.T) {
 	schema := []string{
-		`CREATE TABLE resultset (
+		`CREATE TABLE IF NOT EXISTS resultset (
 			id uuid primary key,
 			foo varchar(10)
 		)`,

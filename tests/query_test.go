@@ -13,7 +13,7 @@ type QuerySuite struct {
 
 func TestQuerySuite(t *testing.T) {
 	schema := []string{
-		`CREATE TABLE query (
+		`CREATE TABLE IF NOT EXISTS query (
 			id uuid primary key,
 			foo varchar(10)
 		)`,

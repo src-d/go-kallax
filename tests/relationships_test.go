@@ -12,16 +12,16 @@ type RelationshipsSuite struct {
 
 func TestRelationships(t *testing.T) {
 	schemas := []string{
-		`CREATE TABLE persons (
+		`CREATE TABLE IF NOT EXISTS persons (
 			id uuid primary key,
 			name text
 		)`,
-		`CREATE TABLE cars (
+		`CREATE TABLE IF NOT EXISTS cars (
 			id uuid primary key,
 			model_name text,
 			owner_id uuid references persons(id)
 		)`,
-		`CREATE TABLE pets (
+		`CREATE TABLE IF NOT EXISTS pets (
 			id uuid primary key,
 			name text,
 			kind text,

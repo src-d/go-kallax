@@ -62,7 +62,7 @@ func (s *BaseTestSuite) TearDownTest() {
 	}
 	var queries []string
 	for _, t := range s.tables {
-		queries = append(queries, fmt.Sprintf("DROP TABLE %s", t))
+		queries = append(queries, fmt.Sprintf("DROP TABLE IF EXISTS %s", t))
 	}
 	s.QuerySucceed(queries...)
 }
