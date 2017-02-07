@@ -144,39 +144,35 @@ func (m *rel) SetRelationship(field string, record interface{}) error {
 	return fmt.Errorf("kallax: no relationship found for field %s", field)
 }
 
-var ModelSchema = &BaseSchema{
-	alias: "__model",
-	table: "model",
-	id:    f("id"),
-	foreignKeys: ForeignKeys{
+var ModelSchema = NewBaseSchema(
+	"model",
+	"__model",
+	f("id"),
+	ForeignKeys{
 		"rel":  NewForeignKey("model_id", false),
 		"rels": NewForeignKey("model_id", false),
 	},
-	constructor: func() Record {
+	func() Record {
 		return new(model)
 	},
-	columns: []SchemaField{
-		f("id"),
-		f("name"),
-		f("email"),
-		f("age"),
-	},
-}
+	f("id"),
+	f("name"),
+	f("email"),
+	f("age"),
+)
 
-var RelSchema = &BaseSchema{
-	alias:       "__rel",
-	table:       "rel",
-	id:          f("id"),
-	foreignKeys: ForeignKeys{},
-	constructor: func() Record {
+var RelSchema = NewBaseSchema(
+	"rel",
+	"__rel",
+	f("id"),
+	ForeignKeys{},
+	func() Record {
 		return new(rel)
 	},
-	columns: []SchemaField{
-		f("id"),
-		f("model_id"),
-		f("foo"),
-	},
-}
+	f("id"),
+	f("model_id"),
+	f("foo"),
+)
 
 func f(name string) SchemaField {
 	return NewSchemaField(name)
