@@ -25,6 +25,8 @@ var (
 	ErrStop = errors.New("kallax: stopped ForEach execution")
 	// ErrInvalidTxCallback is returned when a nil callback is passed.
 	ErrInvalidTxCallback = errors.New("kallax: invalid transaction callback given")
+	// ErrNotFound is returned when a certain entity is not found.
+	ErrNotFound = errors.New("kallax: entity not found")
 )
 
 // Store is a structure capable of retrieving records from a concrete table in
@@ -263,7 +265,7 @@ func (s *Store) Reload(schema Schema, record Record) error {
 
 	rs := NewResultSet(rows, false, nil, columns...)
 	if !rs.Next() {
-		return sql.ErrNoRows
+		return ErrNotFound
 	}
 
 	return rs.Scan(record)

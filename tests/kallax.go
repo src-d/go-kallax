@@ -286,7 +286,7 @@ func (s *CarStore) MustCount(q *CarQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *CarStore) FindOne(q *CarQuery) (*Car, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -296,7 +296,7 @@ func (s *CarStore) FindOne(q *CarQuery) (*Car, error) {
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -497,7 +497,7 @@ func (rs *CarResultSet) All() ([]*Car, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *CarResultSet) One() (*Car, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -704,7 +704,7 @@ func (s *EventsAllFixtureStore) MustCount(q *EventsAllFixtureQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *EventsAllFixtureStore) FindOne(q *EventsAllFixtureQuery) (*EventsAllFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -714,7 +714,7 @@ func (s *EventsAllFixtureStore) FindOne(q *EventsAllFixtureQuery) (*EventsAllFix
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -910,7 +910,7 @@ func (rs *EventsAllFixtureResultSet) All() ([]*EventsAllFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *EventsAllFixtureResultSet) One() (*EventsAllFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -1101,7 +1101,7 @@ func (s *EventsFixtureStore) MustCount(q *EventsFixtureQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *EventsFixtureStore) FindOne(q *EventsFixtureQuery) (*EventsFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -1111,7 +1111,7 @@ func (s *EventsFixtureStore) FindOne(q *EventsFixtureQuery) (*EventsFixture, err
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -1307,7 +1307,7 @@ func (rs *EventsFixtureResultSet) All() ([]*EventsFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *EventsFixtureResultSet) One() (*EventsFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -1498,7 +1498,7 @@ func (s *EventsSaveFixtureStore) MustCount(q *EventsSaveFixtureQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *EventsSaveFixtureStore) FindOne(q *EventsSaveFixtureQuery) (*EventsSaveFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -1508,7 +1508,7 @@ func (s *EventsSaveFixtureStore) FindOne(q *EventsSaveFixtureQuery) (*EventsSave
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -1704,7 +1704,7 @@ func (rs *EventsSaveFixtureResultSet) All() ([]*EventsSaveFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *EventsSaveFixtureResultSet) One() (*EventsSaveFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -1864,7 +1864,7 @@ func (s *JSONModelStore) MustCount(q *JSONModelQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *JSONModelStore) FindOne(q *JSONModelQuery) (*JSONModel, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -1874,7 +1874,7 @@ func (s *JSONModelStore) FindOne(q *JSONModelQuery) (*JSONModel, error) {
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -2070,7 +2070,7 @@ func (rs *JSONModelResultSet) All() ([]*JSONModel, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *JSONModelResultSet) One() (*JSONModel, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -2227,7 +2227,7 @@ func (s *MultiKeySortFixtureStore) MustCount(q *MultiKeySortFixtureQuery) int64 
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *MultiKeySortFixtureStore) FindOne(q *MultiKeySortFixtureQuery) (*MultiKeySortFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -2237,7 +2237,7 @@ func (s *MultiKeySortFixtureStore) FindOne(q *MultiKeySortFixtureQuery) (*MultiK
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -2433,7 +2433,7 @@ func (rs *MultiKeySortFixtureResultSet) All() ([]*MultiKeySortFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *MultiKeySortFixtureResultSet) One() (*MultiKeySortFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -2753,7 +2753,7 @@ func (s *PersonStore) MustCount(q *PersonQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *PersonStore) FindOne(q *PersonQuery) (*Person, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -2763,7 +2763,7 @@ func (s *PersonStore) FindOne(q *PersonQuery) (*Person, error) {
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -3089,7 +3089,7 @@ func (rs *PersonResultSet) All() ([]*Person, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *PersonResultSet) One() (*Person, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -3389,7 +3389,7 @@ func (s *PetStore) MustCount(q *PetQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *PetStore) FindOne(q *PetQuery) (*Pet, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -3399,7 +3399,7 @@ func (s *PetStore) FindOne(q *PetQuery) (*Pet, error) {
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -3600,7 +3600,7 @@ func (rs *PetResultSet) All() ([]*Pet, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *PetResultSet) One() (*Pet, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -3749,7 +3749,7 @@ func (s *QueryFixtureStore) MustCount(q *QueryFixtureQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *QueryFixtureStore) FindOne(q *QueryFixtureQuery) (*QueryFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -3759,7 +3759,7 @@ func (s *QueryFixtureStore) FindOne(q *QueryFixtureQuery) (*QueryFixture, error)
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -3955,7 +3955,7 @@ func (rs *QueryFixtureResultSet) All() ([]*QueryFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *QueryFixtureResultSet) One() (*QueryFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -4104,7 +4104,7 @@ func (s *ResultSetFixtureStore) MustCount(q *ResultSetFixtureQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *ResultSetFixtureStore) FindOne(q *ResultSetFixtureQuery) (*ResultSetFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -4114,7 +4114,7 @@ func (s *ResultSetFixtureStore) FindOne(q *ResultSetFixtureQuery) (*ResultSetFix
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -4310,7 +4310,7 @@ func (rs *ResultSetFixtureResultSet) All() ([]*ResultSetFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *ResultSetFixtureResultSet) One() (*ResultSetFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -4571,7 +4571,7 @@ func (s *SchemaFixtureStore) MustCount(q *SchemaFixtureQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *SchemaFixtureStore) FindOne(q *SchemaFixtureQuery) (*SchemaFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -4581,7 +4581,7 @@ func (s *SchemaFixtureStore) FindOne(q *SchemaFixtureQuery) (*SchemaFixture, err
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -4813,7 +4813,7 @@ func (rs *SchemaFixtureResultSet) All() ([]*SchemaFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *SchemaFixtureResultSet) One() (*SchemaFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -4962,7 +4962,7 @@ func (s *StoreFixtureStore) MustCount(q *StoreFixtureQuery) int64 {
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *StoreFixtureStore) FindOne(q *StoreFixtureQuery) (*StoreFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -4972,7 +4972,7 @@ func (s *StoreFixtureStore) FindOne(q *StoreFixtureQuery) (*StoreFixture, error)
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -5168,7 +5168,7 @@ func (rs *StoreFixtureResultSet) All() ([]*StoreFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *StoreFixtureResultSet) One() (*StoreFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -5317,7 +5317,7 @@ func (s *StoreWithConstructFixtureStore) MustCount(q *StoreWithConstructFixtureQ
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *StoreWithConstructFixtureStore) FindOne(q *StoreWithConstructFixtureQuery) (*StoreWithConstructFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -5327,7 +5327,7 @@ func (s *StoreWithConstructFixtureStore) FindOne(q *StoreWithConstructFixtureQue
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -5523,7 +5523,7 @@ func (rs *StoreWithConstructFixtureResultSet) All() ([]*StoreWithConstructFixtur
 // One returns the first record on the result set and closes the result set.
 func (rs *StoreWithConstructFixtureResultSet) One() (*StoreWithConstructFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -5676,7 +5676,7 @@ func (s *StoreWithNewFixtureStore) MustCount(q *StoreWithNewFixtureQuery) int64 
 }
 
 // FindOne returns the first row returned by the given query.
-// `sql.ErrNoRows` is returned if there are no results.
+// `ErrNotFound` is returned if there are no results.
 func (s *StoreWithNewFixtureStore) FindOne(q *StoreWithNewFixtureQuery) (*StoreWithNewFixture, error) {
 	q.Limit(1)
 	q.Offset(0)
@@ -5686,7 +5686,7 @@ func (s *StoreWithNewFixtureStore) FindOne(q *StoreWithNewFixtureQuery) (*StoreW
 	}
 
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
@@ -5882,7 +5882,7 @@ func (rs *StoreWithNewFixtureResultSet) All() ([]*StoreWithNewFixture, error) {
 // One returns the first record on the result set and closes the result set.
 func (rs *StoreWithNewFixtureResultSet) One() (*StoreWithNewFixture, error) {
 	if !rs.Next() {
-		return nil, sql.ErrNoRows
+		return nil, kallax.ErrNotFound
 	}
 
 	record, err := rs.Get()
