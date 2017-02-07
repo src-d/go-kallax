@@ -156,7 +156,8 @@ func (s *FieldSuite) TestValue() {
 
 type ModelSuite struct {
 	suite.Suite
-	model *Model
+	model    *Model
+	variadic *Model
 }
 
 func (s *ModelSuite) SetupSuite() {
@@ -165,10 +166,14 @@ func (s *ModelSuite) SetupSuite() {
 	pkg, err := p.Do()
 	s.Nil(err)
 
-	s.Len(pkg.Models, 2, "there should exist 2 models")
+	s.Len(pkg.Models, 3, "there should exist 3 models")
 	for _, m := range pkg.Models {
 		if m.Name == "User" {
 			s.model = m
+		}
+
+		if m.Name == "Variadic" {
+			s.variadic = m
 		}
 	}
 	s.NotNil(s.model, "User struct should be defined")
@@ -188,6 +193,13 @@ func (s *ModelSuite) TestCtor() {
 	s.Equal("username, email", s.model.CtorArgVars())
 	s.Equal("(record *User, err error)", s.model.CtorReturns())
 	s.Equal("record, err", s.model.CtorRetVars())
+}
+
+func (s *ModelSuite) TestCtor_Variadic() {
+	s.Equal("bar string, foo ...string", s.variadic.CtorArgs())
+	s.Equal("bar, foo...", s.variadic.CtorArgVars())
+	s.Equal("(record *Variadic)", s.variadic.CtorReturns())
+	s.Equal("record", s.variadic.CtorRetVars())
 }
 
 func TestModelValidate(t *testing.T) {

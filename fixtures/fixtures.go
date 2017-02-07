@@ -45,3 +45,13 @@ type Settings struct {
 	NotificationsActive bool
 	NotifyByEmail       bool
 }
+
+type Variadic struct {
+	kallax.Model
+	Foo []string
+	Bar string
+}
+
+func newVariadic(bar string, foo ...string) *Variadic {
+	return &Variadic{Foo: foo, Bar: bar}
+}
