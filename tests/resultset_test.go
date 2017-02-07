@@ -156,5 +156,6 @@ func (s *ResulsetSuite) TestForEachAndCount() {
 	s.Equal(2, manualCount)
 
 	queriedCount, err := store.Count(query)
+	s.NoError(err)
 	s.Equal(int64(2), queriedCount)
 }
