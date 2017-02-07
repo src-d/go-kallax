@@ -187,8 +187,13 @@ const jsonBaseTpl = `
 		Y int
 	}
 
+	type Bar struct {
+		A bool
+	}
+
 	type JSON struct {
 		Foo string
+		Other Bar
 		Arr []Deep
 	}
 
@@ -216,6 +221,7 @@ UrlNoPtr kallax.SchemaField
 const expectedSubSchemas = `type schemaFooJSON struct {
 *kallax.BaseSchemaField
 Foo kallax.SchemaField
+Other *schemaFooJSONOther
 Arr *schemaFooJSONArr
 }
 
@@ -231,6 +237,11 @@ JSONSchemaArray: kallax.NewJSONSchemaArray("json", "Arr"),
 X:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", fmt.Sprint(n), "redefined"),
 Y:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", fmt.Sprint(n), "Y"),
 }
+}
+
+type schemaFooJSONOther struct {
+*kallax.BaseSchemaField
+A kallax.SchemaField
 }
 
 `
@@ -250,6 +261,10 @@ Arr:kallax.NewSchemaField("arr"),
 JSON:&schemaFooJSON{
 BaseSchemaField: kallax.NewSchemaField("json").(*kallax.BaseSchemaField),
 Foo:kallax.NewJSONSchemaKey(kallax.JSONText, "json", "Foo"),
+Other:&schemaFooJSONOther{
+JSONSchemaKey: kallax.NewJSONSchemaKey(kallax.JSONAny, "json", "Other"),
+A:kallax.NewJSONSchemaKey(kallax.JSONBool, "json", "Other", "A"),
+},
 Arr:&schemaFooJSONArr{
 JSONSchemaArray: kallax.NewJSONSchemaArray("json", "Arr"),
 X:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", "redefined"),

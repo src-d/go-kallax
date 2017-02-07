@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -181,18 +182,26 @@ func removeTypePrefix(typ string) string {
 // A subschema is the JSON schema of a field that will be stored as JSON.
 func (td *TemplateData) GenSubSchemas() string {
 	var buf bytes.Buffer
-	for parent, field := range td.subschemas {
-		buf.WriteString("type schema" + parent + " struct {\n")
+
+	var names = make([]string, 0, len(td.subschemas))
+	for n := range td.subschemas {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		field := td.subschemas[name]
+		buf.WriteString("type schema" + name + " struct {\n")
 		if isSliceOrArray(field) {
 			buf.WriteString("*kallax.JSONSchemaArray\n")
 		} else {
 			buf.WriteString("*kallax.BaseSchemaField\n")
 		}
-		td.genFieldsSchema(&buf, parent, field.Fields)
+		td.genFieldsSchema(&buf, name, field.Fields)
 		buf.WriteString("}\n\n")
 
 		if isSliceOrArray(field) {
-			td.genArraySchemaAtFunc(&buf, parent, field)
+			td.genArraySchemaAtFunc(&buf, name, field)
 		}
 	}
 	return buf.String()
@@ -309,10 +318,6 @@ func (td *TemplateData) genFieldsInit(buf *bytes.Buffer, parent string, fields [
 }
 
 func (td *TemplateData) genJSONType(f *Field) string {
-	if f.Kind != Basic {
-		return "kallax.JSONAny"
-	}
-
 	switch f.Type {
 	case "string":
 		return "kallax.JSONText"
