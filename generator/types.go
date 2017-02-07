@@ -433,6 +433,28 @@ const (
 	Relationship
 )
 
+// String returns the constant name of the FieldKind
+func (t FieldKind) String() string {
+	switch t {
+	case Basic:
+		return "Basic"
+	case Array:
+		return "Array"
+	case Slice:
+		return "Slice"
+	case Map:
+		return "Map"
+	case Interface:
+		return "Interface"
+	case Struct:
+		return "Struct"
+	case Relationship:
+		return "Relationship"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 // NewField creates a new field with its name, type and struct tag.
 func NewField(n, t string, tag reflect.StructTag) *Field {
 	return &Field{
