@@ -13,7 +13,7 @@ type JSONSuite struct {
 
 func TestJSON(t *testing.T) {
 	schema := []string{
-		`CREATE TABLE jsons (
+		`CREATE TABLE IF NOT EXISTS jsons (
 			id uuid primary key,
 			foo text,
 			bar jsonb,

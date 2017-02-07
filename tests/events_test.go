@@ -14,7 +14,7 @@ type EventsSuite struct {
 
 func TestEventsSuite(t *testing.T) {
 	schema := []string{
-		`CREATE TABLE event (
+		`CREATE TABLE IF NOT EXISTS event (
 			id uuid primary key,
 			checks JSON,
 			must_fail_before JSON,
