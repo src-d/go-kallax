@@ -270,9 +270,15 @@ func (m *Model) CtorArgs() string {
 	var ret []string
 	sig := m.CtorFunc.Type().(*types.Signature)
 
-	for i := 0; i < sig.Params().Len(); i++ {
+	paramsLen := sig.Params().Len()
+	for i := 0; i < paramsLen; i++ {
 		param := sig.Params().At(i)
 		typeName := typeString(param.Type(), m.Package)
+		if paramsLen == i+1 && sig.Variadic() {
+			// since it's variadic, type name is []T instead of T
+			// so we gotta get rid of the []
+			typeName = "..." + typeName[2:]
+		}
 		paramName := param.Name()
 		if paramName == "s" {
 			paramName = fmt.Sprintf("arg%v", i)
@@ -293,8 +299,13 @@ func (m *Model) CtorArgVars() string {
 	var ret []string
 	sig := m.CtorFunc.Type().(*types.Signature)
 
+	paramsLen := sig.Params().Len()
 	for i := 0; i < sig.Params().Len(); i++ {
-		ret = append(ret, sig.Params().At(i).Name())
+		arg := sig.Params().At(i).Name()
+		if paramsLen == i+1 && sig.Variadic() {
+			arg += "..."
+		}
+		ret = append(ret, arg)
 	}
 
 	return strings.Join(ret, ", ")
