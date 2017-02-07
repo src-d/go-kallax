@@ -195,7 +195,6 @@ func (f *JSONSchemaKey) QualifiedName(schema Schema) string {
 	}
 
 	return fmt.Sprintf(format, alias, f.field, op, strings.Join(f.paths, ","))
-	return fmt.Sprintf("%s.%s", schema.Alias(), f)
 }
 
 func (f *JSONSchemaKey) String() string {
