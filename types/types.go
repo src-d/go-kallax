@@ -1,3 +1,4 @@
+// Package types provides implementation of some wrapper SQL types.
 package types
 
 import (
@@ -12,9 +13,22 @@ import (
 	"github.com/lib/pq"
 )
 
-// Nullable gives the ability to scan nil values to the given type
-// only if they implement sql.Scanner.
-func Nullable(typ interface{}) interface{} {
+// SQLType is the common interface a type has to fulfill to be considered a
+// SQL type.
+type SQLType interface {
+	sql.Scanner
+	driver.Valuer
+}
+
+// Nullable converts the given type (which should be a pointer ideally) into
+// a nullable type. For that, it must be either a pointer of a basic Go type or
+// a type that implements sql.Scanner itself.
+// time.Time and time.Duration are also supported, even though they are none of
+// the above.
+// If the given types does not fall into any of the above categories, it will
+// actually return a valid sql.Scanner that will fail only when the Scan is
+// performed.
+func Nullable(typ interface{}) sql.Scanner {
 	switch typ := typ.(type) {
 	case *string:
 		return &nullString{typ}
@@ -60,7 +74,7 @@ type nullableErr struct {
 }
 
 func (n *nullableErr) Scan(_ interface{}) error {
-	return fmt.Errorf("type %T is not nullable and cannot be scanned", n.v)
+	return fmt.Errorf("kallax: type %T is not nullable and cannot be scanned", n.v)
 }
 
 type nullable struct {
@@ -309,39 +323,16 @@ func (u URL) Value() (driver.Value, error) {
 	return (&url).String(), nil
 }
 
-// ScanJSON scans json v into dst.
-// WARNING: This is here temporarily, might be removed in the future, use
-// `JSON` instead.
-func ScanJSON(v interface{}, dst interface{}) error {
-	switch v := v.(type) {
-	case []byte:
-		return json.Unmarshal(v, dst)
-	case string:
-		return ScanJSON([]byte(v), dst)
-	}
-
-	return fmt.Errorf("kallax: cannot scan type %s into JSON type", reflect.TypeOf(v))
-}
-
-// JSONValue converts something into json.
-// WARNING: This is here temporarily, might be removed in the future, use
-// `JSON` instead.
-func JSONValue(v interface{}) (driver.Value, error) {
-	return json.Marshal(v)
-}
-
-// SQLType is the common interface a type has to fulfill to be considered a
-// SQL type.
-type SQLType interface {
-	sql.Scanner
-	driver.Valuer
-}
-
 type array struct {
 	val  reflect.Value
 	size int
 }
 
+// Array returns an SQLType for the given array type with a specific size.
+// Note that the actual implementation of this relies on reflection, so be
+// cautious with its usage.
+// The array is scanned using a slice of the same type, so the same
+// restrictions as the `Slice` function of this package are applied.
 func Array(v interface{}, size int) SQLType {
 	return &array{reflect.ValueOf(v), size}
 }
@@ -351,7 +342,7 @@ func (a *array) Scan(v interface{}) error {
 	newSlice := reflect.MakeSlice(sliceTyp, 0, 0)
 	slicePtr := reflect.New(sliceTyp)
 	slicePtr.Elem().Set(newSlice)
-	if err := pq.Array(slicePtr.Interface()).Scan(v); err != nil {
+	if err := Slice(slicePtr.Interface()).Scan(v); err != nil {
 		return err
 	}
 
@@ -396,9 +387,16 @@ func JSON(v interface{}) SQLType {
 }
 
 func (j *sqlJSON) Scan(v interface{}) error {
-	return ScanJSON(v, j.val)
+	switch v := v.(type) {
+	case []byte:
+		return json.Unmarshal(v, j.val)
+	case string:
+		return j.Scan([]byte(v))
+	}
+
+	return fmt.Errorf("kallax: cannot scan type %s into JSON type", reflect.TypeOf(v))
 }
 
 func (j *sqlJSON) Value() (driver.Value, error) {
-	return JSONValue(j.val)
+	return json.Marshal(j.val)
 }

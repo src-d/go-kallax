@@ -17,12 +17,13 @@ type slice struct {
 
 // Slice wraps a slice value so it can be scanned from and converted to
 // PostgreSQL arrays. The following values can be used with this function:
-//  - slices of basic types
+//  - slices of all Go basic types
 //  - slices of *url.URL and url.URL
 //  - slices of types that implement sql.Scanner and driver.Valuer (take into
 //    account that these make use of reflection for scan/value)
 //
-// NOTE: Keep in mind to always use the following types in the database schema to keep it in sync with the values allowed in Go.
+// NOTE: Keep in mind to always use the following types in the database schema
+// to keep it in sync with the values allowed in Go.
 //  - int64: bigint
 //  - uint64: numeric(20)
 //  - int: bigint
@@ -708,6 +709,69 @@ func (a Uint8Array) Value() (driver.Value, error) {
 	return "{}", nil
 }
 
+// Float32Array represents a one-dimensional array of the PostgreSQL real type.
+type Float32Array []float32
+
+// Scan implements the sql.Scanner interface.
+func (a *Float32Array) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case []byte:
+		return a.scanBytes(src)
+	case string:
+		return a.scanBytes([]byte(src))
+	case nil:
+		*a = nil
+		return nil
+	}
+
+	return fmt.Errorf("kallax: cannot convert %T to Float32Array", src)
+}
+
+func (a *Float32Array) scanBytes(src []byte) error {
+	elems, err := scanLinearArray(src, []byte{','}, "Float32Array")
+	if err != nil {
+		return err
+	}
+	if *a != nil && len(elems) == 0 {
+		*a = (*a)[:0]
+	} else {
+		b := make(Float32Array, len(elems))
+		for i, v := range elems {
+			val, err := strconv.ParseFloat(string(v), 32)
+			if err != nil {
+				return fmt.Errorf("kallax: parsing array element index %d: %v", i, err)
+			}
+			b[i] = float32(val)
+		}
+		*a = b
+	}
+	return nil
+}
+
+// Value implements the driver.Valuer interface.
+func (a Float32Array) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+
+	if n := len(a); n > 0 {
+		// There will be at least two curly brackets, N bytes of values,
+		// and N-1 bytes of delimiters.
+		b := make([]byte, 1, 1+2*n)
+		b[0] = '{'
+
+		b = strconv.AppendFloat(b, float64(a[0]), 'f', -1, 64)
+		for i := 1; i < n; i++ {
+			b = append(b, ',')
+			b = strconv.AppendFloat(b, float64(a[i]), 'f', -1, 64)
+		}
+
+		return string(append(b, '}')), nil
+	}
+
+	return "{}", nil
+}
+
 // parseArray extracts the dimensions and elements of an array represented in
 // text format. Only representations emitted by the backend are supported.
 // Notably, whitespace around brackets and delimiters is significant, and NULL
@@ -821,69 +885,6 @@ Close:
 		}
 	}
 	return
-}
-
-// Float32Array represents a one-dimensional array of the PostgreSQL real type.
-type Float32Array []float32
-
-// Scan implements the sql.Scanner interface.
-func (a *Float32Array) Scan(src interface{}) error {
-	switch src := src.(type) {
-	case []byte:
-		return a.scanBytes(src)
-	case string:
-		return a.scanBytes([]byte(src))
-	case nil:
-		*a = nil
-		return nil
-	}
-
-	return fmt.Errorf("kallax: cannot convert %T to Float32Array", src)
-}
-
-func (a *Float32Array) scanBytes(src []byte) error {
-	elems, err := scanLinearArray(src, []byte{','}, "Float32Array")
-	if err != nil {
-		return err
-	}
-	if *a != nil && len(elems) == 0 {
-		*a = (*a)[:0]
-	} else {
-		b := make(Float32Array, len(elems))
-		for i, v := range elems {
-			val, err := strconv.ParseFloat(string(v), 32)
-			if err != nil {
-				return fmt.Errorf("kallax: parsing array element index %d: %v", i, err)
-			}
-			b[i] = float32(val)
-		}
-		*a = b
-	}
-	return nil
-}
-
-// Value implements the driver.Valuer interface.
-func (a Float32Array) Value() (driver.Value, error) {
-	if a == nil {
-		return nil, nil
-	}
-
-	if n := len(a); n > 0 {
-		// There will be at least two curly brackets, N bytes of values,
-		// and N-1 bytes of delimiters.
-		b := make([]byte, 1, 1+2*n)
-		b[0] = '{'
-
-		b = strconv.AppendFloat(b, float64(a[0]), 'f', -1, 64)
-		for i := 1; i < n; i++ {
-			b = append(b, ',')
-			b = strconv.AppendFloat(b, float64(a[i]), 'f', -1, 64)
-		}
-
-		return string(append(b, '}')), nil
-	}
-
-	return "{}", nil
 }
 
 func scanLinearArray(src, del []byte, typ string) (elems [][]byte, err error) {

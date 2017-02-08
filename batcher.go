@@ -22,7 +22,7 @@ type batchQueryRunner struct {
 	records []Record
 }
 
-var ErrNoMoreRows = errors.New("kallax: there are no more rows in the result set")
+var errNoMoreRows = errors.New("kallax: there are no more rows in the result set")
 
 func newBatchQueryRunner(schema Schema, db squirrel.DBProxy, q Query) *batchQueryRunner {
 	cols, builder := q.compile()
@@ -53,7 +53,7 @@ func newBatchQueryRunner(schema Schema, db squirrel.DBProxy, q Query) *batchQuer
 
 func (r *batchQueryRunner) next() (Record, error) {
 	if r.eof {
-		return nil, ErrNoMoreRows
+		return nil, errNoMoreRows
 	}
 
 	if len(r.records) == 0 {
@@ -64,7 +64,7 @@ func (r *batchQueryRunner) next() (Record, error) {
 
 		if len(records) == 0 {
 			r.eof = true
-			return nil, ErrNoMoreRows
+			return nil, errNoMoreRows
 		}
 
 		r.total += len(records)

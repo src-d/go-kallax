@@ -143,7 +143,7 @@ type BatchingResultSet struct {
 // It will return false when there are no more rows.
 func (rs *BatchingResultSet) Next() bool {
 	rs.last, rs.lastErr = rs.runner.next()
-	if rs.lastErr == ErrNoMoreRows {
+	if rs.lastErr == errNoMoreRows {
 		return false
 	}
 
