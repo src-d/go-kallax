@@ -422,6 +422,10 @@ type Field struct {
 	IsJSON bool
 	// IsAlias reports whether the field is of a type that aliases some other type.
 	IsAlias bool
+	// IsEmbedded reports whether the field is an embedded struct or not.
+	// A struct is considered embedded if and only if the struct was embedded
+	// as defined in Go.
+	IsEmbedded bool
 }
 
 // FieldKind is the kind of a field.
@@ -545,10 +549,10 @@ func foreignKeyForModel(model string) string {
 
 // Inline reports whether the field is inline and its children will be in the
 // root of the model.
-// An inline field is the one having the type kallax.Model or one that has a
-// struct tag `kallax` containing `,inline`.
+// An inline field is the one having the type kallax.Model, one that has a
+// struct tag `kallax` containing `,inline` or an embedded struct field.
 func (f *Field) Inline() bool {
-	if f.Type == BaseModel {
+	if f.Type == BaseModel || f.IsEmbedded {
 		return true
 	}
 

@@ -365,6 +365,51 @@ func (s *ProcessorSuite) TestIsModel() {
 	}
 }
 
+func (s *ProcessorSuite) TestIsEmbedded() {
+	src := `
+	package fixture
+
+	import "github.com/src-d/go-kallax"
+
+	type Bar struct {
+		kallax.Model
+		Bar string
+	}
+
+	type Struct struct {
+		Bar Bar
+	}
+
+	type Foo struct {
+		kallax.Model
+		A Bar
+		B *Bar
+		Bar
+		*Struct
+		C struct {
+			D int
+		}
+	}	
+	`
+	pkg := s.processFixture(src)
+	m := findModel(pkg, "Foo")
+	cases := []struct {
+		field    string
+		embedded bool
+	}{
+		{"Model", true},
+		{"A", false},
+		{"B", false},
+		{"Bar", true},
+		{"Struct", true},
+		{"C", false},
+	}
+
+	for _, c := range cases {
+		s.Equal(c.embedded, findField(m, c.field).IsEmbedded, c.field)
+	}
+}
+
 func TestProcessor(t *testing.T) {
 	suite.Run(t, new(ProcessorSuite))
 }

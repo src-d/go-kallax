@@ -2,7 +2,6 @@ package generator
 
 import (
 	"bytes"
-	"fmt"
 	"go/ast"
 	"go/importer"
 	"go/parser"
@@ -372,7 +371,6 @@ func (s *TemplateSuite) TestExecute() {
 	s.processSource(baseTpl)
 	var buf bytes.Buffer
 	err := Base.Execute(&buf, s.td.Package)
-	fmt.Println(err)
 	s.Nil(err)
 }
 

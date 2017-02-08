@@ -233,6 +233,10 @@ func (p *Processor) processFields(s *types.Struct, done []*types.Struct, root bo
 			field.Type = BaseModel
 		}
 
+		if f.Anonymous() {
+			field.IsEmbedded = true
+		}
+
 		p.processField(field, f.Type(), done, root)
 		fields = append(fields, field)
 	}
@@ -271,7 +275,9 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 			return
 		}
 
-		if p.isSQLType(types.NewPointer(typ)) {
+		// embedded fields won't be stored, only their fields, so it's irrelevant
+		// if they implement scanner and valuer
+		if !field.IsEmbedded && p.isSQLType(types.NewPointer(typ)) {
 			field.Kind = Interface
 			return
 		}
