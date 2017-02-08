@@ -402,7 +402,7 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 		{"B", false},
 		{"Bar", true},
 		{"Struct", true},
-		{"C", true},
+		{"C", false},
 	}
 
 	for _, c := range cases {

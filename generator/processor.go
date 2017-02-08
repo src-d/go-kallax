@@ -222,17 +222,9 @@ func (p *Processor) processFields(s *types.Struct, done []*types.Struct, root bo
 			continue
 		}
 
-		var tname string
-		switch typ := f.Type().Underlying().(type) {
-		case *types.Struct:
-			tname = typeName(f.Type())
-		default:
-			tname = typeName(typ)
-		}
-
 		field := NewField(
 			f.Name(),
-			tname,
+			typeName(f.Type().Underlying()),
 			reflect.StructTag(s.Tag(i)),
 		)
 		field.Node = f
@@ -332,10 +324,6 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 	case *types.Struct:
 		field.Kind = Struct
 		field.IsJSON = true
-		// if it's a struct defined inline, it should be considered embedded
-		if strings.HasPrefix(field.Type, "struct{") {
-			field.IsEmbedded = true
-		}
 
 		d := false
 		for _, v := range done {

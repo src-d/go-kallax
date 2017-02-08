@@ -424,8 +424,7 @@ type Field struct {
 	IsAlias bool
 	// IsEmbedded reports whether the field is an embedded struct or not.
 	// A struct is considered embedded if and only if the struct was embedded
-	// as defined in Go or if it's an inline definition.
-	// E.g: Foo struct { A int }
+	// as defined in Go.
 	IsEmbedded bool
 }
 
