@@ -8,7 +8,7 @@ import (
 )
 
 // Model contains all the basic fields that make something a model, that is,
-// the ID and some internal things used by kallax.
+// the ID and some internal data used by kallax.
 // To make a struct a model, it only needs to have Model embedded.
 //
 //	type MyModel struct {
@@ -57,6 +57,10 @@ func (m *Model) setPersisted() {
 }
 
 // IsWritable returns whether this Model can be saved into the database.
+// For example, a model with partially retrieved data is not writable, so
+// it is not saved by accident and the data is corrupted. For example, if
+// you select only 2 columns out of all the ones the table has, it will not
+// be writable.
 func (m *Model) IsWritable() bool {
 	return m.writable
 }
