@@ -429,6 +429,12 @@ type FieldKind int
 
 const (
 	// Basic is a field with a basic type.
+	// On top of the Go basic types, we consider Basic as well the following
+	// types:
+	//  - time.Time
+	//  - time.Duration
+	//  - kallax.ID
+	//  - url.URL
 	Basic FieldKind = iota
 	// Array is a field with an array type.
 	Array
