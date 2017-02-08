@@ -197,6 +197,10 @@ const jsonBaseTpl = `
 		Arr []Deep
 	}
 
+	type JS struct {
+		Foo string
+	}
+
 	type Foo struct {
 		kallax.Model
 		Foo string
@@ -206,6 +210,7 @@ const jsonBaseTpl = `
 		URL *url.URL
 		UrlNoPtr url.URL
 		Rel Rel
+		JSONArray []JS
 	}
 `
 
@@ -216,6 +221,7 @@ Arr kallax.SchemaField
 JSON *schemaFooJSON
 URL kallax.SchemaField
 UrlNoPtr kallax.SchemaField
+JSONArray *schemaFooJSONArray
 `
 
 const expectedSubSchemas = `type schemaFooJSON struct {
@@ -236,6 +242,18 @@ return &schemaFooJSONArr{
 JSONSchemaArray: kallax.NewJSONSchemaArray("json", "Arr"),
 X:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", fmt.Sprint(n), "redefined"),
 Y:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", fmt.Sprint(n), "Y"),
+}
+}
+
+type schemaFooJSONArray struct {
+*kallax.BaseSchemaField
+Foo kallax.SchemaField
+}
+
+func (s *schemaFooJSONArray) At(n int) *schemaFooJSONArray {
+return &schemaFooJSONArray{
+BaseSchemaField: kallax.NewSchemaField("jsonarray").(*kallax.BaseSchemaField),
+Foo:kallax.NewJSONSchemaKey(kallax.JSONText, "jsonarray", fmt.Sprint(n), "Foo"),
 }
 }
 
@@ -273,6 +291,10 @@ Y:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", "Y"),
 },
 URL:kallax.NewSchemaField("url"),
 UrlNoPtr:kallax.NewSchemaField("url_no_ptr"),
+JSONArray:&schemaFooJSONArray{
+BaseSchemaField: kallax.NewSchemaField("jsonarray").(*kallax.BaseSchemaField),
+Foo:kallax.NewJSONSchemaKey(kallax.JSONText, "jsonarray", "Foo"),
+},
 `
 
 func (s *TemplateSuite) TestGenSchemaInit() {

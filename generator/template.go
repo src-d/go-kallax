@@ -193,7 +193,11 @@ func (td *TemplateData) GenSubSchemas() string {
 		field := td.subschemas[name]
 		buf.WriteString("type schema" + name + " struct {\n")
 		if isSliceOrArray(field) {
-			buf.WriteString("*kallax.JSONSchemaArray\n")
+			if isRootField(field) {
+				buf.WriteString("*kallax.BaseSchemaField\n")
+			} else {
+				buf.WriteString("*kallax.JSONSchemaArray\n")
+			}
 		} else {
 			buf.WriteString("*kallax.BaseSchemaField\n")
 		}
@@ -211,21 +215,29 @@ func (td *TemplateData) GenSubSchemas() string {
 func (td *TemplateData) genArraySchemaAtFunc(buf *bytes.Buffer, parent string, f *Field) {
 	buf.WriteString(fmt.Sprintf("func (s *schema%s) At(n int) *schema%s {\n", parent, parent))
 	buf.WriteString(fmt.Sprintf("return &schema%s{\n", parent))
-	buf.WriteString(fmt.Sprintf("JSONSchemaArray: kallax.NewJSONSchemaArray(%s),\n", td.genSchemaPath(f, "")))
+
+	if isRootField(f) {
+		buf.WriteString(fmt.Sprintf("BaseSchemaField: kallax.NewSchemaField(%s).(*kallax.BaseSchemaField),\n", td.genSchemaPath(f)))
+	} else {
+		buf.WriteString(fmt.Sprintf("JSONSchemaArray: kallax.NewJSONSchemaArray(%s),\n", td.genSchemaPath(f)))
+	}
+
 	td.genSubschemaFieldsInit(buf, parent, f.Fields, "fmt.Sprint(n)")
 	buf.WriteString("}\n}\n\n")
 }
 
 // genSchemaPath generates the path needed to access the given field in JSON.
-// If prependLast is given, it will add it before the last element of the path.
-func (td *TemplateData) genSchemaPath(f *Field, prependLast string) string {
+// If prependLast is given, it will add the items before the last element of the path.
+// It also returns a boolean reporting whether the path has a single level of
+// depth (that is, we're talking about the column itself).
+func (td *TemplateData) genSchemaPath(f *Field, prependLast ...string) string {
 	var result string
 	for f.Parent != nil {
 		if !f.Inline() {
 			if result == "" {
 				result = fmt.Sprintf("%q", f.JSONName())
-				if prependLast != "" {
-					result = fmt.Sprintf("%s, %s", prependLast, result)
+				if len(prependLast) > 0 {
+					result = fmt.Sprintf("%s, %s", strings.Join(prependLast, ", "), result)
 				}
 			} else {
 				result = fmt.Sprintf("%q, %s", f.JSONName(), result)
@@ -248,15 +260,23 @@ func (td *TemplateData) genSubschemaFieldsInit(buf *bytes.Buffer, parent string,
 			td.genSubschemaFieldsInit(buf, parent, f.Fields, "")
 		} else {
 			buf.WriteString(fmt.Sprintf("%s:", f.Name))
+
+			var path string
+			if prependLast != "" {
+				path = td.genSchemaPath(f, prependLast)
+			} else {
+				path = td.genSchemaPath(f)
+			}
+
 			if f.IsJSON && len(f.Fields) > 0 {
 				td.genSubschemaInit(buf, parent, f)
-			} else if strings.HasPrefix(f.Type, "[") {
-				buf.WriteString(fmt.Sprintf("kallax.NewJSONSchemaArray(%s)", td.genSchemaPath(f, prependLast)))
+			} else if isSliceOrArray(f) {
+				buf.WriteString(fmt.Sprintf("kallax.NewJSONSchemaArray(%s)", path))
 			} else {
 				buf.WriteString(fmt.Sprintf(
 					"kallax.NewJSONSchemaKey(%s, %s)",
 					td.genJSONType(f),
-					td.genSchemaPath(f, prependLast),
+					path,
 				))
 			}
 			buf.WriteString(",\n")
@@ -268,12 +288,16 @@ func (td *TemplateData) genSubschemaFieldsInit(buf *bytes.Buffer, parent string,
 func (td *TemplateData) genSubschemaInit(buf *bytes.Buffer, parent string, f *Field) {
 	buf.WriteString(fmt.Sprintf("&schema%s%s{\n", parent, f.Name))
 	if isSliceOrArray(f) {
-		buf.WriteString(fmt.Sprintf("JSONSchemaArray: kallax.NewJSONSchemaArray(%s),\n", td.genSchemaPath(f, "")))
+		if isRootField(f) {
+			buf.WriteString(fmt.Sprintf("BaseSchemaField: kallax.NewSchemaField(%s).(*kallax.BaseSchemaField),\n", td.genSchemaPath(f)))
+		} else {
+			buf.WriteString(fmt.Sprintf("JSONSchemaArray: kallax.NewJSONSchemaArray(%s),\n", td.genSchemaPath(f)))
+		}
 	} else {
 		buf.WriteString(fmt.Sprintf(
 			"JSONSchemaKey: kallax.NewJSONSchemaKey(%s, %s),\n",
 			td.genJSONType(f),
-			td.genSchemaPath(f, ""),
+			td.genSchemaPath(f),
 		))
 	}
 	td.genSubschemaFieldsInit(buf, parent+f.Name, f.Fields, "")
@@ -330,6 +354,12 @@ func (td *TemplateData) genJSONType(f *Field) string {
 	default:
 		return "kallax.JSONAny"
 	}
+}
+
+// isRootField reports whether the field is at the top level of the model.
+// It takes into account if the parent is inlined or not.
+func isRootField(f *Field) bool {
+	return f.Parent == nil || (f.Parent.Inline() && isRootField(f.Parent))
 }
 
 func isSliceOrArray(f *Field) bool {
