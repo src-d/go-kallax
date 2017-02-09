@@ -3,7 +3,6 @@ package kallax
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"io"
 
 	"github.com/src-d/go-kallax/types"
@@ -25,6 +24,10 @@ type ResultSet interface {
 // is called with a `ResultSet` created as a result of a `RawQuery`, which is
 // not allowed.
 var ErrRawScan = errors.New("kallax: result set comes from raw query, use RawScan instead")
+
+// ErrRawScanBatching is an error returned when the `RawScan` method is used
+// with a batching result set.
+var ErrRawScanBatching = errors.New("kallax: cannot perform a raw scan on a batching result set")
 
 // BaseResultSet is a generic collection of rows.
 type BaseResultSet struct {
@@ -167,5 +170,5 @@ func (rs *BatchingResultSet) Close() error {
 // RawScan will always throw an error, as this is not a supported operation of
 // a batching result set.
 func (rs *BatchingResultSet) RawScan(_ ...interface{}) error {
-	return fmt.Errorf("kallax: cannot perform a raw scan on a batching result set")
+	return ErrRawScanBatching
 }
