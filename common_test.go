@@ -149,8 +149,9 @@ var ModelSchema = NewBaseSchema(
 	"__model",
 	f("id"),
 	ForeignKeys{
-		"rel":  NewForeignKey("model_id", false),
-		"rels": NewForeignKey("model_id", false),
+		"rel":     NewForeignKey("model_id", false),
+		"rels":    NewForeignKey("model_id", false),
+		"rel_inv": NewForeignKey("model_id", true),
 	},
 	func() Record {
 		return new(model)

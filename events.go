@@ -66,11 +66,15 @@ func ApplyBeforeEvents(r Record) error {
 	}
 
 	if rec, ok := r.(BeforeInserter); ok && !r.IsPersisted() {
-		return rec.BeforeInsert()
+		if err := rec.BeforeInsert(); err != nil {
+			return err
+		}
 	}
 
 	if rec, ok := r.(BeforeUpdater); ok && r.IsPersisted() {
-		return rec.BeforeUpdate()
+		if err := rec.BeforeUpdate(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -92,7 +96,9 @@ func ApplyAfterEvents(r Record, wasPersisted bool) error {
 	}
 
 	if rec, ok := r.(AfterSaver); ok {
-		return rec.AfterSave()
+		if err := rec.AfterSave(); err != nil {
+			return err
+		}
 	}
 
 	return nil
