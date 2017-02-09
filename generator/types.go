@@ -433,7 +433,6 @@ const (
 	// types:
 	//  - time.Time
 	//  - time.Duration
-	//  - kallax.ID
 	//  - url.URL
 	Basic FieldKind = iota
 	// Array is a field with an array type.
