@@ -35,6 +35,20 @@ func TestID_ThreeNewIDsAreDifferent(t *testing.T) {
 	r.False(id1 == id2)
 }
 
+func TestID_ScanValue(t *testing.T) {
+	r := require.New(t)
+
+	expected := NewID()
+	v, err := expected.Value()
+	r.NoError(err)
+
+	var id ID
+	r.NoError(id.Scan(v))
+
+	r.Equal(expected, id)
+	r.Equal(expected.String(), id.String())
+}
+
 func TestVirtualColumn(t *testing.T) {
 	r := require.New(t)
 	record := newModel("", "", 0)
