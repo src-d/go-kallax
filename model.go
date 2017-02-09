@@ -11,7 +11,26 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// Model is the base type of the items that are stored
+// Model contains all the basic fields that make something a model, that is,
+// the ID and some internal data used by kallax.
+// To make a struct a model, it only needs to have Model embedded.
+//
+//	type MyModel struct {
+//		kallax.Model
+//		Foo string
+//	}
+//
+// Custom name for the table can be specified using the struct tag `table` when
+// embedding the Model.
+//
+//	type MyModel struct {
+//		kallax.Model `table:"custom_name"`
+//	}
+//
+// Otherwise, the default name of the table is the name of the model converted
+// to lower snake case. E.g: MyModel => my_model.
+// No pluralization is done right now, but might be done in the future, so
+// please, set the name of the tables yourself.
 type Model struct {
 	ID             ID
 	virtualColumns map[string]interface{}
@@ -19,7 +38,8 @@ type Model struct {
 	writable       bool
 }
 
-// NewModel creates and return a new Model
+// NewModel creates a new Model that is writable, not persisted and identified
+// with a newly generated ID.
 func NewModel() Model {
 	m := Model{
 		persisted:      false,
@@ -30,7 +50,8 @@ func NewModel() Model {
 	return m
 }
 
-// IsPersisted returns whether this Model is new in the store or not.
+// IsPersisted returns whether the Model has already been persisted to the
+// database or not.
 func (m *Model) IsPersisted() bool {
 	return m.persisted
 }
@@ -39,8 +60,11 @@ func (m *Model) setPersisted() {
 	m.persisted = true
 }
 
-// IsWritable returns whether this Model can be sent back to the database to be
-// stored with its changes.
+// IsWritable returns whether this Model can be saved into the database.
+// For example, a model with partially retrieved data is not writable, so
+// it is not saved by accident and the data is corrupted. For example, if
+// you select only 2 columns out of all the ones the table has, it will not
+// be writable.
 func (m *Model) IsWritable() bool {
 	return m.writable
 }
@@ -49,24 +73,28 @@ func (m *Model) setWritable(w bool) {
 	m.writable = w
 }
 
-// GetID returns the ID.
+// GetID returns the ID of the model.
 func (m *Model) GetID() ID {
 	return m.ID
 }
 
-// SetID overrides the ID.
-// The ID should not be modified once it has been set and stored in the DB
-// WARNING: Not to be used by final users!
+// SetID sets the ID of the model.
+// The ID should not be modified once it has been set and stored in the
+// database, so use it with caution.
 func (m *Model) SetID(id ID) {
 	m.ID = id
 }
 
 // ClearVirtualColumns clears all the previous virtual columns.
+// This method is only intended for internal use. It is only exposed for
+// technical reasons.
 func (m *Model) ClearVirtualColumns() {
 	m.virtualColumns = make(map[string]interface{})
 }
 
 // AddVirtualColumn adds a new virtual column with the given name and value.
+// This method is only intended for internal use. It is only exposed for
+// technical reasons.
 func (m *Model) AddVirtualColumn(name string, v interface{}) {
 	if m.virtualColumns == nil {
 		m.ClearVirtualColumns()
@@ -75,6 +103,8 @@ func (m *Model) AddVirtualColumn(name string, v interface{}) {
 }
 
 // VirtualColumn returns the value of the virtual column with the given column name.
+// This method is only intended for internal use. It is only exposed for
+// technical reasons.
 func (m *Model) VirtualColumn(name string) interface{} {
 	if m.virtualColumns == nil {
 		m.ClearVirtualColumns()
@@ -82,15 +112,15 @@ func (m *Model) VirtualColumn(name string) interface{} {
 	return m.virtualColumns[name]
 }
 
-// Identifiable must be implemented by those values that can be identified by an ID
+// Identifiable must be implemented by those values that can be identified by an ID.
 type Identifiable interface {
 	// GetID returns the ID.
 	GetID() ID
-	// SetID overrides the ID.
+	// SetID sets the ID.
 	SetID(id ID)
 }
 
-// Persistable must be implemented by those values that can be persisted
+// Persistable must be implemented by those values that can be persisted.
 type Persistable interface {
 	// IsPersisted returns whether this Model is new in the store or not.
 	IsPersisted() bool
@@ -100,17 +130,15 @@ type Persistable interface {
 // Writable must be implemented by those values that defines internally
 // if they can be sent back to the database to be stored with its changes.
 type Writable interface {
-	// IsWritable returns whether this Model can be sent back to the database
-	// to be stored with its changes.
+	// IsWritable returns whether this Model can be saved into the database.
 	IsWritable() bool
 	setWritable(bool)
 }
 
-// ColumnAddresser must be implemented by those values that expose their properties
-// under pointers, identified by its property names
+// ColumnAddresser provides the pointer addresses of columns.
 type ColumnAddresser interface {
-	// ColumnAddress returns a pointer to the object property identified by the
-	// column name or an error if that property does not exist
+	// ColumnAddress returns the pointer to the column value of the given
+	// column name, or an error if it does not exist in the model.
 	ColumnAddress(string) (interface{}, error)
 }
 
@@ -123,11 +151,10 @@ type Relationable interface {
 	SetRelationship(string, interface{}) error
 }
 
-// Valuer must be implemented by those object that expose their properties
-// identified by its property names
+// Valuer provides the values for columns.
 type Valuer interface {
-	// Value returns the value under the object property identified by the passed
-	// string or an error if that property does not exist
+	// Value returns the value of the given column, or an error if it does not
+	// exist in the model.
 	Value(string) (interface{}, error)
 }
 
@@ -156,7 +183,7 @@ func RecordValues(record Valuer, columns ...string) ([]interface{}, error) {
 	return values, nil
 }
 
-// Record is the interface that must be implemented by models that can be stored.
+// Record is something that can be stored as a row in the database.
 type Record interface {
 	Identifiable
 	Persistable
@@ -196,11 +223,13 @@ func (id ID) Value() (driver.Value, error) {
 	return uuid.UUID(id).Value()
 }
 
-// IsEmpty returns true if the ID is not set
+// IsEmpty returns whether the ID is empty or not. An empty ID means it has not
+// been set yet.
 func (id ID) IsEmpty() bool {
 	return uuid.Equal(uuid.UUID(id), uuid.Nil)
 }
 
+// String returns the string representation of the ID.
 func (id ID) String() string {
 	return uuid.UUID(id).String()
 }
@@ -210,10 +239,13 @@ type virtualColumn struct {
 	col string
 }
 
+// VirtualColumn returns a sql.Scanner that will scan the given column as a
+// virtual column in the given record.
 func VirtualColumn(col string, r Record) sql.Scanner {
 	return &virtualColumn{r, col}
 }
 
+// Scan implements the scanner interface.
 func (c *virtualColumn) Scan(src interface{}) error {
 	var id ID
 	if err := (&id).Scan(src); err != nil {

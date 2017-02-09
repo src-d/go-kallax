@@ -3,35 +3,23 @@ package kallax
 import (
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/require"
 )
 
-func TestTimestampable(t *testing.T) {
-	suite.Run(t, new(TimestampableSuite))
-}
+func TestTimestampsBeforeSave(t *testing.T) {
+	s := require.New(t)
 
-type TimestampableSuite struct {
-	suite.Suite
-}
+	var ts Timestamps
+	s.True(ts.CreatedAt.IsZero())
+	s.True(ts.UpdatedAt.IsZero())
 
-func (s *TimestampableSuite) TestTimestamp() {
-	var item Timestamps
-	s.True(item.CreatedAt.IsZero())
-	s.True(item.UpdatedAt.IsZero())
-	item.Timestamp()
-	createdAt := item.CreatedAt
-	updatedAt := item.CreatedAt
-	s.False(createdAt.IsZero())
-	s.False(updatedAt.IsZero())
-	item.Timestamp()
-	s.Equal(createdAt, item.CreatedAt)
-	s.NotEqual(updatedAt, item.UpdatedAt)
-}
+	s.NoError(ts.BeforeSave())
+	s.False(ts.CreatedAt.IsZero())
+	s.False(ts.UpdatedAt.IsZero())
 
-func (s *TimestampableSuite) TestTimestampBeforeSave() {
-	var item Timestamps
-	err := item.BeforeSave()
-	s.Nil(err)
-	s.False(item.CreatedAt.IsZero())
-	s.False(item.UpdatedAt.IsZero())
+	createdAt := ts.CreatedAt
+	updatedAt := ts.CreatedAt
+	s.NoError(ts.BeforeSave())
+	s.Equal(createdAt, ts.CreatedAt)
+	s.NotEqual(updatedAt, ts.UpdatedAt)
 }

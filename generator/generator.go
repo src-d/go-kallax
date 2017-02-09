@@ -1,3 +1,5 @@
+// Package generator implements the processor of source code and generator of
+// kallax models based on Go source code.
 package generator
 
 import (
