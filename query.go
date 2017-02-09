@@ -1,9 +1,16 @@
 package kallax
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Masterminds/squirrel"
+)
+
+var (
+	// ErrManyToManyNotSupported is returned when a many to many relationship
+	// is added to a query.
+	ErrManyToManyNotSupported = errors.New("kallax: many to many relationships are not supported")
 )
 
 // Query is the common interface all queries must satisfy. The basic abilities
@@ -158,7 +165,7 @@ func (q *BaseQuery) selectedColumns() []SchemaField {
 // be passed in the case of one to many relationships.
 func (q *BaseQuery) AddRelation(schema Schema, field string, typ RelationshipType, filter Condition) error {
 	if typ == ManyToMany {
-		return fmt.Errorf("kallax: many to many relationship are not supported, field: %s", field)
+		return ErrManyToManyNotSupported
 	}
 
 	fk, ok := q.schema.ForeignKey(field)

@@ -3,7 +3,11 @@ package kallax
 import (
 	"database/sql"
 	"database/sql/driver"
+	"math/rand"
+	"sync"
+	"time"
 
+	"github.com/oklog/ulid"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -190,13 +194,23 @@ type Record interface {
 	VirtualColumnContainer
 }
 
-// ID is the identifier type used in models. It is an UUID, so it should
-// be stored as `uuid` in PostgreSQL.
+var randPool = &sync.Pool{
+	New: func() interface{} {
+		return rand.NewSource(time.Now().UnixNano())
+	},
+}
+
+// ID is the Kallax identifier type.
 type ID uuid.UUID
 
-// NewID returns a new ID.
+// NewID returns a new kallax ID, which is a lexically sortable UUID.
+// The internal representation is an ULID (https://github.com/oklog/ulid).
 func NewID() ID {
-	return ID(uuid.NewV4())
+	entropy := randPool.Get().(rand.Source)
+	id := ID(ulid.MustNew(ulid.Timestamp(time.Now()), rand.New(entropy)))
+	randPool.Put(entropy)
+
+	return id
 }
 
 // Scan implements the Scanner interface.

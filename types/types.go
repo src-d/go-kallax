@@ -210,7 +210,6 @@ type nullUint struct {
 }
 
 func (n *nullUint) Scan(v interface{}) error {
-	fmt.Printf("IS TYPE %T\n", v)
 	ns := new(sql.NullInt64)
 	if err := ns.Scan(v); err != nil {
 		return err

@@ -144,13 +144,8 @@ func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64
 	return cnt, nil
 }
 
-// Save inserts or updates the given record in the table. It requires a record
-// with non empty ID.
+// Save inserts or updates the given record in the table.
 func (s *Store) Save(schema Schema, record Record) (updated bool, err error) {
-	if record.GetID().IsEmpty() {
-		return false, ErrEmptyID
-	}
-
 	if !record.IsPersisted() {
 		return false, s.Insert(schema, record)
 	}
@@ -206,10 +201,6 @@ func (s *Store) RawExec(sql string, params ...interface{}) (int64, error) {
 // Find performs a query and returns a result set with the results.
 func (s *Store) Find(q Query) (ResultSet, error) {
 	rels := q.getRelationships()
-	if containsRelationshipOfType(rels, ManyToMany) {
-		return nil, fmt.Errorf("kallax: many to many relationships are not supported")
-	}
-
 	if containsRelationshipOfType(rels, OneToMany) {
 		return NewBatchingResultSet(newBatchQueryRunner(q.Schema(), s.proxy, q)), nil
 	}

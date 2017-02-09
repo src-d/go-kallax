@@ -87,6 +87,20 @@ func (s *QuerySuite) TestAddRelation() {
 	s.Equal("SELECT __model.id, __model.name, __model.email, __model.age, __rel_rel.id, __rel_rel.model_id, __rel_rel.foo FROM model __model LEFT JOIN rel __rel_rel ON (__rel_rel.model_id = __model.id)", s.q.String())
 }
 
+func (s *QuerySuite) TestAddRelation_Inverse() {
+	s.Nil(s.q.AddRelation(RelSchema, "rel_inv", OneToOne, nil))
+	s.Equal("SELECT __model.id, __model.name, __model.email, __model.age, __rel_rel_inv.id, __rel_rel_inv.model_id, __rel_rel_inv.foo FROM model __model LEFT JOIN rel __rel_rel_inv ON (__rel_rel_inv.id = __model.model_id)", s.q.String())
+}
+
+func (s *QuerySuite) TestAddRelation_ManyToMany() {
+	err := s.q.AddRelation(RelSchema, "rel", ManyToMany, nil)
+	s.Equal(ErrManyToManyNotSupported, err)
+}
+
+func (s *QuerySuite) TestAddRelation_FKNotFound() {
+	s.Error(s.q.AddRelation(RelSchema, "fooo", OneToOne, nil))
+}
+
 func (s *QuerySuite) assertSql(sql string) {
 	_, builder := s.q.compile()
 	result, _, err := builder.ToSql()
