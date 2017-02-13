@@ -1749,6 +1749,8 @@ func (r *JSONModel) ColumnAddress(col string) (interface{}, error) {
 			r.Bar = new(Bar)
 		}
 		return types.JSON(r.Bar), nil
+	case "baz_slice":
+		return types.JSON(&r.BazSlice), nil
 	case "baz":
 		return types.JSON(&r.Baz), nil
 
@@ -1765,6 +1767,8 @@ func (r *JSONModel) Value(col string) (interface{}, error) {
 		return r.Foo, nil
 	case "bar":
 		return types.JSON(r.Bar), nil
+	case "baz_slice":
+		return types.JSON(r.BazSlice), nil
 	case "baz":
 		return types.JSON(r.Baz), nil
 
@@ -5956,10 +5960,11 @@ type schemaEventsSaveFixture struct {
 
 type schemaJSONModel struct {
 	*kallax.BaseSchema
-	ID  kallax.SchemaField
-	Foo kallax.SchemaField
-	Bar *schemaJSONModelBar
-	Baz kallax.SchemaField
+	ID       kallax.SchemaField
+	Foo      kallax.SchemaField
+	Bar      *schemaJSONModelBar
+	BazSlice *schemaJSONModelBazSlice
+	Baz      kallax.SchemaField
 }
 
 type schemaMultiKeySortFixture struct {
@@ -6044,6 +6049,18 @@ func (s *schemaJSONModelBarQux) At(n int) *schemaJSONModelBarQux {
 		Schnooga:        kallax.NewJSONSchemaKey(kallax.JSONText, "bar", "Qux", fmt.Sprint(n), "Schnooga"),
 		Balooga:         kallax.NewJSONSchemaKey(kallax.JSONInt, "bar", "Qux", fmt.Sprint(n), "Balooga"),
 		Boo:             kallax.NewJSONSchemaKey(kallax.JSONFloat, "bar", "Qux", fmt.Sprint(n), "Boo"),
+	}
+}
+
+type schemaJSONModelBazSlice struct {
+	*kallax.BaseSchemaField
+	Mux kallax.SchemaField
+}
+
+func (s *schemaJSONModelBazSlice) At(n int) *schemaJSONModelBazSlice {
+	return &schemaJSONModelBazSlice{
+		BaseSchemaField: kallax.NewSchemaField("baz_slice").(*kallax.BaseSchemaField),
+		Mux:             kallax.NewJSONSchemaKey(kallax.JSONText, "baz_slice", fmt.Sprint(n), "Mux"),
 	}
 }
 
@@ -6135,6 +6152,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 			kallax.NewSchemaField("bar"),
+			kallax.NewSchemaField("baz_slice"),
 			kallax.NewSchemaField("baz"),
 		),
 		ID:  kallax.NewSchemaField("id"),
@@ -6148,6 +6166,10 @@ var Schema = &schema{
 				Boo:             kallax.NewJSONSchemaKey(kallax.JSONFloat, "bar", "Qux", "Boo"),
 			},
 			Mux: kallax.NewJSONSchemaKey(kallax.JSONText, "bar", "Mux"),
+		},
+		BazSlice: &schemaJSONModelBazSlice{
+			BaseSchemaField: kallax.NewSchemaField("baz_slice").(*kallax.BaseSchemaField),
+			Mux:             kallax.NewJSONSchemaKey(kallax.JSONText, "baz_slice", "Mux"),
 		},
 		Baz: kallax.NewSchemaField("baz"),
 	},

@@ -17,7 +17,8 @@ func TestJSON(t *testing.T) {
 			id uuid primary key,
 			foo text,
 			bar jsonb,
-			baz jsonb
+			baz jsonb,
+			baz_slice jsonb
 		)`,
 	}
 	suite.Run(t, &JSONSuite{NewBaseSuite(schema, "jsons")})

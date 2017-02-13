@@ -637,6 +637,10 @@ func (f *Field) wrapAddress(ptr string) string {
 func (f *Field) Value() string {
 	name := f.fieldVarName()
 
+	if f.IsJSON {
+		return fmt.Sprintf("types.JSON(%s), nil", name)
+	}
+
 	switch f.Kind {
 	case Basic:
 		if mapped, ok := mappings[f.Type]; ok {
@@ -655,10 +659,6 @@ func (f *Field) Value() string {
 		return fmt.Sprintf("types.Slice(%s), nil", name)
 	case Array:
 		return fmt.Sprintf("types.Array(%s, %d), nil", f.fieldVarAddress(), arrayLen(f))
-	}
-
-	if f.IsJSON {
-		return fmt.Sprintf("types.JSON(%s), nil", name)
 	}
 
 	return name + ", nil"
