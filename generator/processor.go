@@ -208,7 +208,7 @@ func (p *Processor) findEvents(node *types.Named) []Event {
 
 // isEventPresent checks the given Event is implemented for the given node.
 func (p *Processor) isEventPresent(node *types.Named, e Event) bool {
-	signature := p.getMethodSignature(types.NewPointer(node), string(e))
+	signature := getMethodSignature(p.Package, types.NewPointer(node), string(e))
 	return signatureMatches(signature, nil, typeCheckers{isBuiltinError})
 }
 
@@ -277,7 +277,7 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 
 		// embedded fields won't be stored, only their fields, so it's irrelevant
 		// if they implement scanner and valuer
-		if !field.IsEmbedded && p.isSQLType(types.NewPointer(typ)) {
+		if !field.IsEmbedded && isSQLType(p.Package, types.NewPointer(typ)) {
 			field.Kind = Interface
 			return
 		}
@@ -342,13 +342,13 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 	}
 }
 
-func (p *Processor) isSQLType(typ types.Type) bool {
-	scan := p.getMethodSignature(typ, "Scan")
+func isSQLType(pkg *types.Package, typ types.Type) bool {
+	scan := getMethodSignature(pkg, typ, "Scan")
 	if !signatureMatches(scan, typeCheckers{isEmptyInterface}, typeCheckers{isBuiltinError}) {
 		return false
 	}
 
-	value := p.getMethodSignature(typ, "Value")
+	value := getMethodSignature(pkg, typ, "Value")
 	if !signatureMatches(value, nil, typeCheckers{isDriverValue, isBuiltinError}) {
 		return false
 	}
@@ -377,9 +377,9 @@ func (c typeCheckers) check(tuple *types.Tuple) bool {
 
 type typeChecker func(types.Type) bool
 
-func (p *Processor) getMethodSignature(typ types.Type, name string) *types.Signature {
+func getMethodSignature(pkg *types.Package, typ types.Type, name string) *types.Signature {
 	ms := types.NewMethodSet(typ)
-	method := ms.Lookup(p.Package, name)
+	method := ms.Lookup(pkg, name)
 	if method == nil {
 		return nil
 	}

@@ -300,8 +300,8 @@ func (s *ProcessorSuite) TestIsSQLType() {
 	s.Nil(err)
 	m := findModel(pkg, "Foo")
 
-	s.True(p.isSQLType(types.NewPointer(m.Fields[0].Fields[0].Node.Type())))
-	s.False(p.isSQLType(types.NewPointer(m.Fields[1].Node.Type())))
+	s.True(isSQLType(p.Package, types.NewPointer(m.Fields[0].Fields[0].Node.Type())))
+	s.False(isSQLType(p.Package, types.NewPointer(m.Fields[1].Node.Type())))
 }
 
 func (s *ProcessorSuite) processorFixture(source string) *Processor {
