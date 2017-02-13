@@ -17,6 +17,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
 * [Installation](#installation)
 * [Usage](#usage)
 * [Define models](#define-models)
+  * [Struct tags](#struct-tags)
   * [Model constructors](#model-constructors)
   * [Model events](#model-events)
 * [Model schema](#model-schema)
@@ -31,6 +32,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Simple queries](#simple-queries)
   * [Query with relationships](#query-with-relationships)
   * [Querying JSON](#querying-json)
+* [Transactions](#transactions)
 * [Contributing](#contributing)
 
 ## Installation
@@ -118,6 +120,17 @@ type Metadata struct {
         Metadata map[string]interface{} // this will be json
 }
 ```
+
+### Struct tags
+
+| Tag | Description | Can be used in |
+| --- | --- | --- | --- |
+| `table"table_name"` | Specifies the name of the table for a model | embedded `kallax.Model` |
+| `kallax:"column_name"` | Specifies the name of the column | Any model field that is not a relationship |
+| `kallax:"-"` | Ignores the field and does not store it | Any model field |
+| `kallax:",inline"` | Adds the fields of the struct field to the model. Column name can also be given before the comma | Any struct field |
+| `fk:"foreign_key_name"` | Name of the foreign key column | Any relationship field |
+| `fk:",inverse"` | Specifies the relationship is an inverse relationship. Foreign key name can also be given before the comma | Any relationship field |
 
 ### Model constructors
 
@@ -440,6 +453,39 @@ q := NewPostQuery().Where(kallax.JSONContainsAnyKey(
         "foo", "bar",
 ))
 ```
+
+### Transactions
+
+To execute things in a transaction the `Transaction` method of the model store can be used. All the operations done using the store provided to the callback will be run in a transaction.
+If the callback returns an error, the transaction will be rolled back.
+
+```go
+store.Transaction(func(s *UserStore) error {
+        if err := s.Insert(user1); err != nil {
+                return err
+        }
+
+        return s.Insert(user2)
+})
+```
+
+The fact that a transaction receives a store with the type of the model can be a problem if you want to store several models of different types. You can, indeed, create new stores of the other types, but do so with care. Do not use the internal `*kallax.Store`, as it does not perform any type checks or some of the operations the concrete type stores do.
+
+```go
+store.Transaction(func(s *UserStore) error {
+        postStore := &PostStore{s.Store}
+
+        for _, p := range posts {
+                if err := postStore.Insert(p); err != nil {
+                        return err
+                }
+        }
+
+        return s.Insert(user)
+})
+```
+
+`Transaction` can be used inside a transaction, but it does not open a new one, reuses the existing one.
 
 ## Contributing 
 
