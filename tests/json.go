@@ -6,11 +6,16 @@ type JSONModel struct {
 	kallax.Model `table:"jsons"`
 	Foo          string
 	Bar          *Bar
+	BazSlice     []Baz
 	Baz          map[string]interface{}
 }
 
 type Bar struct {
 	Qux []Qux
+	Mux string
+}
+
+type Baz struct {
 	Mux string
 }
 
