@@ -1768,7 +1768,7 @@ func (r *JSONModel) Value(col string) (interface{}, error) {
 	case "bar":
 		return types.JSON(r.Bar), nil
 	case "baz_slice":
-		return types.Slice(r.BazSlice), nil
+		return types.JSON(r.BazSlice), nil
 	case "baz":
 		return types.JSON(r.Baz), nil
 
