@@ -4857,6 +4857,10 @@ func (r *StoreFixture) ColumnAddress(col string) (interface{}, error) {
 		return &r.Model.ID, nil
 	case "foo":
 		return &r.Foo, nil
+	case "slice_prop":
+		return types.Slice(&r.SliceProp), nil
+	case "alias_slice_prop":
+		return types.Slice(&r.AliasSliceProp), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in StoreFixture: %s", col)
@@ -4869,6 +4873,10 @@ func (r *StoreFixture) Value(col string) (interface{}, error) {
 		return r.Model.ID, nil
 	case "foo":
 		return r.Foo, nil
+	case "slice_prop":
+		return types.Slice(r.SliceProp), nil
+	case "alias_slice_prop":
+		return types.Slice(r.AliasSliceProp), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in StoreFixture: %s", col)
@@ -6013,8 +6021,10 @@ type schemaSchemaFixture struct {
 
 type schemaStoreFixture struct {
 	*kallax.BaseSchema
-	ID  kallax.SchemaField
-	Foo kallax.SchemaField
+	ID             kallax.SchemaField
+	Foo            kallax.SchemaField
+	SliceProp      kallax.SchemaField
+	AliasSliceProp kallax.SchemaField
 }
 
 type schemaStoreWithConstructFixture struct {
@@ -6298,9 +6308,13 @@ var Schema = &schema{
 			},
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
+			kallax.NewSchemaField("slice_prop"),
+			kallax.NewSchemaField("alias_slice_prop"),
 		),
-		ID:  kallax.NewSchemaField("id"),
-		Foo: kallax.NewSchemaField("foo"),
+		ID:             kallax.NewSchemaField("id"),
+		Foo:            kallax.NewSchemaField("foo"),
+		SliceProp:      kallax.NewSchemaField("slice_prop"),
+		AliasSliceProp: kallax.NewSchemaField("alias_slice_prop"),
 	},
 	StoreWithConstructFixture: &schemaStoreWithConstructFixture{
 		BaseSchema: kallax.NewBaseSchema(

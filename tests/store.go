@@ -6,9 +6,13 @@ import (
 	"github.com/src-d/go-kallax"
 )
 
+type AliasSliceString []string
+
 type StoreFixture struct {
-	kallax.Model `table:"store"`
-	Foo          string
+	kallax.Model   `table:"store"`
+	Foo            string
+	SliceProp      []string
+	AliasSliceProp AliasSliceString
 }
 
 type StoreWithConstructFixture struct {
