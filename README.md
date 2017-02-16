@@ -420,6 +420,8 @@ for rs.Next() {
 }
 ```
 
+Next will automatically close the result set when it hits the end. If you have to prematurely exit the iteration you can close it manually with `rs.Close()`.
+
 You can query just a single row with `FindOne`.
 
 ```go
@@ -482,6 +484,18 @@ Because of this, retrieving 1:N relationships is really fast.
 
 The default batch size is 50, you can change this using the `BatchSize` method all queries have.
 
+**NOTE:** if a filter is passed to a `With{Name}` method we can no longer guarantee that all related objects are there and, therefore, the retrieved records will **not** be writable.
+
+### Reloading a model
+
+If, for example, you have a model that is not writable because you only selected one field you can always reload it and have the full object.
+
+```go
+err := store.Reload(user)
+```
+
+Reload will not road any relationships, just the model itself. After a `Reload` the model will **always** be writable.
+
 ### Querying JSON
 
 You can query arbitrary JSON using the JSON operators defined in the [kallax](https://godoc.org/github.com/src-d/go-kallax) package. The schema of the JSON (if it's a struct, obviously for maps it is not) is also generated.
@@ -493,7 +507,7 @@ q := NewPostQuery().Where(kallax.JSONContainsAnyKey(
 ))
 ```
 
-### Transactions
+## Transactions
 
 To execute things in a transaction the `Transaction` method of the model store can be used. All the operations done using the store provided to the callback will be run in a transaction.
 If the callback returns an error, the transaction will be rolled back.
