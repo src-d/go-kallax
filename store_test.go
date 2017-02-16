@@ -21,22 +21,9 @@ func (s *StoreSuite) SetupTest() {
 	var err error
 	s.db, err = openTestDB()
 	s.NoError(err)
-	_, err = s.db.Exec(`CREATE TABLE model (
-		id uuid PRIMARY KEY,
-		name varchar(255) not null,
-		email varchar(255) not null,
-		age int not null
-	)`)
-	s.NoError(err)
-
-	_, err = s.db.Exec(`CREATE TABLE rel (
-		id uuid PRIMARY KEY,
-		model_id uuid,
-		foo text
-	)`)
-	s.NoError(err)
 
 	s.store = NewStore(s.db)
+	setupTables(s.T(), s.db)
 
 	s.errDB, err = sql.Open("postgres", "postgres://0.0.0.0:5432/notexists")
 	s.NoError(err)
@@ -44,10 +31,7 @@ func (s *StoreSuite) SetupTest() {
 }
 
 func (s *StoreSuite) TearDownTest() {
-	_, err := s.db.Exec("DROP TABLE model")
-	s.NoError(err)
-	_, err = s.db.Exec("DROP TABLE rel")
-	s.NoError(err)
+	teardownTables(s.T(), s.db)
 	s.NoError(s.db.Close())
 	s.NoError(s.errDB.Close())
 }

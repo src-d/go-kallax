@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func envOrDefault(key string, def string) string {
@@ -21,6 +24,30 @@ func openTestDB() (*sql.DB, error) {
 		envOrDefault("DBPASS", "testing"),
 		envOrDefault("DBNAME", "testing"),
 	))
+}
+
+func setupTables(t *testing.T, db *sql.DB) {
+	_, err := db.Exec(`CREATE TABLE model (
+		id uuid PRIMARY KEY,
+		name varchar(255) not null,
+		email varchar(255) not null,
+		age int not null
+	)`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`CREATE TABLE rel (
+		id uuid PRIMARY KEY,
+		model_id uuid,
+		foo text
+	)`)
+	require.NoError(t, err)
+}
+
+func teardownTables(t *testing.T, db *sql.DB) {
+	_, err := db.Exec("DROP TABLE model")
+	require.NoError(t, err)
+	_, err = db.Exec("DROP TABLE rel")
+	require.NoError(t, err)
 }
 
 type model struct {
