@@ -29,7 +29,7 @@ func main() {
 		},
 		cli.StringSliceFlag{
 			Name:  "exclude, e",
-			Usage: "List of excluded files in the excluded. You can use this flag as many times as you want.",
+			Usage: "List of excluded files from the package when generating the code for your models. Use this to exclude files in your package that uses the generated code. You can use this flag as many times as you want.",
 		},
 	}
 	app.Action = generateModels
