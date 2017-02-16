@@ -18,6 +18,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
 * [Usage](#usage)
 * [Define models](#define-models)
   * [Struct tags](#struct-tags)
+  * [Primary keys](#primary-keys)
   * [Model constructors](#model-constructors)
   * [Model events](#model-events)
 * [Model schema](#model-schema)
@@ -53,9 +54,10 @@ Imagine you have the following file in the package where your models are.
 package models
 
 type User struct {
-        kallax.Model `table:"users"`
+        kallax.Model         `table:"users"`
+        ID       kallax.ULID `pk:""`
         Username string
-        Email string
+        Email    string
         Password string
 }
 ```
@@ -70,11 +72,20 @@ Now all you have to do is run `go generate ./...` and a `kallax.go` file will be
 
 If you don't want to use `go generate`, even though is the preferred use, you can just go to your package and run `kallax gen` yourself.
 
+### Excluding files from generation
+
+Sometimes you might want to use the generated code in the same package it is defined and cause problems during the generation when you regenerate your models. You can exclude files in the package by changing the `go:generate` comment to the following:
+
+```go
+//go:generate kallax gen -e file1.go -e file2.go
+```
+
 ## Define models
 
 A model is just a Go struct that embeds the `kallax.Model` type. All the fields of this struct will be columns in the database table.
 
-By embedding `kallax.Model`, you are already embedding the `ID` field. The `ID` is always an `UUID`. Right now, it is not possible to specify an ID that is not an UUID.
+A model also needs to have one (and just one) primary key. That is whatever field of the struct with the struct tag `pk`, which can be `pk:""` for a non auto-incrementable primary key or `pk:"autoincr"` for one that is auto-incrementable.
+More about primary keys is discussed at the [primary keys](#primary-keys) section.
 
 First, let's review the rules and conventions for model fields:
 * All the fields with basic types or types that implement [sql.Scanner](https://golang.org/pkg/database/sql/#Scanner) and [driver.Valuer](https://golang.org/pkg/database/sql/driver/#Valuer) will be considered a column in the table of their matching type.
@@ -85,7 +96,7 @@ First, let's review the rules and conventions for model fields:
 * Slices or arrays of structs (or pointers to structs) that are models themselves will be considered a 1:N relationship.
 * A struct or pointer to struct field that is a model itself will be considered a 1:1 relationship.
 * For relationships, the foreign key is assumed to be the name of the model converted to lower snake case plus `_id` (e.g. `User` => `user_id`). You can override this with the struct tag `fk:"my_custom_fk"`.
-* For inverse relationship, you need to use the struct tag `fk:",inverse"`. You can combine the `inverse` with overriding the foreign key with `fk:"my_custom_fk,inverse"`. In the case of inverses, the foreign key name does not specify the name of the column in the relationship table, but the name of the column in the own table. The name of the column in the other table is always supposed to be `id` and cannot be changed.
+* For inverse relationship, you need to use the struct tag `fk:",inverse"`. You can combine the `inverse` with overriding the foreign key with `fk:"my_custom_fk,inverse"`. In the case of inverses, the foreign key name does not specify the name of the column in the relationship table, but the name of the column in the own table. The name of the column in the other table is always the primary key of the other model and cannot be changed for the time being.
 * Foreign keys *do not have to be in the model*, they are automagically managed underneath by kallax.
 
 Kallax also provides a `kallax.Timestamps` struct that contains `CreatedAt` and `UpdatedAt` that will be managed automatically.
@@ -94,11 +105,12 @@ Let's see an example of models with all these cases:
 
 ```go
 type User struct {
-        kallax.Model `table:"users"`
+        kallax.Model       `table:"users"`
         kallax.Timestamps
-        Username string
-        Password string
-        Emails []string
+        kallax.ID int64    `pk:"autoincr"`
+        Username  string
+        Password  string
+        Emails    []string
         // This is for demo purposes, please don't do this
         // 1:N relationships load all N rows by default, so
         // only do it when N is small.
@@ -108,10 +120,11 @@ type User struct {
 }
 
 type Post struct {
-        kallax.Model `table:"posts"`
+        kallax.Model      `table:"posts"`
         kallax.Timestamps
-        Content string `kallax:"post_content"`
-        Poster *User `fk:"poster_id,inverse"`
+        ID       int64    `pk:"autoincr"`
+        Content  string   `kallax:"post_content"`
+        Poster   *User    `fk:"poster_id,inverse"`
         Metadata Metadata `kallax:",inline"`
 }
 
@@ -126,11 +139,29 @@ type Metadata struct {
 | Tag | Description | Can be used in |
 | --- | --- | --- | --- |
 | `table"table_name"` | Specifies the name of the table for a model | embedded `kallax.Model` |
+| `pk:""` | Specifies the field is a primary key | any field with a valid identifier type |
+| `pk:"autoincr"` | Specifies the field is an auto-incrementable primary key | any field with a valid identifier type |
 | `kallax:"column_name"` | Specifies the name of the column | Any model field that is not a relationship |
 | `kallax:"-"` | Ignores the field and does not store it | Any model field |
 | `kallax:",inline"` | Adds the fields of the struct field to the model. Column name can also be given before the comma | Any struct field |
 | `fk:"foreign_key_name"` | Name of the foreign key column | Any relationship field |
 | `fk:",inverse"` | Specifies the relationship is an inverse relationship. Foreign key name can also be given before the comma | Any relationship field |
+
+### Primary keys
+
+Primary key types need to satisfy the [Identifier](https://godoc.org/github.com/src-d/go-kallax/#Identifier) interface. Even though they have to do that, the generator is smart enough to know when to wrap some types to make it easier on the user.
+
+The following types can be used as primary key:
+
+* `int64`
+* [`uuid.UUID`](https://godoc.org/github.com/satori/go.uuid#UUID)
+* [`kallax.ULID`](https://godoc.org/github.com/src-d/go-kallax/#ULID): this is a type kallax provides that implements a lexically sortable UUID. You can store it as `uuid` like any other UUID, but internally it's an ULID and you will be able to sort lexically by it.
+
+If you need another type as primary key, feel free to open a pull request implementing that.
+
+**Known limitations**
+
+* Only one primary key can be specified and it can't be a composite key.
 
 ### Model constructors
 
@@ -154,7 +185,15 @@ Kallax will generate one with the following signature:
 func NewUser(username string, password string, emails ...string) (*User, error)
 ```
 
-Then, why is it needed that kallax generates the public constructor? To make sure all the model internal fields are initialized correctly, set and ID for the model, etc.
+**IMPORTANT:** if your primary key is not auto-incrementable, you should set an ID for every model you create in your constructor. Or, at least, set it before inserting it.
+
+If you don't implement your own constructor it's ok, kallax will generate one for you just instantiating your object like this:
+
+```go
+func NewT() *T {
+        return new(T)
+}
+```
 
 ### Model events
 
@@ -492,7 +531,7 @@ store.Transaction(func(s *UserStore) error {
 ### Suggesting features
 
 Kallax is a very opinionated ORM that works for us, so changes that make things not work for us or add complexity via configuration will not be considered for adding.
-If we decide not to implement the feature you're suggesting, just keep in mind that it might not be because it is not a good ide, but because it does not work for us.
+If we decide not to implement the feature you're suggesting, just keep in mind that it might not be because it is not a good idea, but because it does not work for us or is not aligned with the direction we want kallax to be moving forward.
 
 ### Running tests
 
