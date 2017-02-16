@@ -20,12 +20,16 @@ func main() {
 		cli.StringFlag{
 			Name:  "input",
 			Value: ".",
-			Usage: "input package directory",
+			Usage: "Input package directory",
 		},
 		cli.StringFlag{
 			Name:  "output",
 			Value: "kallax.go",
-			Usage: "output file name",
+			Usage: "Output file name",
+		},
+		cli.StringSliceFlag{
+			Name:  "exclude, e",
+			Usage: "List of excluded files from the package when generating the code for your models. Use this to exclude files in your package that uses the generated code. You can use this flag as many times as you want.",
 		},
 	}
 	app.Action = generateModels
@@ -44,12 +48,13 @@ func main() {
 func generateModels(c *cli.Context) error {
 	input := c.String("input")
 	output := c.String("output")
+	excluded := c.StringSlice("exclude")
 
 	if !isDirectory(input) {
 		return fmt.Errorf("kallax: Input path should be a directory %s", input)
 	}
 
-	p := generator.NewProcessor(input, nil)
+	p := generator.NewProcessor(input, excluded)
 	pkg, err := p.Do()
 	if err != nil {
 		return err
