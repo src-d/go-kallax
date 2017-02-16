@@ -25,6 +25,7 @@ type Schema interface {
 	WithAlias(string) Schema
 	// New creates a new record with the given schema.
 	New() Record
+	isPrimaryKeyAutoIncrementable() bool
 }
 
 // BaseSchema is the basic implementation of Schema.
@@ -35,6 +36,7 @@ type BaseSchema struct {
 	id          SchemaField
 	columns     []SchemaField
 	constructor RecordConstructor
+	autoIncr    bool
 }
 
 // RecordConstructor is a function that creates a record.
@@ -42,7 +44,7 @@ type RecordConstructor func() Record
 
 // NewBaseSchema creates a new schema with the given table, alias, identifier
 // and columns.
-func NewBaseSchema(table, alias string, id SchemaField, fks ForeignKeys, ctor RecordConstructor, columns ...SchemaField) *BaseSchema {
+func NewBaseSchema(table, alias string, id SchemaField, fks ForeignKeys, ctor RecordConstructor, autoIncr bool, columns ...SchemaField) *BaseSchema {
 	return &BaseSchema{
 		alias:       alias,
 		table:       table,
@@ -50,6 +52,7 @@ func NewBaseSchema(table, alias string, id SchemaField, fks ForeignKeys, ctor Re
 		id:          id,
 		columns:     columns,
 		constructor: ctor,
+		autoIncr:    autoIncr,
 	}
 }
 
@@ -67,6 +70,7 @@ func (s *BaseSchema) WithAlias(field string) Schema {
 func (s *BaseSchema) New() Record {
 	return s.constructor()
 }
+func (s *BaseSchema) isPrimaryKeyAutoIncrementable() bool { return s.autoIncr }
 
 type aliasSchema struct {
 	*BaseSchema

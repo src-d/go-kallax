@@ -27,13 +27,14 @@ func (s *ProcessorSuite) TestInlineStruct() {
 
   type Bar struct {
     kallax.Model
+	ID int64 ` + "`pk:\"autoincr\"`" + `
     Foo string
     R *Foo ` + "`kallax:\",inline\"`" + `
   }
   `
 
 	pkg := s.processFixture(fixtureSrc)
-	s.True(findModel(pkg, "Bar").Fields[2].Inline())
+	s.True(findModel(pkg, "Bar").Fields[3].Inline())
 }
 
 func (s *ProcessorSuite) TestTags() {
@@ -44,12 +45,13 @@ func (s *ProcessorSuite) TestTags() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Int int "foo"
 	}
 	`
 
 	pkg := s.processFixture(fixtureSrc)
-	s.Equal(reflect.StructTag("foo"), findModel(pkg, "Foo").Fields[1].Tag)
+	s.Equal(reflect.StructTag("foo"), findModel(pkg, "Foo").Fields[2].Tag)
 }
 
 func (s *ProcessorSuite) TestRecursiveModel() {
@@ -60,6 +62,7 @@ func (s *ProcessorSuite) TestRecursiveModel() {
 
 	type Recur struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 		R *Recur
 	}
@@ -80,6 +83,7 @@ func (s *ProcessorSuite) TestDeepRecursiveStruct() {
 
 	type Recur struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 		Rec *Other
 	}
@@ -93,11 +97,11 @@ func (s *ProcessorSuite) TestDeepRecursiveStruct() {
 	m := findModel(pkg, "Recur")
 
 	s.Equal(
-		m.Fields[2].Fields[0].Fields[2].Node,
-		m.Fields[2].Node,
+		m.Fields[3].Fields[0].Fields[3].Node,
+		m.Fields[3].Node,
 		"indirect type recursivity not handled correctly.",
 	)
-	s.Len(pkg.Models[0].Fields[2].Fields[0].Fields[2].Fields, 0)
+	s.Len(pkg.Models[0].Fields[3].Fields[0].Fields[3].Fields, 0)
 }
 
 func (s *ProcessorSuite) TestIsEventPresent() {
@@ -108,6 +112,7 @@ func (s *ProcessorSuite) TestIsEventPresent() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 	}
 
@@ -152,6 +157,7 @@ func (s *ProcessorSuite) TestProcessField() {
 
 	type Related struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 	}
 
@@ -170,6 +176,7 @@ func (s *ProcessorSuite) TestProcessField() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Basic string
 		AliasBasic BasicAlias
 		BasicPtr *string
@@ -241,6 +248,7 @@ func (s *ProcessorSuite) TestCtor() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 	}
 
@@ -264,6 +272,7 @@ func (s *ProcessorSuite) TestSQLTypeIsInterface() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo Bar
 	}
 
@@ -289,8 +298,9 @@ func (s *ProcessorSuite) TestIsSQLType() {
 
 	import 	"github.com/src-d/go-kallax"
 
-	type Foo struct {
+	type SQLTypeFixture struct {
 		kallax.Model
+		ID kallax.ULID ` + "`pk:\"\"`" + `
 		Foo string
 	}
 	`
@@ -298,9 +308,10 @@ func (s *ProcessorSuite) TestIsSQLType() {
 	p := s.processorFixture(fixtureSrc)
 	pkg, err := p.processPackage()
 	s.Nil(err)
-	m := findModel(pkg, "Foo")
+	m := findModel(pkg, "SQLTypeFixture")
 
-	s.True(isSQLType(p.Package, types.NewPointer(m.Fields[0].Fields[0].Node.Type())))
+	s.True(isSQLType(p.Package, types.NewPointer(m.ID.Node.Type())))
+	// model is index 1 because ID is always index 0
 	s.False(isSQLType(p.Package, types.NewPointer(m.Fields[1].Node.Type())))
 }
 
@@ -341,6 +352,7 @@ func (s *ProcessorSuite) TestIsModel() {
 
 	type Bar struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Bar string
 	}
 
@@ -350,6 +362,7 @@ func (s *ProcessorSuite) TestIsModel() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 		Ptr *Bar
 		NoPtr Bar
@@ -381,6 +394,7 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 
 	type Bar struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Bar string
 	}
 
@@ -390,6 +404,7 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		A Bar
 		B *Bar
 		Bar

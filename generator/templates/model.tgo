@@ -2,13 +2,19 @@
 
 // New{{.Name}} returns a new instance of {{.Name}}.
 func New{{.Name}}({{.CtorArgs}}) {{.CtorReturns}} {
-        {{.CtorRetVars}} = {{if .CtorFunc}}{{.CtorFunc.Name}}({{.CtorArgVars}}){{else}}&{{.Name}}{}{{end}}
-        if record != nil {
-                record.SetID(kallax.NewID())
-        }
-        return
+        return {{if .CtorFunc}}{{.CtorFunc.Name}}({{.CtorArgVars}}){{else}}new({{.Name}}){{end}}
 }
 
+// GetID returns the primary key of the model.
+func (r *{{.Name}}) GetID() kallax.Identifier {
+        {{- if .ID.IsPtr}}
+        return (*{{$.IdentifierType .ID}})(r.{{.ID.Name}})
+        {{- else }}
+        return (*{{$.IdentifierType .ID}})(&r.{{.ID.Name}})
+        {{- end }}
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *{{.Name}}) ColumnAddress(col string) (interface{}, error) {
         switch col {
                 {{$.GenColumnAddresses .}}
@@ -17,6 +23,7 @@ func (r *{{.Name}}) ColumnAddress(col string) (interface{}, error) {
         }
 }
 
+// Value returns the value of the given column.
 func (r *{{.Name}}) Value(col string) (interface{}, error) {
         switch col {
                 {{$.GenColumnValues .}}
@@ -25,6 +32,8 @@ func (r *{{.Name}}) Value(col string) (interface{}, error) {
         }
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *{{.Name}}) NewRelationshipRecord(field string) (kallax.Record, error) {
         {{if .Relationships -}}
         switch field {
@@ -38,6 +47,7 @@ func (r *{{.Name}}) NewRelationshipRecord(field string) (kallax.Record, error) {
         {{- end}}
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
         {{if .Relationships -}}
         switch field {
@@ -46,7 +56,7 @@ func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
                 if !ok {
                         return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", rel)
                 }
-                {{if .IsPtr}}if !val.Model.ID.IsEmpty() {
+                {{if .IsPtr}}if !val.GetID().IsEmpty() {
                         r.{{.Name}} = val
                 }
                 {{else}}r.{{.Name}} = *val{{end}}
@@ -92,8 +102,8 @@ func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordW
         var records []kallax.RecordWithSchema
         {{range .Relationships}}
         {{- if .IsInverse -}}
-        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.ID.IsEmpty(){{end}} {
-                record.AddVirtualColumn("{{.ForeignKey}}", record.{{.Name}}.ID)
+        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} {
+                record.AddVirtualColumn("{{.ForeignKey}}", record.{{.Name}}.GetID())
                 records = append(records, kallax.RecordWithSchema{
                         Schema.{{.TypeSchemaName}}.BaseSchema,
                         {{if not .IsPtr}}&{{end}}record.{{.Name}},
@@ -102,16 +112,16 @@ func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordW
         {{else if .IsOneToManyRelationship}}
         for _, rec := range record.{{.Name}} {
                 rec.ClearVirtualColumns()
-                rec.AddVirtualColumn("{{.ForeignKey}}", record.ID)
+                rec.AddVirtualColumn("{{.ForeignKey}}", record.GetID())
                 records = append(records, kallax.RecordWithSchema{
                         Schema.{{.TypeSchemaName}}.BaseSchema,
                         {{if not ($.IsPtrSlice .)}}&{{end}}rec,
                 })
         }
         {{else}}
-        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.ID.IsEmpty(){{end}} {
+        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} {
                 record.{{.Name}}.ClearVirtualColumns()
-                record.{{.Name}}.AddVirtualColumn("{{.ForeignKey}}", record.ID)
+                record.{{.Name}}.AddVirtualColumn("{{.ForeignKey}}", record.GetID())
                 records = append(records, kallax.RecordWithSchema{
                         Schema.{{.TypeSchemaName}}.BaseSchema,
                         {{if not .IsPtr}}&{{end}}record.{{.Name}},
@@ -483,7 +493,7 @@ func (s *{{.Model.StoreName}}) Remove{{.Name}}(record *{{.Model.Name}}, deleted 
         for _, r := range record.{{.Name}} {
                 var found bool
                 for _, d := range deleted {
-                        if d.ID == r.ID {
+                        if d.GetID().Equals(r.GetID()) {
                                 found = true
                                 break
                         }

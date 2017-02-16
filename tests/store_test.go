@@ -71,7 +71,7 @@ func (s *StoreSuite) TestStoreFindOneReturnValues() {
 	s.Nil(store.Insert(NewStoreWithConstructFixture("bar")))
 
 	notFoundQuery := NewStoreWithConstructFixtureQuery()
-	notFoundQuery.Where(kallax.Eq(Schema.ResultSetFixture.ID, kallax.NewID()))
+	notFoundQuery.Where(kallax.Eq(Schema.ResultSetFixture.ID, kallax.NewULID()))
 	doc, err := store.FindOne(notFoundQuery)
 	s.resultOrError(doc, err)
 

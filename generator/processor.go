@@ -109,12 +109,13 @@ func (p *Processor) parseSourceFiles(filenames []string) (*types.Package, error)
 }
 
 func (p *Processor) processPackage() (*Package, error) {
-	pkg := &Package{pkg: p.Package, Name: p.Package.Name()}
+	pkg := NewPackage(p.Package)
 	var ctors []*types.Func
 
 	fmt.Println("Package: ", pkg.Name)
 
 	s := p.Package.Scope()
+	var models []*Model
 	for _, name := range s.Names() {
 		obj := s.Lookup(name)
 		switch t := obj.Type().(type) {
@@ -124,13 +125,15 @@ func (p *Processor) processPackage() (*Package, error) {
 			}
 		case *types.Named:
 			if str, ok := t.Underlying().(*types.Struct); ok {
-				if m := p.processModel(name, str, t); m != nil {
-					fmt.Printf("Found: %s\n", m)
+				if m, err := p.processModel(name, str, t); err != nil {
+					return nil, err
+				} else if m != nil {
+					fmt.Printf("Model: %s\n", m)
 					if err := m.Validate(); err != nil {
 						return nil, err
 					}
 
-					pkg.Models = append(pkg.Models, m)
+					models = append(models, m)
 					m.Node = t
 					m.Package = p.Package
 				}
@@ -138,22 +141,23 @@ func (p *Processor) processPackage() (*Package, error) {
 		}
 	}
 
+	pkg.SetModels(models)
 	for _, ctor := range ctors {
-		p.tryMatchConstructor(pkg.Models, ctor)
+		p.tryMatchConstructor(pkg, ctor)
 	}
 
 	return pkg, nil
 }
 
-func (p *Processor) tryMatchConstructor(models []*Model, fun *types.Func) {
-	for _, m := range models {
-		if fun.Name() != fmt.Sprintf("new%s", m.Name) {
-			continue
-		}
+func (p *Processor) tryMatchConstructor(pkg *Package, fun *types.Func) {
+	if !strings.HasPrefix(fun.Name(), "new") {
+		return
+	}
 
+	if m := pkg.FindModel(fun.Name()[3:]); m != nil {
 		sig := fun.Type().(*types.Signature)
 		if sig.Recv() != nil {
-			continue
+			return
 		}
 
 		res := sig.Results()
@@ -165,23 +169,25 @@ func (p *Processor) tryMatchConstructor(models []*Model, fun *types.Func) {
 				}
 			}
 		}
-		return
 	}
 }
 
-func (p *Processor) processModel(name string, s *types.Struct, t *types.Named) *Model {
+func (p *Processor) processModel(name string, s *types.Struct, t *types.Named) (*Model, error) {
 	m := NewModel(name)
 	m.Events = p.findEvents(t)
 
 	var base int
 	var fields []*Field
 	if base, fields = p.processFields(s, nil, true); base == -1 {
-		return nil
+		return nil, nil
 	}
 
-	m.SetFields(fields)
-	p.processBaseField(m, m.Fields[base])
-	return m
+	if err := m.SetFields(fields); err != nil {
+		return nil, err
+	}
+
+	p.processBaseField(m, fields[base])
+	return m, nil
 }
 
 var allEvents = Events{

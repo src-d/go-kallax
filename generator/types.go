@@ -124,7 +124,30 @@ type Package struct {
 	// Name is the package name.
 	Name string
 	// Models are all the models found in the package.
-	Models []*Model
+	Models        []*Model
+	indexedModels map[string]*Model
+}
+
+// NewPackage creates a new package.
+func NewPackage(pkg *types.Package) *Package {
+	return &Package{
+		Name:          pkg.Name(),
+		pkg:           pkg,
+		indexedModels: make(map[string]*Model),
+	}
+}
+
+// SetModels sets the models of the packages and indexes them.
+func (p *Package) SetModels(models []*Model) {
+	for _, m := range models {
+		p.indexedModels[m.Name] = m
+	}
+	p.Models = models
+}
+
+// FindModel finds the model with the given name.
+func (p *Package) FindModel(name string) *Model {
+	return p.indexedModels[name]
 }
 
 const (
@@ -156,6 +179,8 @@ type Model struct {
 	Type string
 	// Fields contains the list of fields in the model.
 	Fields []*Field
+	// ID contains the identifier field of the model.
+	ID *Field
 	// Events contains the list of events implemented by the model.
 	Events Events
 	// Node is the node where the model was defined.
@@ -245,6 +270,14 @@ func (m *Model) checkFieldColumns(fields []*Field, cols occurrences) {
 // Validate returns an error if the model is not valid. To be valid, a model
 // needs a non-empty table name, a non-repeated set of fields.
 func (m *Model) Validate() error {
+	if m.ID == nil {
+		return fmt.Errorf("kallax: model %s has no primary key defined", m.Name)
+	}
+
+	if !isValidIdentifier(m.ID) {
+		return fmt.Errorf("kallax: primary key %q of model %q does not have a valid identifier type (%s)", m.ID.Name, m.Name, m.ID.Type)
+	}
+
 	if fields := m.repeatedFields(); len(fields) > 0 {
 		return fmt.Errorf("kallax: the following fields are repeated: %v", fields)
 	}
@@ -368,11 +401,35 @@ func (m *Model) CtorRetVars() string {
 }
 
 // SetFields sets all the children fields and their model to the current model.
-func (m *Model) SetFields(fields []*Field) {
+// It also finds the primary key and sets it in the model.
+// It will return an error if more than one primary key is found.
+func (m *Model) SetFields(fields []*Field) error {
+	var fs []*Field
+	var id *Field
 	for _, f := range fields {
 		f.Model = m
-		m.Fields = append(m.Fields, f)
+		if f.IsPrimaryKey() {
+			if id != nil {
+				return fmt.Errorf(
+					"kallax: found more than one primary key in model %s: %s and %s",
+					m.Name,
+					id.Name,
+					f.Name,
+				)
+			}
+
+			id = f
+			m.ID = f
+		} else {
+			fs = append(fs, f)
+		}
 	}
+
+	if id != nil {
+		m.Fields = []*Field{id}
+	}
+	m.Fields = append(m.Fields, fs...)
+	return nil
 }
 
 // Relationships returns the fields of a model that are relationships.
@@ -527,6 +584,17 @@ func (f *Field) ForeignKey() string {
 	return fk
 }
 
+// IsPrimaryKey reports whether the field is the primary key.
+func (f *Field) IsPrimaryKey() bool {
+	_, ok := f.Tag.Lookup("pk")
+	return ok
+}
+
+// IsAutoIncrement reports whether the field is an autoincrementable primary key.
+func (f *Field) IsAutoIncrement() bool {
+	return f.Tag.Get("pk") == "autoincr"
+}
+
 // IsInverse returns whether the field is an inverse relationship.
 func (f *Field) IsInverse() bool {
 	if f.Kind != Relationship {
@@ -668,6 +736,23 @@ func (f *Field) Value() string {
 func (f *Field) TypeSchemaName() string {
 	parts := strings.Split(f.Type, ".")
 	return parts[len(parts)-1]
+}
+
+var identifierTypes = map[string]string{
+	"github.com/src-d/go-kallax.UUID":      "kallax.UUID",
+	"github.com/src-d/go-kallax.ULID":      "kallax.ULID",
+	"github.com/src-d/go-kallax.NumericID": "kallax.NumericID",
+	"github.com/satori/go.uuid.UUID":       "kallax.UUID",
+	"int64": "kallax.NumericID",
+}
+
+func identifierType(f *Field) string {
+	return identifierTypes[typeName(f.Node.Type())]
+}
+
+func isValidIdentifier(f *Field) bool {
+	_, ok := identifierTypes[typeName(f.Node.Type())]
+	return ok
 }
 
 func arrayLen(f *Field) int {
