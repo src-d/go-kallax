@@ -21,7 +21,7 @@ func TestOneToManyWithFilterNotWritable(t *testing.T) {
 	r.NoError(store.Insert(ModelSchema, m))
 
 	for i := 0; i < 4; i++ {
-		r.NoError(store.Insert(RelSchema, newRel(m.ID, fmt.Sprint(i))))
+		r.NoError(store.Insert(RelSchema, newRel(m.GetID(), fmt.Sprint(i))))
 	}
 
 	q := NewBaseQuery(ModelSchema)
