@@ -33,7 +33,7 @@ func (s *OpsSuite) remove(table string) {
 
 func (s *OpsSuite) TestOperators() {
 	s.create(`CREATE TABLE model (
-		id uuid PRIMARY KEY,
+		id serial PRIMARY KEY,
 		name varchar(255) not null,
 		email varchar(255) not null,
 		age int not null
@@ -108,7 +108,7 @@ func (s *OpsSuite) TestArrayOperators() {
 		{"ArrayOverlap fail", ArrayOverlap(f, 6, 7, 8, 9), false},
 	}
 
-	_, err := s.db.Exec("INSERT INTO slices (id,elems) VALUES ($1, $2)", NewID(), types.Slice([]int64{1, 2, 3}))
+	_, err := s.db.Exec("INSERT INTO slices (id,elems) VALUES ($1, $2)", NewULID(), types.Slice([]int64{1, 2, 3}))
 	s.NoError(err)
 
 	for _, c := range cases {
@@ -174,7 +174,7 @@ func (s *OpsSuite) TestJSONOperators() {
 	}
 
 	for _, r := range records {
-		_, err := s.db.Exec("INSERT INTO jsons (id,elem) VALUES ($1, $2)", NewID(), types.JSON(r))
+		_, err := s.db.Exec("INSERT INTO jsons (id,elem) VALUES ($1, $2)", NewULID(), types.JSON(r))
 		s.NoError(err)
 	}
 

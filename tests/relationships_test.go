@@ -13,19 +13,19 @@ type RelationshipsSuite struct {
 func TestRelationships(t *testing.T) {
 	schemas := []string{
 		`CREATE TABLE IF NOT EXISTS persons (
-			id uuid primary key,
+			id serial primary key,
 			name text
 		)`,
 		`CREATE TABLE IF NOT EXISTS cars (
 			id uuid primary key,
 			model_name text,
-			owner_id uuid references persons(id)
+			owner_id integer references persons(id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS pets (
 			id uuid primary key,
 			name text,
 			kind text,
-			owner_id uuid references persons(id)
+			owner_id integer references persons(id)
 		)`,
 	}
 	suite.Run(t, &RelationshipsSuite{NewBaseSuite(schemas, "cars", "pets", "persons")})
@@ -129,6 +129,7 @@ func (s *RelationshipsSuite) assertNoEvents(evs map[string]int, events ...string
 }
 
 func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, pets ...*Pet) {
+	s.False(pers.GetID().IsEmpty(), "ID should not be empty")
 	s.Equal(name, pers.Name)
 	pers.events = nil
 	s.Len(pers.Pets, len(pets))
@@ -140,6 +141,7 @@ func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, p
 	var petList = make([]*Pet, len(pets))
 	for i, pet := range pets {
 		p := *pet
+		s.False(p.GetID().IsEmpty(), "ID should not be empty")
 		p.Owner = nil
 		p.events = nil
 		petList[i] = &p
@@ -150,6 +152,7 @@ func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, p
 		s.Nil(pers.Car)
 	} else {
 		c = *car
+		s.False(c.GetID().IsEmpty(), "ID should not be empty")
 		c.Owner = nil
 		c.events = nil
 		s.Equal(&c, pers.Car)

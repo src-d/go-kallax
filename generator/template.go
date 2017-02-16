@@ -63,16 +63,29 @@ func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Fi
 			td.genFieldsColumnAddresses(buf, f.Fields)
 		} else if f.Kind == Relationship && f.IsInverse() {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ForeignKey()))
-			buf.WriteString(fmt.Sprintf("return kallax.VirtualColumn(\"%s\", r), nil\n", f.ForeignKey()))
+			buf.WriteString(fmt.Sprintf("return kallax.VirtualColumn(\"%s\", r, new(%s)), nil\n", f.ForeignKey(), td.foreignKeyType(f)))
 		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
-			// can't scan a json if is nil
-			if f.IsJSON && f.IsPtr {
-				buf.WriteString(fmt.Sprintf(initNilPtrTpl, f.Name, f.Name, td.GenTypeName(f)))
+			if f.IsPrimaryKey() {
+				buf.WriteString(fmt.Sprintf("return (*%s)(%s), nil\n", td.IdentifierType(f), f.fieldVarAddress()))
+			} else {
+				// can't scan a json if is nil
+				if f.IsJSON && f.IsPtr {
+					buf.WriteString(fmt.Sprintf(initNilPtrTpl, f.Name, f.Name, td.GenTypeName(f)))
+				}
+				buf.WriteString(fmt.Sprintf("return %s\n", f.Address()))
 			}
-			buf.WriteString(fmt.Sprintf("return %s\n", f.Address()))
 		}
 	}
+}
+
+func (td *TemplateData) foreignKeyType(f *Field) string {
+	model := td.Package.FindModel(f.TypeSchemaName())
+	return identifierType(model.ID)
+}
+
+func (td *TemplateData) IdentifierType(f *Field) string {
+	return identifierType(f)
 }
 
 // GenColumnValues generates the body of the switch that returns the column

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var emptySchema = NewBaseSchema("", "", nil, nil, nil)
+var emptySchema = NewBaseSchema("", "", nil, nil, nil, false)
 
 func TestBaseSchemaFieldQualifiedName(t *testing.T) {
 	var cases = []struct {

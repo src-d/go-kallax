@@ -4,7 +4,8 @@ import "github.com/src-d/go-kallax"
 
 type SchemaFixture struct {
 	kallax.Model `table:"schema"`
-	ShouldIgnore string `kallax:"-"`
+	ID           kallax.ULID `pk:""`
+	ShouldIgnore string      `kallax:"-"`
 	String       string
 	Int          int
 	Nested       *SchemaFixture
@@ -16,4 +17,8 @@ type SchemaFixture struct {
 	MapOfSomeType  map[string]struct {
 		Foo string
 	}
+}
+
+func newSchemaFixture() *SchemaFixture {
+	return &SchemaFixture{ID: kallax.NewULID()}
 }

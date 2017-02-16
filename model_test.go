@@ -6,26 +6,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIDIsEmpty(t *testing.T) {
+func TestUULIDIsEmpty(t *testing.T) {
 	r := require.New(t)
-	var id ID
+	var id ULID
 	r.True(id.IsEmpty())
 
-	id = NewID()
+	id = NewULID()
 	r.False(id.IsEmpty())
 }
 
-func TestID_Value(t *testing.T) {
-	id := NewID()
+func TestULID_Value(t *testing.T) {
+	id := NewULID()
 	v, _ := id.Value()
 	require.Equal(t, id.String(), v)
 }
 
-func TestID_ThreeNewIDsAreDifferent(t *testing.T) {
+func TestUULID_ThreeNewIDsAreDifferent(t *testing.T) {
 	r := require.New(t)
-	id1 := NewID()
-	id2 := NewID()
-	id3 := NewID()
+	id1 := NewULID()
+	id2 := NewULID()
+	id3 := NewULID()
 
 	r.NotEqual(id1, id2)
 	r.NotEqual(id1, id3)
@@ -35,14 +35,14 @@ func TestID_ThreeNewIDsAreDifferent(t *testing.T) {
 	r.False(id1 == id2)
 }
 
-func TestID_ScanValue(t *testing.T) {
+func TestULID_ScanValue(t *testing.T) {
 	r := require.New(t)
 
-	expected := NewID()
+	expected := NewULID()
 	v, err := expected.Value()
 	r.NoError(err)
 
-	var id ID
+	var id ULID
 	r.NoError(id.Scan(v))
 
 	r.Equal(expected, id)
@@ -56,14 +56,14 @@ func TestVirtualColumn(t *testing.T) {
 	r.Equal(nil, record.VirtualColumn("foo"))
 
 	record.virtualColumns = nil
-	s := VirtualColumn("foo", record)
+	s := VirtualColumn("foo", record, new(ULID))
 
-	id := NewID()
+	id := NewULID()
 	v, err := id.Value()
 	r.NoError(err)
 	r.NoError(s.Scan(v))
 	r.Len(record.virtualColumns, 1)
-	r.Equal(id, record.VirtualColumn("foo"))
+	r.Equal(&id, record.VirtualColumn("foo"))
 
 	r.Error(s.Scan(nil))
 }

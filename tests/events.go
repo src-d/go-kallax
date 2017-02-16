@@ -4,6 +4,7 @@ import "github.com/src-d/go-kallax"
 
 type EventsFixture struct {
 	kallax.Model   `table:"event"`
+	ID             kallax.ULID `pk:""`
 	Checks         map[string]bool
 	MustFailBefore error
 	MustFailAfter  error
@@ -11,6 +12,7 @@ type EventsFixture struct {
 
 func newEventsFixture() *EventsFixture {
 	return &EventsFixture{
+		ID:     kallax.NewULID(),
 		Checks: make(map[string]bool, 0),
 	}
 }
@@ -53,6 +55,7 @@ func (s *EventsFixture) AfterUpdate() error {
 
 type EventsSaveFixture struct {
 	kallax.Model   `table:"event"`
+	ID             kallax.ULID `pk:""`
 	Checks         map[string]bool
 	MustFailBefore error
 	MustFailAfter  error
@@ -60,6 +63,7 @@ type EventsSaveFixture struct {
 
 func newEventsSaveFixture() *EventsSaveFixture {
 	return &EventsSaveFixture{
+		ID:     kallax.NewULID(),
 		Checks: make(map[string]bool, 0),
 	}
 }
@@ -84,6 +88,7 @@ func (s *EventsSaveFixture) AfterSave() error {
 
 type EventsAllFixture struct {
 	kallax.Model   `table:"event"`
+	ID             kallax.ULID `pk:""`
 	Checks         map[string]bool
 	MustFailBefore error
 	MustFailAfter  error
@@ -91,6 +96,7 @@ type EventsAllFixture struct {
 
 func newEventsAllFixture() *EventsAllFixture {
 	return &EventsAllFixture{
+		ID:     kallax.NewULID(),
 		Checks: make(map[string]bool, 0),
 	}
 }
