@@ -43,7 +43,7 @@ func (s *TemplateSuite) processSource(source string) {
 }
 
 const expectedAddresses = `case "id":
-return &r.Model.ID, nil
+return (*kallax.NumericID)(&r.ID), nil
 case "foo":
 return &r.Foo, nil
 case "bar":
@@ -57,7 +57,7 @@ return (*types.URL)(r.URL), nil
 case "url_no_ptr":
 return (*types.URL)(&r.UrlNoPtr), nil
 case "foo_id":
-return kallax.VirtualColumn("foo_id", r), nil
+return kallax.VirtualColumn("foo_id", r, new(kallax.NumericID)), nil
 `
 
 const baseTpl = `
@@ -68,6 +68,7 @@ const baseTpl = `
 
 	type Rel struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 	}
 
@@ -77,6 +78,7 @@ const baseTpl = `
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 		Bar *string
 		Rel Rel
@@ -97,7 +99,7 @@ func (s *TemplateSuite) TestGenColumnAddresses() {
 }
 
 const expectedValues = `case "id":
-return r.Model.ID, nil
+return r.ID, nil
 case "foo":
 return r.Foo, nil
 case "bar":
@@ -127,6 +129,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 
 	type Rel struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 	}
 
@@ -136,6 +139,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 		Bar *string
 		Rel Rel
@@ -178,6 +182,7 @@ const jsonBaseTpl = `
 
 	type Rel struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 	}
 
@@ -202,6 +207,7 @@ const jsonBaseTpl = `
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 		Bar *string
 		Arr []string
@@ -312,6 +318,7 @@ func (s *TemplateSuite) TestGenTypeName() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Slice []string
 		Ptr *string
 		NoPtr string
@@ -346,6 +353,7 @@ func (s *TemplateSuite) TestIsPtrSlice() {
 
 	type Foo struct {
 		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Ptr *url.URL
 		Slice []url.URL
 		PtrSlice []*url.URL

@@ -119,7 +119,7 @@ func (r *batchQueryRunner) processBatch(rows *sql.Rows) ([]Record, error) {
 
 	var ids = make([]interface{}, len(records))
 	for i, r := range records {
-		ids[i] = r.GetID()
+		ids[i] = r.GetID().Raw()
 	}
 
 	for _, rel := range r.oneToManyRels {
@@ -129,7 +129,7 @@ func (r *batchQueryRunner) processBatch(rows *sql.Rows) ([]Record, error) {
 		}
 
 		for _, r := range records {
-			err := r.SetRelationship(rel.Field, indexedResults[r.GetID()])
+			err := r.SetRelationship(rel.Field, indexedResults[r.GetID().Raw()])
 			if err != nil {
 				return nil, err
 			}
@@ -184,7 +184,8 @@ func (r *batchQueryRunner) getRecordRelationships(ids []interface{}, rel Relatio
 
 		rec.setPersisted()
 		rec.setWritable(true)
-		indexedResults[val] = append(indexedResults[val], rec)
+		id := val.(Identifier).Raw()
+		indexedResults[id] = append(indexedResults[id], rec)
 	}
 
 	if err := relRs.Close(); err != nil {

@@ -4,6 +4,7 @@ import kallax "github.com/src-d/go-kallax"
 
 type JSONModel struct {
 	kallax.Model `table:"jsons"`
+	ID           kallax.ULID `pk:""`
 	Foo          string
 	Bar          *Bar
 	BazSlice     []Baz
@@ -26,5 +27,5 @@ type Qux struct {
 }
 
 func newJSONModel() *JSONModel {
-	return &JSONModel{Baz: make(map[string]interface{})}
+	return &JSONModel{ID: kallax.NewULID(), Baz: make(map[string]interface{})}
 }

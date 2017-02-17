@@ -33,7 +33,7 @@ func (s *QuerySuite) TestQuery() {
 		s.Equal("bar", store.MustFindOne(query).Foo)
 	})
 
-	notID := kallax.NewID()
+	notID := kallax.NewULID()
 	queryErr := NewQueryFixtureQuery()
 	queryErr.Where(kallax.Eq(Schema.QueryFixture.ID, notID))
 	s.Panics(func() {

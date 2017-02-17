@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func envOrDefault(key string, def string) string {
@@ -23,8 +26,33 @@ func openTestDB() (*sql.DB, error) {
 	))
 }
 
+func setupTables(t *testing.T, db *sql.DB) {
+	_, err := db.Exec(`CREATE TABLE model (
+		id serial PRIMARY KEY,
+		name varchar(255) not null,
+		email varchar(255) not null,
+		age int not null
+	)`)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`CREATE TABLE rel (
+		id serial PRIMARY KEY,
+		model_id integer,
+		foo text
+	)`)
+	require.NoError(t, err)
+}
+
+func teardownTables(t *testing.T, db *sql.DB) {
+	_, err := db.Exec("DROP TABLE model")
+	require.NoError(t, err)
+	_, err = db.Exec("DROP TABLE rel")
+	require.NoError(t, err)
+}
+
 type model struct {
 	Model
+	ID    int64 `pk:"autoincr"`
 	Name  string
 	Email string
 	Age   int
@@ -102,14 +130,24 @@ func (m *model) SetRelationship(field string, record interface{}) error {
 	return fmt.Errorf("kallax: no relationship found for field %s", field)
 }
 
-type rel struct {
-	Model
-	ModelID ID
-	Foo     string
+func (m *model) GetID() Identifier {
+	return (*NumericID)(&m.ID)
 }
 
-func newRel(id ID, foo string) *rel {
-	return &rel{NewModel(), id, foo}
+type rel struct {
+	Model
+	ID  int64 `pk:"autoincr"`
+	Foo string
+}
+
+func newRel(id Identifier, foo string) *rel {
+	rel := &rel{NewModel(), 0, foo}
+	rel.AddVirtualColumn("model_id", id)
+	return rel
+}
+
+func (r *rel) GetID() Identifier {
+	return (*NumericID)(&r.ID)
 }
 
 func (m *rel) Value(col string) (interface{}, error) {
@@ -117,7 +155,7 @@ func (m *rel) Value(col string) (interface{}, error) {
 	case "id":
 		return m.ID, nil
 	case "model_id":
-		return m.ModelID, nil
+		return m.VirtualColumn(col), nil
 	case "foo":
 		return m.Foo, nil
 	}
@@ -129,7 +167,7 @@ func (m *rel) ColumnAddress(col string) (interface{}, error) {
 	case "id":
 		return &m.ID, nil
 	case "model_id":
-		return &m.ModelID, nil
+		return VirtualColumn(col, m, new(NumericID)), nil
 	case "foo":
 		return &m.Foo, nil
 	}
@@ -156,6 +194,7 @@ var ModelSchema = NewBaseSchema(
 	func() Record {
 		return new(model)
 	},
+	true,
 	f("id"),
 	f("name"),
 	f("email"),
@@ -170,6 +209,7 @@ var RelSchema = NewBaseSchema(
 	func() Record {
 		return new(rel)
 	},
+	true,
 	f("id"),
 	f("model_id"),
 	f("foo"),

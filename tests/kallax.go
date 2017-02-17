@@ -17,19 +17,21 @@ var _ fmt.Formatter
 
 // NewCar returns a new instance of Car.
 func NewCar(model string, owner *Person) (record *Car) {
-	record = newCar(model, owner)
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newCar(model, owner)
 }
 
+// GetID returns the primary key of the model.
+func (r *Car) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *Car) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "owner_id":
-		return kallax.VirtualColumn("owner_id", r), nil
+		return kallax.VirtualColumn("owner_id", r, new(kallax.NumericID)), nil
 	case "model_name":
 		return &r.ModelName, nil
 
@@ -38,10 +40,11 @@ func (r *Car) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *Car) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "owner_id":
 		return r.Model.VirtualColumn(col), nil
 	case "model_name":
@@ -52,6 +55,8 @@ func (r *Car) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *Car) NewRelationshipRecord(field string) (kallax.Record, error) {
 	switch field {
 	case "Owner":
@@ -61,6 +66,7 @@ func (r *Car) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model Car has no relationship %s", field)
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *Car) SetRelationship(field string, rel interface{}) error {
 	switch field {
 	case "Owner":
@@ -68,7 +74,7 @@ func (r *Car) SetRelationship(field string, rel interface{}) error {
 		if !ok {
 			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Owner", rel)
 		}
-		if !val.Model.ID.IsEmpty() {
+		if !val.GetID().IsEmpty() {
 			r.Owner = val
 		}
 
@@ -94,7 +100,7 @@ func (s *CarStore) relationshipRecords(record *Car) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
 	if record.Owner != nil {
-		record.AddVirtualColumn("owner_id", record.Owner.ID)
+		record.AddVirtualColumn("owner_id", record.Owner.GetID())
 		records = append(records, kallax.RecordWithSchema{
 			Schema.Person.BaseSchema,
 			record.Owner,
@@ -524,17 +530,19 @@ func (rs *CarResultSet) Close() error {
 
 // NewEventsAllFixture returns a new instance of EventsAllFixture.
 func NewEventsAllFixture() (record *EventsAllFixture) {
-	record = newEventsAllFixture()
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newEventsAllFixture()
 }
 
+// GetID returns the primary key of the model.
+func (r *EventsAllFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *EventsAllFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "checks":
 		return types.JSON(&r.Checks), nil
 	case "must_fail_before":
@@ -547,10 +555,11 @@ func (r *EventsAllFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *EventsAllFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "checks":
 		return types.JSON(r.Checks), nil
 	case "must_fail_before":
@@ -563,10 +572,13 @@ func (r *EventsAllFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *EventsAllFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model EventsAllFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *EventsAllFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model EventsAllFixture has no relationships")
 }
@@ -937,17 +949,19 @@ func (rs *EventsAllFixtureResultSet) Close() error {
 
 // NewEventsFixture returns a new instance of EventsFixture.
 func NewEventsFixture() (record *EventsFixture) {
-	record = newEventsFixture()
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newEventsFixture()
 }
 
+// GetID returns the primary key of the model.
+func (r *EventsFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *EventsFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "checks":
 		return types.JSON(&r.Checks), nil
 	case "must_fail_before":
@@ -960,10 +974,11 @@ func (r *EventsFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *EventsFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "checks":
 		return types.JSON(r.Checks), nil
 	case "must_fail_before":
@@ -976,10 +991,13 @@ func (r *EventsFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *EventsFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model EventsFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *EventsFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model EventsFixture has no relationships")
 }
@@ -1334,17 +1352,19 @@ func (rs *EventsFixtureResultSet) Close() error {
 
 // NewEventsSaveFixture returns a new instance of EventsSaveFixture.
 func NewEventsSaveFixture() (record *EventsSaveFixture) {
-	record = newEventsSaveFixture()
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newEventsSaveFixture()
 }
 
+// GetID returns the primary key of the model.
+func (r *EventsSaveFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *EventsSaveFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "checks":
 		return types.JSON(&r.Checks), nil
 	case "must_fail_before":
@@ -1357,10 +1377,11 @@ func (r *EventsSaveFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *EventsSaveFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "checks":
 		return types.JSON(r.Checks), nil
 	case "must_fail_before":
@@ -1373,10 +1394,13 @@ func (r *EventsSaveFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *EventsSaveFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model EventsSaveFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *EventsSaveFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model EventsSaveFixture has no relationships")
 }
@@ -1731,17 +1755,19 @@ func (rs *EventsSaveFixtureResultSet) Close() error {
 
 // NewJSONModel returns a new instance of JSONModel.
 func NewJSONModel() (record *JSONModel) {
-	record = newJSONModel()
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newJSONModel()
 }
 
+// GetID returns the primary key of the model.
+func (r *JSONModel) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *JSONModel) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "foo":
 		return &r.Foo, nil
 	case "bar":
@@ -1759,10 +1785,11 @@ func (r *JSONModel) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *JSONModel) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "foo":
 		return r.Foo, nil
 	case "bar":
@@ -1777,10 +1804,13 @@ func (r *JSONModel) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *JSONModel) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model JSONModel has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *JSONModel) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model JSONModel has no relationships")
 }
@@ -2101,17 +2131,19 @@ func (rs *JSONModelResultSet) Close() error {
 
 // NewMultiKeySortFixture returns a new instance of MultiKeySortFixture.
 func NewMultiKeySortFixture() (record *MultiKeySortFixture) {
-	record = &MultiKeySortFixture{}
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newMultiKeySortFixture()
 }
 
+// GetID returns the primary key of the model.
+func (r *MultiKeySortFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *MultiKeySortFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "name":
 		return &r.Name, nil
 	case "start":
@@ -2124,10 +2156,11 @@ func (r *MultiKeySortFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *MultiKeySortFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "name":
 		return r.Name, nil
 	case "start":
@@ -2140,10 +2173,13 @@ func (r *MultiKeySortFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *MultiKeySortFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model MultiKeySortFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *MultiKeySortFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model MultiKeySortFixture has no relationships")
 }
@@ -2464,17 +2500,19 @@ func (rs *MultiKeySortFixtureResultSet) Close() error {
 
 // NewPerson returns a new instance of Person.
 func NewPerson(name string) (record *Person) {
-	record = newPerson(name)
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newPerson(name)
 }
 
+// GetID returns the primary key of the model.
+func (r *Person) GetID() kallax.Identifier {
+	return (*kallax.NumericID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *Person) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.NumericID)(&r.ID), nil
 	case "name":
 		return &r.Name, nil
 
@@ -2483,10 +2521,11 @@ func (r *Person) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *Person) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "name":
 		return r.Name, nil
 
@@ -2495,6 +2534,8 @@ func (r *Person) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *Person) NewRelationshipRecord(field string) (kallax.Record, error) {
 	switch field {
 	case "Pets":
@@ -2506,6 +2547,7 @@ func (r *Person) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model Person has no relationship %s", field)
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *Person) SetRelationship(field string, rel interface{}) error {
 	switch field {
 	case "Pets":
@@ -2528,7 +2570,7 @@ func (r *Person) SetRelationship(field string, rel interface{}) error {
 		if !ok {
 			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Car", rel)
 		}
-		if !val.Model.ID.IsEmpty() {
+		if !val.GetID().IsEmpty() {
 			r.Car = val
 		}
 
@@ -2556,7 +2598,7 @@ func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSch
 
 	for _, rec := range record.Pets {
 		rec.ClearVirtualColumns()
-		rec.AddVirtualColumn("owner_id", record.ID)
+		rec.AddVirtualColumn("owner_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
 			Schema.Pet.BaseSchema,
 			rec,
@@ -2565,7 +2607,7 @@ func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSch
 
 	if record.Car != nil {
 		record.Car.ClearVirtualColumns()
-		record.Car.AddVirtualColumn("owner_id", record.ID)
+		record.Car.AddVirtualColumn("owner_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
 			Schema.Car.BaseSchema,
 			record.Car,
@@ -2888,7 +2930,7 @@ func (s *PersonStore) RemovePets(record *Person, deleted ...*Pet) error {
 	for _, r := range record.Pets {
 		var found bool
 		for _, d := range deleted {
-			if d.ID == r.ID {
+			if d.GetID().Equals(r.GetID()) {
 				found = true
 				break
 			}
@@ -3120,33 +3162,36 @@ func (rs *PersonResultSet) Close() error {
 
 // NewPet returns a new instance of Pet.
 func NewPet(name string, kind string, owner *Person) (record *Pet) {
-	record = newPet(name, kind, owner)
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newPet(name, kind, owner)
 }
 
+// GetID returns the primary key of the model.
+func (r *Pet) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *Pet) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "name":
 		return &r.Name, nil
 	case "kind":
 		return &r.Kind, nil
 	case "owner_id":
-		return kallax.VirtualColumn("owner_id", r), nil
+		return kallax.VirtualColumn("owner_id", r, new(kallax.NumericID)), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Pet: %s", col)
 	}
 }
 
+// Value returns the value of the given column.
 func (r *Pet) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "name":
 		return r.Name, nil
 	case "kind":
@@ -3159,6 +3204,8 @@ func (r *Pet) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *Pet) NewRelationshipRecord(field string) (kallax.Record, error) {
 	switch field {
 	case "Owner":
@@ -3168,6 +3215,7 @@ func (r *Pet) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model Pet has no relationship %s", field)
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *Pet) SetRelationship(field string, rel interface{}) error {
 	switch field {
 	case "Owner":
@@ -3175,7 +3223,7 @@ func (r *Pet) SetRelationship(field string, rel interface{}) error {
 		if !ok {
 			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Owner", rel)
 		}
-		if !val.Model.ID.IsEmpty() {
+		if !val.GetID().IsEmpty() {
 			r.Owner = val
 		}
 
@@ -3201,7 +3249,7 @@ func (s *PetStore) relationshipRecords(record *Pet) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
 	if record.Owner != nil {
-		record.AddVirtualColumn("owner_id", record.Owner.ID)
+		record.AddVirtualColumn("owner_id", record.Owner.GetID())
 		records = append(records, kallax.RecordWithSchema{
 			Schema.Person.BaseSchema,
 			record.Owner,
@@ -3631,17 +3679,19 @@ func (rs *PetResultSet) Close() error {
 
 // NewQueryFixture returns a new instance of QueryFixture.
 func NewQueryFixture(f string) (record *QueryFixture) {
-	record = newQueryFixture(f)
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newQueryFixture(f)
 }
 
+// GetID returns the primary key of the model.
+func (r *QueryFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *QueryFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "foo":
 		return &r.Foo, nil
 
@@ -3650,10 +3700,11 @@ func (r *QueryFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *QueryFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "foo":
 		return r.Foo, nil
 
@@ -3662,10 +3713,13 @@ func (r *QueryFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *QueryFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model QueryFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *QueryFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model QueryFixture has no relationships")
 }
@@ -3986,17 +4040,19 @@ func (rs *QueryFixtureResultSet) Close() error {
 
 // NewResultSetFixture returns a new instance of ResultSetFixture.
 func NewResultSetFixture(f string) (record *ResultSetFixture) {
-	record = newResultSetFixture(f)
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newResultSetFixture(f)
 }
 
+// GetID returns the primary key of the model.
+func (r *ResultSetFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *ResultSetFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "foo":
 		return &r.Foo, nil
 
@@ -4005,10 +4061,11 @@ func (r *ResultSetFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *ResultSetFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "foo":
 		return r.Foo, nil
 
@@ -4017,10 +4074,13 @@ func (r *ResultSetFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *ResultSetFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model ResultSetFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *ResultSetFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model ResultSetFixture has no relationships")
 }
@@ -4341,17 +4401,19 @@ func (rs *ResultSetFixtureResultSet) Close() error {
 
 // NewSchemaFixture returns a new instance of SchemaFixture.
 func NewSchemaFixture() (record *SchemaFixture) {
-	record = &SchemaFixture{}
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newSchemaFixture()
 }
 
+// GetID returns the primary key of the model.
+func (r *SchemaFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *SchemaFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "string":
 		return &r.String, nil
 	case "int":
@@ -4370,10 +4432,11 @@ func (r *SchemaFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *SchemaFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "string":
 		return r.String, nil
 	case "int":
@@ -4392,6 +4455,8 @@ func (r *SchemaFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *SchemaFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	switch field {
 	case "Nested":
@@ -4401,6 +4466,7 @@ func (r *SchemaFixture) NewRelationshipRecord(field string) (kallax.Record, erro
 	return nil, fmt.Errorf("kallax: model SchemaFixture has no relationship %s", field)
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *SchemaFixture) SetRelationship(field string, rel interface{}) error {
 	switch field {
 	case "Nested":
@@ -4408,7 +4474,7 @@ func (r *SchemaFixture) SetRelationship(field string, rel interface{}) error {
 		if !ok {
 			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Nested", rel)
 		}
-		if !val.Model.ID.IsEmpty() {
+		if !val.GetID().IsEmpty() {
 			r.Nested = val
 		}
 
@@ -4436,7 +4502,7 @@ func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []kallax
 
 	if record.Nested != nil {
 		record.Nested.ClearVirtualColumns()
-		record.Nested.AddVirtualColumn("schema_fixture_id", record.ID)
+		record.Nested.AddVirtualColumn("schema_fixture_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
 			Schema.SchemaFixture.BaseSchema,
 			record.Nested,
@@ -4844,17 +4910,19 @@ func (rs *SchemaFixtureResultSet) Close() error {
 
 // NewStoreFixture returns a new instance of StoreFixture.
 func NewStoreFixture() (record *StoreFixture) {
-	record = &StoreFixture{}
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newStoreFixture()
 }
 
+// GetID returns the primary key of the model.
+func (r *StoreFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *StoreFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "foo":
 		return &r.Foo, nil
 	case "slice_prop":
@@ -4867,10 +4935,11 @@ func (r *StoreFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *StoreFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "foo":
 		return r.Foo, nil
 	case "slice_prop":
@@ -4883,10 +4952,13 @@ func (r *StoreFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *StoreFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model StoreFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *StoreFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model StoreFixture has no relationships")
 }
@@ -5207,17 +5279,19 @@ func (rs *StoreFixtureResultSet) Close() error {
 
 // NewStoreWithConstructFixture returns a new instance of StoreWithConstructFixture.
 func NewStoreWithConstructFixture(f string) (record *StoreWithConstructFixture) {
-	record = newStoreWithConstructFixture(f)
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newStoreWithConstructFixture(f)
 }
 
+// GetID returns the primary key of the model.
+func (r *StoreWithConstructFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *StoreWithConstructFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "foo":
 		return &r.Foo, nil
 
@@ -5226,10 +5300,11 @@ func (r *StoreWithConstructFixture) ColumnAddress(col string) (interface{}, erro
 	}
 }
 
+// Value returns the value of the given column.
 func (r *StoreWithConstructFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "foo":
 		return r.Foo, nil
 
@@ -5238,10 +5313,13 @@ func (r *StoreWithConstructFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *StoreWithConstructFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model StoreWithConstructFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *StoreWithConstructFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model StoreWithConstructFixture has no relationships")
 }
@@ -5562,17 +5640,19 @@ func (rs *StoreWithConstructFixtureResultSet) Close() error {
 
 // NewStoreWithNewFixture returns a new instance of StoreWithNewFixture.
 func NewStoreWithNewFixture() (record *StoreWithNewFixture) {
-	record = &StoreWithNewFixture{}
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newStoreWithNewFixture()
 }
 
+// GetID returns the primary key of the model.
+func (r *StoreWithNewFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *StoreWithNewFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "foo":
 		return &r.Foo, nil
 	case "bar":
@@ -5583,10 +5663,11 @@ func (r *StoreWithNewFixture) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *StoreWithNewFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "foo":
 		return r.Foo, nil
 	case "bar":
@@ -5597,10 +5678,13 @@ func (r *StoreWithNewFixture) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *StoreWithNewFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model StoreWithNewFixture has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *StoreWithNewFixture) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model StoreWithNewFixture has no relationships")
 }
@@ -6086,6 +6170,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(Car)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("owner_id"),
 			kallax.NewSchemaField("model_name"),
@@ -6102,6 +6187,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(EventsAllFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("checks"),
 			kallax.NewSchemaField("must_fail_before"),
@@ -6121,6 +6207,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(EventsFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("checks"),
 			kallax.NewSchemaField("must_fail_before"),
@@ -6140,6 +6227,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(EventsSaveFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("checks"),
 			kallax.NewSchemaField("must_fail_before"),
@@ -6159,6 +6247,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(JSONModel)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 			kallax.NewSchemaField("bar"),
@@ -6192,6 +6281,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(MultiKeySortFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("name"),
 			kallax.NewSchemaField("start"),
@@ -6214,6 +6304,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(Person)
 			},
+			true,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("name"),
 		),
@@ -6231,6 +6322,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(Pet)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("name"),
 			kallax.NewSchemaField("kind"),
@@ -6249,6 +6341,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(QueryFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 		),
@@ -6264,6 +6357,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(ResultSetFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 		),
@@ -6281,6 +6375,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(SchemaFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("string"),
 			kallax.NewSchemaField("int"),
@@ -6306,6 +6401,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(StoreFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 			kallax.NewSchemaField("slice_prop"),
@@ -6325,6 +6421,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(StoreWithConstructFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 		),
@@ -6340,6 +6437,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(StoreWithNewFixture)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("foo"),
 			kallax.NewSchemaField("bar"),

@@ -18,7 +18,7 @@ var Schema = &schema{
         BaseSchema: kallax.NewBaseSchema(
                 "{{.Table}}",
                 "{{.Alias}}",
-                kallax.NewSchemaField("id"),
+                kallax.NewSchemaField("{{.ID.ColumnName}}"),
                 kallax.ForeignKeys{
                 {{range .Relationships}}"{{.Name}}": kallax.NewForeignKey("{{.ForeignKey}}", {{if .IsInverse}}true{{else}}false{{end}}),
                 {{end}}
@@ -26,6 +26,7 @@ var Schema = &schema{
                 func() kallax.Record {
                         return new({{.Name}})
                 },
+                {{if .ID.IsAutoIncrement}}true{{else}}false{{end}},
                 {{$.GenModelColumns .}}
         ),
         {{$.GenSchemaInit .}}

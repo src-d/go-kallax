@@ -27,6 +27,10 @@ var (
 	ErrInvalidTxCallback = errors.New("kallax: invalid transaction callback given")
 	// ErrNotFound is returned when a certain entity is not found.
 	ErrNotFound = errors.New("kallax: entity not found")
+	// ErrCantSetID is returned when a model is inserted and it does not have
+	// neither an autoincrement primary key nor implements the IDSetter
+	// interface.
+	ErrCantSetID = errors.New("kallax: model does not have an auto incrementable primary key, it needs to implement IDSetter interface")
 )
 
 // Store is a structure capable of retrieving records from a concrete table in
@@ -64,21 +68,37 @@ func (s *Store) Insert(schema Schema, record Record) error {
 		return ErrNonNewDocument
 	}
 
-	if record.GetID().IsEmpty() {
-		record.SetID(NewID())
+	cols := ColumnNames(schema.Columns())
+	if schema.isPrimaryKeyAutoIncrementable() {
+		// we have to remove the pk from the list, in case the
+		// pk is auto incremented if it's 0
+		// ID is always the first field, so it's safe to slice here
+		cols = cols[1:]
 	}
 
-	cols := ColumnNames(schema.Columns())
 	values, err := RecordValues(record, cols...)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.builder.
+	builder := s.builder.
 		Insert(schema.Table()).
 		Columns(cols...).
-		Values(values...).
-		Exec()
+		Values(values...)
+	if schema.isPrimaryKeyAutoIncrementable() {
+		var pk interface{}
+		pk, err = record.ColumnAddress(schema.ID().String())
+		if err != nil {
+			return err
+		}
+
+		err = builder.
+			Suffix(fmt.Sprintf("RETURNING %q", schema.ID())).
+			QueryRow().
+			Scan(pk)
+	} else {
+		_, err = builder.Exec()
+	}
 
 	if err != nil {
 		return err

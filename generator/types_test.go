@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,6 +38,40 @@ func (s *FieldSuite) TestInline() {
 
 	for _, c := range cases {
 		s.Equal(c.inline, withTag(mkField("", c.typ), c.tag).Inline(), "field with tag: %s", c.tag)
+	}
+}
+
+func (s *FieldSuite) TestIsPrimaryKey() {
+	cases := []struct {
+		tag string
+		ok  bool
+	}{
+		{"", false},
+		{`kallax:"pk"`, false},
+		{`kallax:"foo,pk"`, false},
+		{`pk:""`, true},
+		{`pk:"foo"`, true},
+		{`pk:"autoincr"`, true},
+	}
+
+	for _, c := range cases {
+		s.Equal(c.ok, withTag(mkField("", ""), c.tag).IsPrimaryKey(), "field with tag: %s", c.tag)
+	}
+}
+
+func (s *FieldSuite) TestIsAutoIncrement() {
+	cases := []struct {
+		tag string
+		ok  bool
+	}{
+		{"", false},
+		{`pk:""`, false},
+		{`pk:"ponies"`, false},
+		{`pk:"autoincr"`, true},
+	}
+
+	for _, c := range cases {
+		s.Equal(c.ok, withTag(mkField("", ""), c.tag).IsAutoIncrement(), "field with tag: %s", c.tag)
 	}
 }
 
@@ -175,6 +208,7 @@ import (
 
 type User struct {
 	kallax.Model ` + "`table:\"users\"`" + `
+	ID int64 ` + "`pk:\"autoincr\"`" + `
 	Username     string
 	Email        string
 	Password     Password
@@ -192,6 +226,7 @@ func newUser(username, email string) (*User, error) {
 
 type Email struct {
 	kallax.Model ` + "`table:\"models\"`" + `
+	ID int64 ` + "`pk:\"autoincr\"`" + `
 	Address      string
 	Primary      bool
 }
@@ -214,6 +249,7 @@ type Settings struct {
 
 type Variadic struct {
 	kallax.Model
+	ID int64 ` + "`pk:\"autoincr\"`" + `
 	Foo []string
 	Bar string
 }
@@ -275,29 +311,38 @@ func (s *ModelSuite) TestCtor_Variadic() {
 	s.Equal("record", s.variadic.CtorRetVars())
 }
 
-func TestModelValidate(t *testing.T) {
-	require := require.New(t)
-	m := &Model{Name: "Foo", Table: "foo"}
+func (s *ModelSuite) TestModelValidate() {
+	require := s.Require()
+
+	id := s.model.ID
+	m := &Model{Name: "Foo", Table: "foo", ID: id}
 	m.Fields = []*Field{
 		mkField("ID", ""),
 		inline(mkField("Nested", "", inline(
 			mkField("Deep", "", mkField("ID", "")),
 		))),
 	}
-	require.NotNil(m.Validate(), "should return error")
+	require.Error(m.Validate(), "should return error")
 
 	m.Fields = []*Field{
 		mkField("ID", ""),
 		inline(mkField("Nested", "", mkField("Foo", ""))),
 	}
-	require.Nil(m.Validate(), "should not return error")
+	require.NoError(m.Validate(), "should not return error")
 
+	m.ID = nil
+	require.Error(m.Validate(), "should return error")
+
+	m.ID = s.model.Fields[2]
+	require.Error(m.Validate(), "should return error")
+
+	m.ID = id
 	m.Table = ""
-	require.NotNil(m.Validate(), "should return error")
+	require.Error(m.Validate(), "should return error")
 }
 
 func TestFieldForeignKey(t *testing.T) {
-	assert := assert.New(t)
+	r := require.New(t)
 	m := &Model{Name: "Foo", Table: "bar", Type: "foo.Foo"}
 
 	cases := []struct {
@@ -317,8 +362,44 @@ func TestFieldForeignKey(t *testing.T) {
 		f.Kind = Relationship
 		f.Model = m
 
-		assert.Equal(c.expected, f.ForeignKey(), "foreign key with tag: %s", c.tag)
-		assert.Equal(c.inverse, f.IsInverse(), "is inverse: %s", c.tag)
+		r.Equal(c.expected, f.ForeignKey(), "foreign key with tag: %s", c.tag)
+		r.Equal(c.inverse, f.IsInverse(), "is inverse: %s", c.tag)
+	}
+}
+
+func TestModelSetFields(t *testing.T) {
+	r := require.New(t)
+	cases := []struct {
+		name   string
+		fields []*Field
+		err    bool
+	}{
+		{
+			"only one primary key",
+			[]*Field{
+				mkField("Foo", ""),
+				withTag(mkField("ID", ""), `pk:""`),
+			},
+			false,
+		},
+		{
+			"multiple primary keys",
+			[]*Field{
+				withTag(mkField("ID", ""), `pk:""`),
+				withTag(mkField("FooID", ""), `pk:""`),
+			},
+			true,
+		},
+	}
+
+	for _, c := range cases {
+		m := new(Model)
+		err := m.SetFields(c.fields)
+		if c.err {
+			r.Error(err, c.name)
+		} else {
+			r.NoError(err, c.name)
+		}
 	}
 }
 

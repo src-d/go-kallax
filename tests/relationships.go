@@ -4,7 +4,8 @@ import kallax "github.com/src-d/go-kallax"
 
 type Car struct {
 	kallax.Model `table:"cars"`
-	Owner        *Person `fk:"owner_id,inverse"`
+	ID           kallax.ULID `pk:""`
+	Owner        *Person     `fk:"owner_id,inverse"`
 	ModelName    string
 	events       map[string]int
 }
@@ -41,6 +42,7 @@ func (c *Car) AfterDelete() error {
 
 type Person struct {
 	kallax.Model `table:"persons"`
+	ID           int64 `pk:"autoincr"`
 	Name         string
 	Pets         []*Pet `fk:"owner_id"`
 	Car          *Car   `fk:"owner_id"`
@@ -79,6 +81,7 @@ func (c *Person) AfterDelete() error {
 
 type Pet struct {
 	kallax.Model `table:"pets"`
+	ID           kallax.ULID `pk:""`
 	Name         string
 	Kind         string
 	Owner        *Person `fk:"owner_id,inverse"`
@@ -116,7 +119,7 @@ func (c *Pet) AfterDelete() error {
 }
 
 func newPet(name, kind string, owner *Person) *Pet {
-	pet := &Pet{Name: name, Kind: kind, Owner: owner}
+	pet := &Pet{ID: kallax.NewULID(), Name: name, Kind: kind, Owner: owner}
 	owner.Pets = append(owner.Pets, pet)
 	return pet
 }
@@ -126,7 +129,7 @@ func newPerson(name string) *Person {
 }
 
 func newCar(model string, owner *Person) *Car {
-	car := &Car{ModelName: model, Owner: owner}
+	car := &Car{ID: kallax.NewULID(), ModelName: model, Owner: owner}
 	owner.Car = car
 	return car
 }

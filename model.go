@@ -3,6 +3,7 @@ package kallax
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -32,22 +33,18 @@ import (
 // No pluralization is done right now, but might be done in the future, so
 // please, set the name of the tables yourself.
 type Model struct {
-	ID             ID
-	virtualColumns map[string]interface{}
+	virtualColumns map[string]Identifier
 	persisted      bool
 	writable       bool
 }
 
-// NewModel creates a new Model that is writable, not persisted and identified
-// with a newly generated ID.
+// NewModel creates a new Model that is writable and not persisted.
 func NewModel() Model {
-	m := Model{
+	return Model{
 		persisted:      false,
 		writable:       true,
-		virtualColumns: make(map[string]interface{}),
+		virtualColumns: make(map[string]Identifier),
 	}
-	m.ID = NewID()
-	return m
 }
 
 // IsPersisted returns whether the Model has already been persisted to the
@@ -73,29 +70,17 @@ func (m *Model) setWritable(w bool) {
 	m.writable = w
 }
 
-// GetID returns the ID of the model.
-func (m *Model) GetID() ID {
-	return m.ID
-}
-
-// SetID sets the ID of the model.
-// The ID should not be modified once it has been set and stored in the
-// database, so use it with caution.
-func (m *Model) SetID(id ID) {
-	m.ID = id
-}
-
 // ClearVirtualColumns clears all the previous virtual columns.
 // This method is only intended for internal use. It is only exposed for
 // technical reasons.
 func (m *Model) ClearVirtualColumns() {
-	m.virtualColumns = make(map[string]interface{})
+	m.virtualColumns = make(map[string]Identifier)
 }
 
 // AddVirtualColumn adds a new virtual column with the given name and value.
 // This method is only intended for internal use. It is only exposed for
 // technical reasons.
-func (m *Model) AddVirtualColumn(name string, v interface{}) {
+func (m *Model) AddVirtualColumn(name string, v Identifier) {
 	if m.virtualColumns == nil {
 		m.ClearVirtualColumns()
 	}
@@ -105,19 +90,29 @@ func (m *Model) AddVirtualColumn(name string, v interface{}) {
 // VirtualColumn returns the value of the virtual column with the given column name.
 // This method is only intended for internal use. It is only exposed for
 // technical reasons.
-func (m *Model) VirtualColumn(name string) interface{} {
+func (m *Model) VirtualColumn(name string) Identifier {
 	if m.virtualColumns == nil {
 		m.ClearVirtualColumns()
 	}
 	return m.virtualColumns[name]
 }
 
+// Identifier is a type used to identify a model.
+type Identifier interface {
+	sql.Scanner
+	driver.Valuer
+	// Equals reports whether the identifier and the given one are equal.
+	Equals(Identifier) bool
+	// IsEmpty returns whether the ID is empty or not.
+	IsEmpty() bool
+	// Raw returns the internal value of the identifier.
+	Raw() interface{}
+}
+
 // Identifiable must be implemented by those values that can be identified by an ID.
 type Identifiable interface {
 	// GetID returns the ID.
-	GetID() ID
-	// SetID sets the ID.
-	SetID(id ID)
+	GetID() Identifier
 }
 
 // Persistable must be implemented by those values that can be persisted.
@@ -164,9 +159,9 @@ type VirtualColumnContainer interface {
 	// ClearVirtualColumns removes all virtual columns.
 	ClearVirtualColumns()
 	// AddVirtualColumn adds a new virtual column with the given name and value
-	AddVirtualColumn(string, interface{})
+	AddVirtualColumn(string, Identifier)
 	// VirtualColumn returns the virtual column with the given column name.
-	VirtualColumn(string) interface{}
+	VirtualColumn(string) Identifier
 }
 
 // RecordValues returns the values of a record at the given columns in the same
@@ -200,58 +195,165 @@ var randPool = &sync.Pool{
 	},
 }
 
-// ID is the Kallax identifier type.
-type ID uuid.UUID
-
-// NewID returns a new kallax ID, which is a lexically sortable UUID.
+// ULID is an ID type provided by kallax that is a lexically sortable UUID.
 // The internal representation is an ULID (https://github.com/oklog/ulid).
-func NewID() ID {
+// It already implements sql.Scanner and driver.Valuer, so it's perfectly
+// safe for database usage.
+type ULID uuid.UUID
+
+// NewULID returns a new ULID, which is a lexically sortable UUID.
+func NewULID() ULID {
 	entropy := randPool.Get().(rand.Source)
-	id := ID(ulid.MustNew(ulid.Timestamp(time.Now()), rand.New(entropy)))
+	id := ULID(ulid.MustNew(ulid.Timestamp(time.Now()), rand.New(entropy)))
 	randPool.Put(entropy)
 
 	return id
 }
 
 // Scan implements the Scanner interface.
-func (id *ID) Scan(src interface{}) error {
+func (id *ULID) Scan(src interface{}) error {
 	return (*uuid.UUID)(id).Scan(src)
 }
 
 // Value implements the Valuer interface.
-func (id ID) Value() (driver.Value, error) {
+func (id ULID) Value() (driver.Value, error) {
 	return uuid.UUID(id).Value()
 }
 
 // IsEmpty returns whether the ID is empty or not. An empty ID means it has not
 // been set yet.
-func (id ID) IsEmpty() bool {
+func (id ULID) IsEmpty() bool {
 	return uuid.Equal(uuid.UUID(id), uuid.Nil)
 }
 
 // String returns the string representation of the ID.
-func (id ID) String() string {
+func (id ULID) String() string {
 	return uuid.UUID(id).String()
+}
+
+// Equals reports whether the ID and the given one are equals.
+func (id ULID) Equals(other Identifier) bool {
+	v, ok := other.(*ULID)
+	if !ok {
+		return false
+	}
+
+	return uuid.Equal(uuid.UUID(id), uuid.UUID(*v))
+}
+
+// Raw returns the underlying raw value.
+func (id ULID) Raw() interface{} {
+	return id
+}
+
+// NumericID is a wrapper for int64 that implements the Identifier interface.
+// You don't need to actually use this as a type in your model. They will be
+// automatically converted to and from in the generated code.
+type NumericID int64
+
+// Scan implements the Scanner interface.
+func (id *NumericID) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case int64:
+		*(*int64)(id) = src
+	default:
+		return fmt.Errorf("kallax: cannot scan value of type %T into a numeric ID", src)
+	}
+
+	return nil
+}
+
+// Value implements the Valuer interface.
+func (id NumericID) Value() (driver.Value, error) {
+	return int64(id), nil
+}
+
+// IsEmpty returns whether the ID is empty or not. An empty ID means it has not
+// been set yet.
+func (id NumericID) IsEmpty() bool {
+	return int64(id) == 0
+}
+
+// String returns the string representation of the ID.
+func (id NumericID) String() string {
+	return fmt.Sprint(int64(id))
+}
+
+// Equals reports whether the ID and the given one are equals.
+func (id NumericID) Equals(other Identifier) bool {
+	v, ok := other.(*NumericID)
+	if !ok {
+		return false
+	}
+
+	return int64(id) == int64(*v)
+}
+
+// Raw returns the underlying raw value.
+func (id NumericID) Raw() interface{} {
+	return id
+}
+
+// UUID is a wrapper type for uuid.UUID that implements the Identifier
+// interface.
+// You don't need to actually use this as a type in your model. They will be
+// automatically converted to and from in the generated code.
+type UUID uuid.UUID
+
+// Scan implements the Scanner interface.
+func (id *UUID) Scan(src interface{}) error {
+	return (*uuid.UUID)(id).Scan(src)
+}
+
+// Value implements the Valuer interface.
+func (id UUID) Value() (driver.Value, error) {
+	return uuid.UUID(id).Value()
+}
+
+// IsEmpty returns whether the ID is empty or not. An empty ID means it has not
+// been set yet.
+func (id UUID) IsEmpty() bool {
+	return uuid.Equal(uuid.UUID(id), uuid.Nil)
+}
+
+// String returns the string representation of the ID.
+func (id UUID) String() string {
+	return uuid.UUID(id).String()
+}
+
+// Equals reports whether the ID and the given one are equals.
+func (id UUID) Equals(other Identifier) bool {
+	v, ok := other.(*UUID)
+	if !ok {
+		return false
+	}
+
+	return uuid.Equal(uuid.UUID(id), uuid.UUID(*v))
+}
+
+// Raw returns the underlying raw value.
+func (id UUID) Raw() interface{} {
+	return id
 }
 
 type virtualColumn struct {
 	r   Record
 	col string
+	id  Identifier
 }
 
 // VirtualColumn returns a sql.Scanner that will scan the given column as a
 // virtual column in the given record.
-func VirtualColumn(col string, r Record) sql.Scanner {
-	return &virtualColumn{r, col}
+func VirtualColumn(col string, r Record, id Identifier) sql.Scanner {
+	return &virtualColumn{r, col, id}
 }
 
 // Scan implements the scanner interface.
 func (c *virtualColumn) Scan(src interface{}) error {
-	var id ID
-	if err := (&id).Scan(src); err != nil {
+	if err := c.id.Scan(src); err != nil {
 		return err
 	}
 
-	c.r.AddVirtualColumn(c.col, id)
+	c.r.AddVirtualColumn(c.col, c.id)
 	return nil
 }

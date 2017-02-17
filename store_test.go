@@ -21,22 +21,9 @@ func (s *StoreSuite) SetupTest() {
 	var err error
 	s.db, err = openTestDB()
 	s.NoError(err)
-	_, err = s.db.Exec(`CREATE TABLE model (
-		id uuid PRIMARY KEY,
-		name varchar(255) not null,
-		email varchar(255) not null,
-		age int not null
-	)`)
-	s.NoError(err)
-
-	_, err = s.db.Exec(`CREATE TABLE rel (
-		id uuid PRIMARY KEY,
-		model_id uuid,
-		foo text
-	)`)
-	s.NoError(err)
 
 	s.store = NewStore(s.db)
+	setupTables(s.T(), s.db)
 
 	s.errDB, err = sql.Open("postgres", "postgres://0.0.0.0:5432/notexists")
 	s.NoError(err)
@@ -44,10 +31,7 @@ func (s *StoreSuite) SetupTest() {
 }
 
 func (s *StoreSuite) TearDownTest() {
-	_, err := s.db.Exec("DROP TABLE model")
-	s.NoError(err)
-	_, err = s.db.Exec("DROP TABLE rel")
-	s.NoError(err)
+	teardownTables(s.T(), s.db)
 	s.NoError(s.db.Close())
 	s.NoError(s.errDB.Close())
 }
@@ -73,7 +57,7 @@ func (s *StoreSuite) TestInsert_NotNew() {
 func (s *StoreSuite) TestInsert_IDEmpty() {
 	var m = new(model)
 	s.Nil(s.store.Insert(ModelSchema, m))
-	s.False(m.ID.IsEmpty())
+	s.False(m.GetID().IsEmpty())
 }
 
 func (s *StoreSuite) TestUpdate() {
@@ -81,12 +65,12 @@ func (s *StoreSuite) TestUpdate() {
 	s.Nil(s.store.Insert(ModelSchema, m))
 
 	var newModel = newModel("a", "a@a.a", 1)
-	newModel.SetID(m.ID)
+	newModel.ID = m.ID
 	_, err := s.store.Update(ModelSchema, newModel)
 	s.Equal(ErrNewDocument, err)
 
 	newModel.setPersisted()
-	newModel.SetID(ID{})
+	newModel.ID = 0
 	_, err = s.store.Update(ModelSchema, newModel)
 	s.Equal(ErrEmptyID, err)
 
@@ -115,7 +99,7 @@ func (s *StoreSuite) TestUpdate_NotUpdated() {
 	var m = newModel("a", "a@a.a", 1)
 	s.Nil(s.store.Insert(ModelSchema, m))
 
-	m.ID = NewID()
+	m.ID = 567
 	_, err := s.store.Update(ModelSchema, m)
 	s.Equal(ErrNoRowUpdate, err)
 }
@@ -357,6 +341,7 @@ func (s *StoreSuite) TestReload_Fail() {
 
 func (s *StoreSuite) TestReload_NotFound() {
 	var m = newModel("Joe", "", 1)
+	m.ID = 1
 	m.setPersisted()
 
 	s.Equal(ErrNotFound, s.store.Reload(ModelSchema, m))
@@ -366,11 +351,11 @@ func (s *StoreSuite) TestFind_1to1() {
 	m := newModel("Foo", "bar", 1)
 	s.Nil(s.store.Insert(ModelSchema, m))
 
-	rel := newRel(m.ID, "foo")
+	rel := newRel(m.GetID(), "foo")
 	s.Nil(s.store.Insert(RelSchema, rel))
 
 	// just to see it does not randomly takes the most recent one
-	s.Nil(s.store.Insert(RelSchema, newRel(NewID(), "foo")))
+	s.Nil(s.store.Insert(RelSchema, newRel(new(NumericID), "foo")))
 
 	q := NewBaseQuery(ModelSchema)
 	q.AddRelation(RelSchema, "rel", OneToOne, nil)
@@ -387,7 +372,7 @@ func (s *StoreSuite) TestFind_1to1() {
 	s.Equal("bar", model.Email)
 	s.Equal(1, model.Age)
 	s.NotNil(model.Rel)
-	s.Equal(model.ID, model.Rel.ModelID)
+	s.Equal(model.GetID(), model.Rel.VirtualColumn("model_id"))
 	s.Equal("foo", model.Rel.Foo)
 }
 
@@ -397,11 +382,11 @@ func (s *StoreSuite) rel1ToNFixtures() {
 
 	rels := []string{"foo", "bar", "baz"}
 	for _, v := range rels {
-		rel := newRel(m.ID, v)
+		rel := newRel(m.GetID(), v)
 		s.Nil(s.store.Insert(RelSchema, rel))
 	}
 
-	s.Nil(s.store.Insert(RelSchema, newRel(NewID(), "qux")))
+	s.Nil(s.store.Insert(RelSchema, newRel(new(NumericID), "qux")))
 }
 
 func (s *StoreSuite) TestFind_1toN() {
@@ -422,7 +407,7 @@ func (s *StoreSuite) TestFind_1toN() {
 	s.Equal("bar", model.Email)
 	s.Equal(1, model.Age)
 	s.Nil(model.Rel)
-	s.Len(model.Rels, 3)
+	s.Require().Len(model.Rels, 3)
 	s.Equal("foo", model.Rels[0].Foo)
 	s.Equal("bar", model.Rels[1].Foo)
 	s.Equal("baz", model.Rels[2].Foo)
@@ -446,7 +431,7 @@ func (s *StoreSuite) TestFind_1toN_Filter() {
 	s.Equal("bar", model.Email)
 	s.Equal(1, model.Age)
 	s.Nil(model.Rel)
-	s.Len(model.Rels, 1)
+	s.Require().Len(model.Rels, 1)
 	s.Equal("bar", model.Rels[0].Foo)
 }
 
@@ -482,7 +467,7 @@ func (s *StoreSuite) TestFind_1toNMultiple() {
 		s.Nil(s.store.Insert(ModelSchema, m))
 
 		for _, v := range rels {
-			s.Nil(s.store.Insert(RelSchema, newRel(m.ID, fmt.Sprintf("%s%d", v, i))))
+			s.Nil(s.store.Insert(RelSchema, newRel(m.GetID(), fmt.Sprintf("%s%d", v, i))))
 		}
 	}
 
@@ -501,10 +486,10 @@ func (s *StoreSuite) TestFind_1toNMultiple() {
 		s.True(ok, "row #%d", i)
 
 		s.Equal(fmt.Sprint(i), model.Name, "row #%d", i)
-		s.Len(model.Rels, 3, "row #%d", i)
+		s.Require().Len(model.Rels, 3, "row #%d", i)
 
 		for j, v := range rels {
-			s.Equal(model.ID, model.Rels[j].ModelID, "row #%d", i)
+			s.Equal(model.GetID(), model.Rels[j].VirtualColumn("model_id"), "row #%d", i)
 			s.Equal(fmt.Sprintf("%s%d", v, i), model.Rels[j].Foo, "row #%d", i)
 		}
 		i++
@@ -514,12 +499,12 @@ func (s *StoreSuite) TestFind_1toNMultiple() {
 
 func (s *StoreSuite) assertModel(m *model) {
 	var result model
-	err := s.db.QueryRow("SELECT id, name, email, age FROM model WHERE id = $1", m.ID).
-		Scan(&result.ID, &result.Name, &result.Email, &result.Age)
+	err := s.db.QueryRow("SELECT id, name, email, age FROM model WHERE id = $1", m.GetID()).
+		Scan(result.GetID(), &result.Name, &result.Email, &result.Age)
 	s.Nil(err)
 
 	if err == nil {
-		s.Equal(m.ID, result.ID)
+		s.Equal(m.GetID(), result.GetID())
 		s.Equal(m.Name, result.Name)
 		s.Equal(m.Email, result.Email)
 		s.Equal(m.Age, result.Age)
@@ -533,8 +518,8 @@ func (s *StoreSuite) assertCount(n int64) {
 }
 
 func (s *StoreSuite) assertNotExists(m *model) {
-	var id ID
-	err := s.db.QueryRow("SELECT id FROM model WHERE id = $1", m.ID).Scan(&id)
+	var id int64
+	err := s.db.QueryRow("SELECT id FROM model WHERE id = $1", m.GetID()).Scan(&id)
 	s.Equal(sql.ErrNoRows, err, "record should not exist")
 }
 

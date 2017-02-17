@@ -29,14 +29,12 @@ type eventsCheck map[string]bool
 func (s *EventsSuite) assertEventsPassed(expected eventsCheck, received eventsCheck) {
 	for expectedEvent, expectedSign := range expected {
 		receivedSign, ok := received[expectedEvent]
-		if s.True(ok, fmt.Sprintf(`Event '%s' was not received
-		// TODO: https://github.com/src-d/go-kallax/issues/56
-		`, expectedEvent)) {
+		if s.True(ok, fmt.Sprintf(`Event '%s' was not received`, expectedEvent)) {
 			s.Equal(expectedSign, receivedSign, expectedEvent)
 		}
 	}
 
-	s.Equal(len(expected), len(received), "// TODO: https://github.com/src-d/go-kallax/issues/56")
+	s.Equal(len(expected), len(received), "expected same number of events")
 }
 
 func (s *EventsSuite) TestEventsInsert() {
@@ -77,8 +75,8 @@ func (s *EventsSuite) TestEventsUpdateError() {
 
 	doc.MustFailAfter = errors.New("kallax: after")
 	updatedRows, err := store.Update(doc)
-	s.Equal(int64(0), updatedRows, "// TODO: https://github.com/src-d/go-kallax/issues/56")
-	s.Equal(doc.MustFailAfter, err, "// TODO: https://github.com/src-d/go-kallax/issues/56")
+	s.Equal(int64(0), updatedRows)
+	s.Equal(doc.MustFailAfter, err)
 
 	doc.MustFailBefore = errors.New("kallax: before")
 	updatedRows, err = store.Update(doc)
