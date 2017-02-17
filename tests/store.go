@@ -9,10 +9,10 @@ import (
 type AliasSliceString []string
 
 type StoreFixture struct {
-	kallax.Model               `table:"store"`
+	kallax.Model   `table:"store"`
 	ID             kallax.ULID `pk:""`
 	Foo            string
-  SliceProp      []string
+	SliceProp      []string
 	AliasSliceProp AliasSliceString
 }
 

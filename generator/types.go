@@ -690,7 +690,7 @@ func (f *Field) wrapAddress(ptr string) string {
 	}
 
 	if f.Kind == Slice {
-		return fmt.Sprintf("types.Slice(%s), nil", ptr)
+		return fmt.Sprintf("types.Slice((*%s)(%s)), nil", f.Type, ptr)
 	}
 
 	if f.Kind == Array {

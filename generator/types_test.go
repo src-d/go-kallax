@@ -123,8 +123,8 @@ func (s *FieldSuite) TestAddress() {
 			`types.Array(&r.Foo, 5), nil`,
 		},
 		{
-			Slice, false, false, "Foo", "", nil,
-			"types.Slice(&r.Foo), nil",
+			Slice, false, false, "Foo", "[]string", nil,
+			"types.Slice((*[]string)(&r.Foo)), nil",
 		},
 		{
 			Basic, false, true, "Foo", "", nil,

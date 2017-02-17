@@ -49,7 +49,7 @@ return &r.Foo, nil
 case "bar":
 return r.Bar, nil
 case "arr":
-return types.Slice(&r.Arr), nil
+return types.Slice((*[]string)(&r.Arr)), nil
 case "json":
 return types.JSON(&r.JSON), nil
 case "url":

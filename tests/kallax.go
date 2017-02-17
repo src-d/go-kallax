@@ -4926,9 +4926,9 @@ func (r *StoreFixture) ColumnAddress(col string) (interface{}, error) {
 	case "foo":
 		return &r.Foo, nil
 	case "slice_prop":
-		return types.Slice(&r.SliceProp), nil
+		return types.Slice((*[]string)(&r.SliceProp)), nil
 	case "alias_slice_prop":
-		return types.Slice(&r.AliasSliceProp), nil
+		return types.Slice((*[]string)(&r.AliasSliceProp)), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in StoreFixture: %s", col)
