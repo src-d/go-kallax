@@ -6,10 +6,14 @@ import (
 	"github.com/src-d/go-kallax"
 )
 
+type AliasSliceString []string
+
 type StoreFixture struct {
-	kallax.Model `table:"store"`
-	ID           kallax.ULID `pk:""`
-	Foo          string
+	kallax.Model               `table:"store"`
+	ID             kallax.ULID `pk:""`
+	Foo            string
+  SliceProp      []string
+	AliasSliceProp AliasSliceString
 }
 
 func newStoreFixture() *StoreFixture {

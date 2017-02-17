@@ -16,7 +16,9 @@ func TestStoreSuite(t *testing.T) {
 		)`,
 		`CREATE TABLE IF NOT EXISTS store (
 			id uuid primary key,
-			foo varchar(10)
+			foo varchar(10),
+			slice_prop text[],
+			alias_slice_prop text[]
 		)`,
 		`CREATE TABLE IF NOT EXISTS store_new (
 			id uuid primary key,
@@ -198,4 +200,33 @@ func (s *StoreSuite) TestFindOne() {
 	if s.NotNil(docFound) {
 		s.Equal(docInserted.Foo, docFound.Foo)
 	}
+}
+
+func (s *StoreSuite) TestFindAliasSlice() {
+	store := NewStoreFixtureStore(s.db)
+
+	fixture1 := NewStoreFixture()
+	fixture1.Foo = "ONE"
+	s.Nil(store.Insert(fixture1))
+	s.assertMustFindByFoo(store, "ONE")
+
+	fixture2 := NewStoreFixture()
+	fixture2.Foo = "TWO"
+	fixture2.SliceProp = []string{"1", "2"}
+	s.Nil(store.Insert(fixture2))
+	s.assertMustFindByFoo(store, "TWO")
+
+	fixture3 := NewStoreFixture()
+	fixture3.Foo = "THREE"
+	fixture3.AliasSliceProp = AliasSliceString{"1", "2"}
+	s.Nil(store.Insert(fixture3))
+	s.assertMustFindByFoo(store, "THREE")
+}
+
+func (s *StoreSuite) assertMustFindByFoo(st *StoreFixtureStore, foo string) {
+	s.NotPanics(func() {
+		q := NewStoreFixtureQuery().Where(kallax.Eq(Schema.StoreFixture.Foo, foo))
+		r := st.MustFindOne(q)
+		s.Equal(foo, r.Foo)
+	})
 }
