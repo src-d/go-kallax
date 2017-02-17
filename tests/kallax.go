@@ -7,9 +7,11 @@ package tests
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/src-d/go-kallax"
+	"github.com/src-d/go-kallax/tests/fixtures"
 	"github.com/src-d/go-kallax/types"
 )
 
@@ -419,6 +421,25 @@ func (q *CarQuery) Where(cond kallax.Condition) *CarQuery {
 func (q *CarQuery) WithOwner() *CarQuery {
 	q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *CarQuery) FindByID(v ...kallax.ULID) *CarQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.Car.ID, values...))
+}
+
+// FindByModelName adds a new filter to the query that will require that
+// the ModelName property is equal to the passed value
+func (q *CarQuery) FindByModelName(v string) *CarQuery {
+	return q.Where(kallax.Eq(Schema.Car.ModelName, v))
 }
 
 // CarResultSet is the set of results returned by a query to the
@@ -840,6 +861,19 @@ func (q *EventsAllFixtureQuery) Where(cond kallax.Condition) *EventsAllFixtureQu
 	return q
 }
 
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *EventsAllFixtureQuery) FindByID(v ...kallax.ULID) *EventsAllFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.EventsAllFixture.ID, values...))
+}
+
 // EventsAllFixtureResultSet is the set of results returned by a query to the
 // database.
 type EventsAllFixtureResultSet struct {
@@ -1241,6 +1275,19 @@ func (q *EventsFixtureQuery) Offset(n uint64) *EventsFixtureQuery {
 func (q *EventsFixtureQuery) Where(cond kallax.Condition) *EventsFixtureQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *EventsFixtureQuery) FindByID(v ...kallax.ULID) *EventsFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.EventsFixture.ID, values...))
 }
 
 // EventsFixtureResultSet is the set of results returned by a query to the
@@ -1646,6 +1693,19 @@ func (q *EventsSaveFixtureQuery) Where(cond kallax.Condition) *EventsSaveFixture
 	return q
 }
 
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *EventsSaveFixtureQuery) FindByID(v ...kallax.ULID) *EventsSaveFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.EventsSaveFixture.ID, values...))
+}
+
 // EventsSaveFixtureResultSet is the set of results returned by a query to the
 // database.
 type EventsSaveFixtureResultSet struct {
@@ -2025,6 +2085,25 @@ func (q *JSONModelQuery) Where(cond kallax.Condition) *JSONModelQuery {
 	return q
 }
 
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *JSONModelQuery) FindByID(v ...kallax.ULID) *JSONModelQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.JSONModel.ID, values...))
+}
+
+// FindByFoo adds a new filter to the query that will require that
+// the Foo property is equal to the passed value
+func (q *JSONModelQuery) FindByFoo(v string) *JSONModelQuery {
+	return q.Where(kallax.Eq(Schema.JSONModel.Foo, v))
+}
+
 // JSONModelResultSet is the set of results returned by a query to the
 // database.
 type JSONModelResultSet struct {
@@ -2392,6 +2471,37 @@ func (q *MultiKeySortFixtureQuery) Offset(n uint64) *MultiKeySortFixtureQuery {
 func (q *MultiKeySortFixtureQuery) Where(cond kallax.Condition) *MultiKeySortFixtureQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *MultiKeySortFixtureQuery) FindByID(v ...kallax.ULID) *MultiKeySortFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.MultiKeySortFixture.ID, values...))
+}
+
+// FindByName adds a new filter to the query that will require that
+// the Name property is equal to the passed value
+func (q *MultiKeySortFixtureQuery) FindByName(v string) *MultiKeySortFixtureQuery {
+	return q.Where(kallax.Eq(Schema.MultiKeySortFixture.Name, v))
+}
+
+// FindByStart adds a new filter to the query that will require that
+// the Start property is equal to the passed value
+func (q *MultiKeySortFixtureQuery) FindByStart(cond kallax.ScalarCond, v time.Time) *MultiKeySortFixtureQuery {
+	return q.Where(cond(Schema.MultiKeySortFixture.Start, v))
+}
+
+// FindByEnd adds a new filter to the query that will require that
+// the End property is equal to the passed value
+func (q *MultiKeySortFixtureQuery) FindByEnd(cond kallax.ScalarCond, v time.Time) *MultiKeySortFixtureQuery {
+	return q.Where(cond(Schema.MultiKeySortFixture.End, v))
 }
 
 // MultiKeySortFixtureResultSet is the set of results returned by a query to the
@@ -2776,6 +2886,31 @@ func (q *NullableQuery) Offset(n uint64) *NullableQuery {
 func (q *NullableQuery) Where(cond kallax.Condition) *NullableQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *NullableQuery) FindByID(v ...int64) *NullableQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.Nullable.ID, values...))
+}
+
+// FindByT adds a new filter to the query that will require that
+// the T property is equal to the passed value
+func (q *NullableQuery) FindByT(cond kallax.ScalarCond, v time.Time) *NullableQuery {
+	return q.Where(cond(Schema.Nullable.T, v))
+}
+
+// FindByScanner adds a new filter to the query that will require that
+// the Scanner property is equal to the passed value
+func (q *NullableQuery) FindByScanner(v kallax.ULID) *NullableQuery {
+	return q.Where(kallax.Eq(Schema.Nullable.Scanner, v))
 }
 
 // NullableResultSet is the set of results returned by a query to the
@@ -3440,6 +3575,25 @@ func (q *PersonQuery) WithCar() *PersonQuery {
 	return q
 }
 
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *PersonQuery) FindByID(v ...int64) *PersonQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.Person.ID, values...))
+}
+
+// FindByName adds a new filter to the query that will require that
+// the Name property is equal to the passed value
+func (q *PersonQuery) FindByName(v string) *PersonQuery {
+	return q.Where(kallax.Eq(Schema.Person.Name, v))
+}
+
 // PersonResultSet is the set of results returned by a query to the
 // database.
 type PersonResultSet struct {
@@ -3957,6 +4111,31 @@ func (q *PetQuery) WithOwner() *PetQuery {
 	return q
 }
 
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *PetQuery) FindByID(v ...kallax.ULID) *PetQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.Pet.ID, values...))
+}
+
+// FindByName adds a new filter to the query that will require that
+// the Name property is equal to the passed value
+func (q *PetQuery) FindByName(v string) *PetQuery {
+	return q.Where(kallax.Eq(Schema.Pet.Name, v))
+}
+
+// FindByKind adds a new filter to the query that will require that
+// the Kind property is equal to the passed value
+func (q *PetQuery) FindByKind(v string) *PetQuery {
+	return q.Where(kallax.Eq(Schema.Pet.Kind, v))
+}
+
 // PetResultSet is the set of results returned by a query to the
 // database.
 type PetResultSet struct {
@@ -4080,8 +4259,60 @@ func (r *QueryFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return (*kallax.ULID)(&r.ID), nil
+	case "embedded":
+		return types.JSON(&r.Embedded), nil
+	case "inline":
+		return &r.Inline.Inline, nil
+	case "map_of_string":
+		return types.JSON(&r.MapOfString), nil
+	case "map_of_interface":
+		return types.JSON(&r.MapOfInterface), nil
+	case "map_of_some_type":
+		return types.JSON(&r.MapOfSomeType), nil
 	case "foo":
 		return &r.Foo, nil
+	case "string_property":
+		return &r.StringProperty, nil
+	case "integer":
+		return &r.Integer, nil
+	case "integer64":
+		return &r.Integer64, nil
+	case "float32":
+		return &r.Float32, nil
+	case "boolean":
+		return &r.Boolean, nil
+	case "array_param":
+		return types.Array(&r.ArrayParam, 3), nil
+	case "slice_param":
+		return types.Slice(&r.SliceParam), nil
+	case "alias_array_param":
+		return types.Array(&r.AliasArrayParam, 3), nil
+	case "alias_slice_param":
+		return types.Slice(&r.AliasSliceParam), nil
+	case "alias_string_param":
+		return &r.AliasStringParam, nil
+	case "alias_int_param":
+		return &r.AliasIntParam, nil
+	case "dummy_param":
+		return types.JSON(&r.DummyParam), nil
+	case "alias_dummy_param":
+		return types.JSON(&r.AliasDummyParam), nil
+	case "idproperty_param":
+		return &r.IDPropertyParam, nil
+	case "interface_prop_param":
+		return &r.InterfacePropParam, nil
+	case "urlparam":
+		return (*types.URL)(&r.URLParam), nil
+	case "time_param":
+		return &r.TimeParam, nil
+	case "alias_arr_alias_string_param":
+		return types.Slice(&r.AliasArrAliasStringParam), nil
+	case "alias_here_array_param":
+		return types.Array(&r.AliasHereArrayParam, 3), nil
+	case "array_alias_here_string_param":
+		return types.Slice(&r.ArrayAliasHereStringParam), nil
+	case "scanner_valuer_param":
+		return &r.ScannerValuerParam, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in QueryFixture: %s", col)
@@ -4093,8 +4324,60 @@ func (r *QueryFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return r.ID, nil
+	case "embedded":
+		return types.JSON(r.Embedded), nil
+	case "inline":
+		return r.Inline.Inline, nil
+	case "map_of_string":
+		return types.JSON(r.MapOfString), nil
+	case "map_of_interface":
+		return types.JSON(r.MapOfInterface), nil
+	case "map_of_some_type":
+		return types.JSON(r.MapOfSomeType), nil
 	case "foo":
 		return r.Foo, nil
+	case "string_property":
+		return r.StringProperty, nil
+	case "integer":
+		return r.Integer, nil
+	case "integer64":
+		return r.Integer64, nil
+	case "float32":
+		return r.Float32, nil
+	case "boolean":
+		return r.Boolean, nil
+	case "array_param":
+		return types.Array(&r.ArrayParam, 3), nil
+	case "slice_param":
+		return types.Slice(r.SliceParam), nil
+	case "alias_array_param":
+		return types.Array(&r.AliasArrayParam, 3), nil
+	case "alias_slice_param":
+		return types.Slice(r.AliasSliceParam), nil
+	case "alias_string_param":
+		return (string)(r.AliasStringParam), nil
+	case "alias_int_param":
+		return (int)(r.AliasIntParam), nil
+	case "dummy_param":
+		return types.JSON(r.DummyParam), nil
+	case "alias_dummy_param":
+		return types.JSON(r.AliasDummyParam), nil
+	case "idproperty_param":
+		return r.IDPropertyParam, nil
+	case "interface_prop_param":
+		return r.InterfacePropParam, nil
+	case "urlparam":
+		return (*types.URL)(&r.URLParam), nil
+	case "time_param":
+		return r.TimeParam, nil
+	case "alias_arr_alias_string_param":
+		return types.Slice(r.AliasArrAliasStringParam), nil
+	case "alias_here_array_param":
+		return types.Array(&r.AliasHereArrayParam, 3), nil
+	case "array_alias_here_string_param":
+		return types.Slice(r.ArrayAliasHereStringParam), nil
+	case "scanner_valuer_param":
+		return r.ScannerValuerParam, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in QueryFixture: %s", col)
@@ -4104,12 +4387,47 @@ func (r *QueryFixture) Value(col string) (interface{}, error) {
 // NewRelationshipRecord returns a new record for the relatiobship in the given
 // field.
 func (r *QueryFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
-	return nil, fmt.Errorf("kallax: model QueryFixture has no relationships")
+	switch field {
+	case "Relation":
+		return new(QueryRelationFixture), nil
+	case "NRelation":
+		return new(QueryRelationFixture), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model QueryFixture has no relationship %s", field)
 }
 
 // SetRelationship sets the given relationship in the given field.
 func (r *QueryFixture) SetRelationship(field string, rel interface{}) error {
-	return fmt.Errorf("kallax: model QueryFixture has no relationships")
+	switch field {
+	case "Relation":
+		val, ok := rel.(*QueryRelationFixture)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Relation", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.Relation = val
+		}
+
+		return nil
+	case "NRelation":
+		records, ok := rel.([]kallax.Record)
+		if !ok {
+			return fmt.Errorf("kallax: relationship field %s needs a collection of records, not %T", field, rel)
+		}
+
+		r.NRelation = make([]*QueryRelationFixture, len(records))
+		for i, record := range records {
+			rel, ok := record.(*QueryRelationFixture)
+			if !ok {
+				return fmt.Errorf("kallax: element of type %T cannot be added to relationship %s", record, field)
+			}
+			r.NRelation[i] = rel
+		}
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model QueryFixture has no relationship %s", field)
 }
 
 // QueryFixtureStore is the entity to access the records of the type QueryFixture
@@ -4124,9 +4442,60 @@ func NewQueryFixtureStore(db *sql.DB) *QueryFixtureStore {
 	return &QueryFixtureStore{kallax.NewStore(db)}
 }
 
+func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
+
+	if record.Relation != nil {
+		record.Relation.ClearVirtualColumns()
+		record.Relation.AddVirtualColumn("owner_id", record.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema.QueryRelationFixture.BaseSchema,
+			record.Relation,
+		})
+	}
+
+	for _, rec := range record.NRelation {
+		rec.ClearVirtualColumns()
+		rec.AddVirtualColumn("owner_id", record.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema.QueryRelationFixture.BaseSchema,
+			rec,
+		})
+	}
+
+	return records
+}
+
 // Insert inserts a QueryFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			if err := s.Insert(Schema.QueryFixture.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
 
 	return s.Store.Insert(Schema.QueryFixture.BaseSchema, record)
 
@@ -4139,6 +4508,38 @@ func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			updated, err = s.Update(Schema.QueryFixture.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
+	}
 
 	return s.Store.Update(Schema.QueryFixture.BaseSchema, record, cols...)
 
@@ -4250,6 +4651,126 @@ func (s *QueryFixtureStore) Transaction(callback func(*QueryFixtureStore) error)
 	})
 }
 
+// RemoveRelation removes from the database the given relationship of the
+// model. It also resets the field Relation of the model.
+func (s *QueryFixtureStore) RemoveRelation(record *QueryFixture) error {
+	var r kallax.Record = record.Relation
+	if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+		if err := beforeDeleter.BeforeDelete(); err != nil {
+			return err
+		}
+	}
+
+	var err error
+	if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			err := s.Delete(Schema.QueryRelationFixture.BaseSchema, r)
+			if err != nil {
+				return err
+			}
+
+			return afterDeleter.AfterDelete()
+		})
+	} else {
+		err = s.Store.Delete(Schema.QueryRelationFixture.BaseSchema, r)
+	}
+	if err != nil {
+		return err
+	}
+
+	record.Relation = nil
+	return nil
+}
+
+// RemoveNRelation removes the given items of the NRelation field of the
+// model. If no items are given, it removes all of them.
+// The items will also be removed from the passed record inside this method.
+func (s *QueryFixtureStore) RemoveNRelation(record *QueryFixture, deleted ...*QueryRelationFixture) error {
+	var updated []*QueryRelationFixture
+	var clear bool
+	if len(deleted) == 0 {
+		clear = true
+		deleted = record.NRelation
+		if len(deleted) == 0 {
+			return nil
+		}
+	}
+
+	if len(deleted) > 1 {
+		err := s.Store.Transaction(func(s *kallax.Store) error {
+			for _, d := range deleted {
+				var r kallax.Record = d
+
+				if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+					if err := beforeDeleter.BeforeDelete(); err != nil {
+						return err
+					}
+				}
+
+				if err := s.Delete(Schema.QueryRelationFixture.BaseSchema, d); err != nil {
+					return err
+				}
+
+				if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+					if err := afterDeleter.AfterDelete(); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if clear {
+			record.NRelation = nil
+			return nil
+		}
+	} else {
+		var r kallax.Record = deleted[0]
+		if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+			if err := beforeDeleter.BeforeDelete(); err != nil {
+				return err
+			}
+		}
+
+		var err error
+		if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+			err = s.Store.Transaction(func(s *kallax.Store) error {
+				err := s.Delete(Schema.QueryRelationFixture.BaseSchema, r)
+				if err != nil {
+					return err
+				}
+
+				return afterDeleter.AfterDelete()
+			})
+		} else {
+			err = s.Store.Delete(Schema.QueryRelationFixture.BaseSchema, deleted[0])
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, r := range record.NRelation {
+		var found bool
+		for _, d := range deleted {
+			if d.GetID().Equals(r.GetID()) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			updated = append(updated, r)
+		}
+	}
+	record.NRelation = updated
+	return nil
+}
+
 // QueryFixtureQuery is the object used to create queries for the QueryFixture
 // entity.
 type QueryFixtureQuery struct {
@@ -4316,6 +4837,204 @@ func (q *QueryFixtureQuery) Offset(n uint64) *QueryFixtureQuery {
 func (q *QueryFixtureQuery) Where(cond kallax.Condition) *QueryFixtureQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+func (q *QueryFixtureQuery) WithRelation() *QueryFixtureQuery {
+	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "Relation", kallax.OneToOne, nil)
+	return q
+}
+
+func (q *QueryFixtureQuery) WithNRelation(cond kallax.Condition) *QueryFixtureQuery {
+	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "NRelation", kallax.OneToMany, cond)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *QueryFixtureQuery) FindByID(v ...kallax.ULID) *QueryFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.QueryFixture.ID, values...))
+}
+
+// FindByInline adds a new filter to the query that will require that
+// the Inline property is equal to the passed value
+func (q *QueryFixtureQuery) FindByInline(v string) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.Inline, v))
+}
+
+// FindByFoo adds a new filter to the query that will require that
+// the Foo property is equal to the passed value
+func (q *QueryFixtureQuery) FindByFoo(v string) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.Foo, v))
+}
+
+// FindByStringProperty adds a new filter to the query that will require that
+// the StringProperty property is equal to the passed value
+func (q *QueryFixtureQuery) FindByStringProperty(v string) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.StringProperty, v))
+}
+
+// FindByInteger adds a new filter to the query that will require that
+// the Integer property is equal to the passed value
+func (q *QueryFixtureQuery) FindByInteger(cond kallax.ScalarCond, v int) *QueryFixtureQuery {
+	return q.Where(cond(Schema.QueryFixture.Integer, v))
+}
+
+// FindByInteger64 adds a new filter to the query that will require that
+// the Integer64 property is equal to the passed value
+func (q *QueryFixtureQuery) FindByInteger64(cond kallax.ScalarCond, v int64) *QueryFixtureQuery {
+	return q.Where(cond(Schema.QueryFixture.Integer64, v))
+}
+
+// FindByFloat32 adds a new filter to the query that will require that
+// the Float32 property is equal to the passed value
+func (q *QueryFixtureQuery) FindByFloat32(cond kallax.ScalarCond, v float32) *QueryFixtureQuery {
+	return q.Where(cond(Schema.QueryFixture.Float32, v))
+}
+
+// FindByBoolean adds a new filter to the query that will require that
+// the Boolean property is equal to the passed value
+func (q *QueryFixtureQuery) FindByBoolean(v bool) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.Boolean, v))
+}
+
+// FindByArrayParam adds a new filter to the query that will require that
+// the ArrayParam property contains all the passed values; if no passed values, it will do nothing
+func (q *QueryFixtureQuery) FindByArrayParam(v ...string) *QueryFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.QueryFixture.ArrayParam, values...))
+}
+
+// FindBySliceParam adds a new filter to the query that will require that
+// the SliceParam property contains all the passed values; if no passed values, it will do nothing
+func (q *QueryFixtureQuery) FindBySliceParam(v ...string) *QueryFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.QueryFixture.SliceParam, values...))
+}
+
+// FindByAliasArrayParam adds a new filter to the query that will require that
+// the AliasArrayParam property contains all the passed values; if no passed values, it will do nothing
+func (q *QueryFixtureQuery) FindByAliasArrayParam(v ...string) *QueryFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.QueryFixture.AliasArrayParam, values...))
+}
+
+// FindByAliasSliceParam adds a new filter to the query that will require that
+// the AliasSliceParam property contains all the passed values; if no passed values, it will do nothing
+func (q *QueryFixtureQuery) FindByAliasSliceParam(v ...string) *QueryFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.QueryFixture.AliasSliceParam, values...))
+}
+
+// FindByAliasStringParam adds a new filter to the query that will require that
+// the AliasStringParam property is equal to the passed value
+func (q *QueryFixtureQuery) FindByAliasStringParam(v fixtures.AliasString) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.AliasStringParam, v))
+}
+
+// FindByAliasIntParam adds a new filter to the query that will require that
+// the AliasIntParam property is equal to the passed value
+func (q *QueryFixtureQuery) FindByAliasIntParam(cond kallax.ScalarCond, v fixtures.AliasInt) *QueryFixtureQuery {
+	return q.Where(cond(Schema.QueryFixture.AliasIntParam, v))
+}
+
+// FindByIDPropertyParam adds a new filter to the query that will require that
+// the IDPropertyParam property is equal to the passed value
+func (q *QueryFixtureQuery) FindByIDPropertyParam(v kallax.ULID) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.IDPropertyParam, v))
+}
+
+// FindByInterfacePropParam adds a new filter to the query that will require that
+// the InterfacePropParam property is equal to the passed value
+func (q *QueryFixtureQuery) FindByInterfacePropParam(v fixtures.InterfaceImplementation) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.InterfacePropParam, v))
+}
+
+// FindByURLParam adds a new filter to the query that will require that
+// the URLParam property is equal to the passed value
+func (q *QueryFixtureQuery) FindByURLParam(v url.URL) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.URLParam, v))
+}
+
+// FindByTimeParam adds a new filter to the query that will require that
+// the TimeParam property is equal to the passed value
+func (q *QueryFixtureQuery) FindByTimeParam(cond kallax.ScalarCond, v time.Time) *QueryFixtureQuery {
+	return q.Where(cond(Schema.QueryFixture.TimeParam, v))
+}
+
+// FindByAliasArrAliasStringParam adds a new filter to the query that will require that
+// the AliasArrAliasStringParam property contains all the passed values; if no passed values, it will do nothing
+func (q *QueryFixtureQuery) FindByAliasArrAliasStringParam(v ...fixtures.AliasString) *QueryFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.QueryFixture.AliasArrAliasStringParam, values...))
+}
+
+// FindByAliasHereArrayParam adds a new filter to the query that will require that
+// the AliasHereArrayParam property contains all the passed values; if no passed values, it will do nothing
+func (q *QueryFixtureQuery) FindByAliasHereArrayParam(v ...string) *QueryFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.QueryFixture.AliasHereArrayParam, values...))
+}
+
+// FindByArrayAliasHereStringParam adds a new filter to the query that will require that
+// the ArrayAliasHereStringParam property contains all the passed values; if no passed values, it will do nothing
+func (q *QueryFixtureQuery) FindByArrayAliasHereStringParam(v ...AliasHereString) *QueryFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.QueryFixture.ArrayAliasHereStringParam, values...))
+}
+
+// FindByScannerValuerParam adds a new filter to the query that will require that
+// the ScannerValuerParam property is equal to the passed value
+func (q *QueryFixtureQuery) FindByScannerValuerParam(v ScannerValuer) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.ScannerValuerParam, v))
 }
 
 // QueryFixtureResultSet is the set of results returned by a query to the
@@ -4423,6 +5142,485 @@ func (rs *QueryFixtureResultSet) Err() error {
 
 // Close closes the result set.
 func (rs *QueryFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
+// NewQueryRelationFixture returns a new instance of QueryRelationFixture.
+func NewQueryRelationFixture() (record *QueryRelationFixture) {
+	return new(QueryRelationFixture)
+}
+
+// GetID returns the primary key of the model.
+func (r *QueryRelationFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *QueryRelationFixture) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.ULID)(&r.ID), nil
+	case "name":
+		return &r.Name, nil
+	case "owner_id":
+		return kallax.VirtualColumn("owner_id", r, new(kallax.ULID)), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in QueryRelationFixture: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *QueryRelationFixture) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+	case "name":
+		return r.Name, nil
+	case "owner_id":
+		return r.Model.VirtualColumn(col), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in QueryRelationFixture: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *QueryRelationFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
+	switch field {
+	case "Owner":
+		return new(QueryFixture), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model QueryRelationFixture has no relationship %s", field)
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *QueryRelationFixture) SetRelationship(field string, rel interface{}) error {
+	switch field {
+	case "Owner":
+		val, ok := rel.(*QueryFixture)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Owner", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.Owner = val
+		}
+
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model QueryRelationFixture has no relationship %s", field)
+}
+
+// QueryRelationFixtureStore is the entity to access the records of the type QueryRelationFixture
+// in the database.
+type QueryRelationFixtureStore struct {
+	*kallax.Store
+}
+
+// NewQueryRelationFixtureStore creates a new instance of QueryRelationFixtureStore
+// using a SQL database.
+func NewQueryRelationFixtureStore(db *sql.DB) *QueryRelationFixtureStore {
+	return &QueryRelationFixtureStore{kallax.NewStore(db)}
+}
+
+func (s *QueryRelationFixtureStore) relationshipRecords(record *QueryRelationFixture) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
+	if record.Owner != nil {
+		record.AddVirtualColumn("owner_id", record.Owner.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema.QueryFixture.BaseSchema,
+			record.Owner,
+		})
+	}
+
+	return records
+}
+
+// Insert inserts a QueryRelationFixture in the database. A non-persisted object is
+// required for this operation.
+func (s *QueryRelationFixtureStore) Insert(record *QueryRelationFixture) error {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			if err := s.Insert(Schema.QueryRelationFixture.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.QueryRelationFixture.BaseSchema, record)
+
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *QueryRelationFixtureStore) Update(record *QueryRelationFixture, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	records := s.relationshipRecords(record)
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			updated, err = s.Update(Schema.QueryRelationFixture.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
+	}
+
+	return s.Store.Update(Schema.QueryRelationFixture.BaseSchema, record, cols...)
+
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *QueryRelationFixtureStore) Save(record *QueryRelationFixture) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *QueryRelationFixtureStore) Delete(record *QueryRelationFixture) error {
+
+	return s.Store.Delete(Schema.QueryRelationFixture.BaseSchema, record)
+
+}
+
+// Find returns the set of results for the given query.
+func (s *QueryRelationFixtureStore) Find(q *QueryRelationFixtureQuery) (*QueryRelationFixtureResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewQueryRelationFixtureResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *QueryRelationFixtureStore) MustFind(q *QueryRelationFixtureQuery) *QueryRelationFixtureResultSet {
+	return NewQueryRelationFixtureResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *QueryRelationFixtureStore) Count(q *QueryRelationFixtureQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *QueryRelationFixtureStore) MustCount(q *QueryRelationFixtureQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *QueryRelationFixtureStore) FindOne(q *QueryRelationFixtureQuery) (*QueryRelationFixture, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *QueryRelationFixtureStore) MustFindOne(q *QueryRelationFixtureQuery) *QueryRelationFixture {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the QueryRelationFixture with the data in the database and
+// makes it writable.
+func (s *QueryRelationFixtureStore) Reload(record *QueryRelationFixture) error {
+	return s.Store.Reload(Schema.QueryRelationFixture.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *QueryRelationFixtureStore) Transaction(callback func(*QueryRelationFixtureStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&QueryRelationFixtureStore{store})
+	})
+}
+
+// QueryRelationFixtureQuery is the object used to create queries for the QueryRelationFixture
+// entity.
+type QueryRelationFixtureQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewQueryRelationFixtureQuery returns a new instance of QueryRelationFixtureQuery.
+func NewQueryRelationFixtureQuery() *QueryRelationFixtureQuery {
+	return &QueryRelationFixtureQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.QueryRelationFixture.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *QueryRelationFixtureQuery) Select(columns ...kallax.SchemaField) *QueryRelationFixtureQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *QueryRelationFixtureQuery) SelectNot(columns ...kallax.SchemaField) *QueryRelationFixtureQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *QueryRelationFixtureQuery) Copy() *QueryRelationFixtureQuery {
+	return &QueryRelationFixtureQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *QueryRelationFixtureQuery) Order(cols ...kallax.ColumnOrder) *QueryRelationFixtureQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *QueryRelationFixtureQuery) BatchSize(size uint64) *QueryRelationFixtureQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *QueryRelationFixtureQuery) Limit(n uint64) *QueryRelationFixtureQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *QueryRelationFixtureQuery) Offset(n uint64) *QueryRelationFixtureQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *QueryRelationFixtureQuery) Where(cond kallax.Condition) *QueryRelationFixtureQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+func (q *QueryRelationFixtureQuery) WithOwner() *QueryRelationFixtureQuery {
+	q.AddRelation(Schema.QueryFixture.BaseSchema, "Owner", kallax.OneToOne, nil)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *QueryRelationFixtureQuery) FindByID(v ...kallax.ULID) *QueryRelationFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.QueryRelationFixture.ID, values...))
+}
+
+// FindByName adds a new filter to the query that will require that
+// the Name property is equal to the passed value
+func (q *QueryRelationFixtureQuery) FindByName(v string) *QueryRelationFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryRelationFixture.Name, v))
+}
+
+// QueryRelationFixtureResultSet is the set of results returned by a query to the
+// database.
+type QueryRelationFixtureResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *QueryRelationFixture
+	lastErr   error
+}
+
+// NewQueryRelationFixtureResultSet creates a new result set for rows of the type
+// QueryRelationFixture.
+func NewQueryRelationFixtureResultSet(rs kallax.ResultSet) *QueryRelationFixtureResultSet {
+	return &QueryRelationFixtureResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *QueryRelationFixtureResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.QueryRelationFixture.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*QueryRelationFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *QueryRelationFixture")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *QueryRelationFixtureResultSet) Get() (*QueryRelationFixture, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *QueryRelationFixtureResultSet) ForEach(fn func(*QueryRelationFixture) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *QueryRelationFixtureResultSet) All() ([]*QueryRelationFixture, error) {
+	var result []*QueryRelationFixture
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *QueryRelationFixtureResultSet) One() (*QueryRelationFixture, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *QueryRelationFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *QueryRelationFixtureResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
@@ -4677,6 +5875,25 @@ func (q *ResultSetFixtureQuery) Offset(n uint64) *ResultSetFixtureQuery {
 func (q *ResultSetFixtureQuery) Where(cond kallax.Condition) *ResultSetFixtureQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *ResultSetFixtureQuery) FindByID(v ...kallax.ULID) *ResultSetFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.ResultSetFixture.ID, values...))
+}
+
+// FindByFoo adds a new filter to the query that will require that
+// the Foo property is equal to the passed value
+func (q *ResultSetFixtureQuery) FindByFoo(v string) *ResultSetFixtureQuery {
+	return q.Where(kallax.Eq(Schema.ResultSetFixture.Foo, v))
 }
 
 // ResultSetFixtureResultSet is the set of results returned by a query to the
@@ -5188,6 +6405,37 @@ func (q *SchemaFixtureQuery) WithNested() *SchemaFixtureQuery {
 	return q
 }
 
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *SchemaFixtureQuery) FindByID(v ...kallax.ULID) *SchemaFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.SchemaFixture.ID, values...))
+}
+
+// FindByString adds a new filter to the query that will require that
+// the String property is equal to the passed value
+func (q *SchemaFixtureQuery) FindByString(v string) *SchemaFixtureQuery {
+	return q.Where(kallax.Eq(Schema.SchemaFixture.String, v))
+}
+
+// FindByInt adds a new filter to the query that will require that
+// the Int property is equal to the passed value
+func (q *SchemaFixtureQuery) FindByInt(cond kallax.ScalarCond, v int) *SchemaFixtureQuery {
+	return q.Where(cond(Schema.SchemaFixture.Int, v))
+}
+
+// FindByInline adds a new filter to the query that will require that
+// the Inline property is equal to the passed value
+func (q *SchemaFixtureQuery) FindByInline(v string) *SchemaFixtureQuery {
+	return q.Where(kallax.Eq(Schema.SchemaFixture.Inline, v))
+}
+
 // SchemaFixtureResultSet is the set of results returned by a query to the
 // database.
 type SchemaFixtureResultSet struct {
@@ -5549,6 +6797,25 @@ func (q *StoreFixtureQuery) Where(cond kallax.Condition) *StoreFixtureQuery {
 	return q
 }
 
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *StoreFixtureQuery) FindByID(v ...kallax.ULID) *StoreFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.StoreFixture.ID, values...))
+}
+
+// FindByFoo adds a new filter to the query that will require that
+// the Foo property is equal to the passed value
+func (q *StoreFixtureQuery) FindByFoo(v string) *StoreFixtureQuery {
+	return q.Where(kallax.Eq(Schema.StoreFixture.Foo, v))
+}
+
 // StoreFixtureResultSet is the set of results returned by a query to the
 // database.
 type StoreFixtureResultSet struct {
@@ -5908,6 +7175,25 @@ func (q *StoreWithConstructFixtureQuery) Offset(n uint64) *StoreWithConstructFix
 func (q *StoreWithConstructFixtureQuery) Where(cond kallax.Condition) *StoreWithConstructFixtureQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *StoreWithConstructFixtureQuery) FindByID(v ...kallax.ULID) *StoreWithConstructFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.StoreWithConstructFixture.ID, values...))
+}
+
+// FindByFoo adds a new filter to the query that will require that
+// the Foo property is equal to the passed value
+func (q *StoreWithConstructFixtureQuery) FindByFoo(v string) *StoreWithConstructFixtureQuery {
+	return q.Where(kallax.Eq(Schema.StoreWithConstructFixture.Foo, v))
 }
 
 // StoreWithConstructFixtureResultSet is the set of results returned by a query to the
@@ -6275,6 +7561,31 @@ func (q *StoreWithNewFixtureQuery) Where(cond kallax.Condition) *StoreWithNewFix
 	return q
 }
 
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *StoreWithNewFixtureQuery) FindByID(v ...kallax.ULID) *StoreWithNewFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.StoreWithNewFixture.ID, values...))
+}
+
+// FindByFoo adds a new filter to the query that will require that
+// the Foo property is equal to the passed value
+func (q *StoreWithNewFixtureQuery) FindByFoo(v string) *StoreWithNewFixtureQuery {
+	return q.Where(kallax.Eq(Schema.StoreWithNewFixture.Foo, v))
+}
+
+// FindByBar adds a new filter to the query that will require that
+// the Bar property is equal to the passed value
+func (q *StoreWithNewFixtureQuery) FindByBar(v string) *StoreWithNewFixtureQuery {
+	return q.Where(kallax.Eq(Schema.StoreWithNewFixture.Bar, v))
+}
+
 // StoreWithNewFixtureResultSet is the set of results returned by a query to the
 // database.
 type StoreWithNewFixtureResultSet struct {
@@ -6394,6 +7705,7 @@ type schema struct {
 	Person                    *schemaPerson
 	Pet                       *schemaPet
 	QueryFixture              *schemaQueryFixture
+	QueryRelationFixture      *schemaQueryRelationFixture
 	ResultSetFixture          *schemaResultSetFixture
 	SchemaFixture             *schemaSchemaFixture
 	StoreFixture              *schemaStoreFixture
@@ -6471,8 +7783,40 @@ type schemaPet struct {
 
 type schemaQueryFixture struct {
 	*kallax.BaseSchema
-	ID  kallax.SchemaField
-	Foo kallax.SchemaField
+	ID                        kallax.SchemaField
+	Embedded                  kallax.SchemaField
+	Inline                    kallax.SchemaField
+	MapOfString               kallax.SchemaField
+	MapOfInterface            kallax.SchemaField
+	MapOfSomeType             kallax.SchemaField
+	Foo                       kallax.SchemaField
+	StringProperty            kallax.SchemaField
+	Integer                   kallax.SchemaField
+	Integer64                 kallax.SchemaField
+	Float32                   kallax.SchemaField
+	Boolean                   kallax.SchemaField
+	ArrayParam                kallax.SchemaField
+	SliceParam                kallax.SchemaField
+	AliasArrayParam           kallax.SchemaField
+	AliasSliceParam           kallax.SchemaField
+	AliasStringParam          kallax.SchemaField
+	AliasIntParam             kallax.SchemaField
+	DummyParam                kallax.SchemaField
+	AliasDummyParam           kallax.SchemaField
+	IDPropertyParam           kallax.SchemaField
+	InterfacePropParam        kallax.SchemaField
+	URLParam                  kallax.SchemaField
+	TimeParam                 kallax.SchemaField
+	AliasArrAliasStringParam  kallax.SchemaField
+	AliasHereArrayParam       kallax.SchemaField
+	ArrayAliasHereStringParam kallax.SchemaField
+	ScannerValuerParam        kallax.SchemaField
+}
+
+type schemaQueryRelationFixture struct {
+	*kallax.BaseSchema
+	ID   kallax.SchemaField
+	Name kallax.SchemaField
 }
 
 type schemaResultSetFixture struct {
@@ -6752,16 +8096,90 @@ var Schema = &schema{
 			"query",
 			"__queryfixture",
 			kallax.NewSchemaField("id"),
-			kallax.ForeignKeys{},
+			kallax.ForeignKeys{
+				"Relation":  kallax.NewForeignKey("owner_id", false),
+				"NRelation": kallax.NewForeignKey("owner_id", false),
+			},
 			func() kallax.Record {
 				return new(QueryFixture)
 			},
 			false,
 			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("embedded"),
+			kallax.NewSchemaField("inline"),
+			kallax.NewSchemaField("map_of_string"),
+			kallax.NewSchemaField("map_of_interface"),
+			kallax.NewSchemaField("map_of_some_type"),
 			kallax.NewSchemaField("foo"),
+			kallax.NewSchemaField("string_property"),
+			kallax.NewSchemaField("integer"),
+			kallax.NewSchemaField("integer64"),
+			kallax.NewSchemaField("float32"),
+			kallax.NewSchemaField("boolean"),
+			kallax.NewSchemaField("array_param"),
+			kallax.NewSchemaField("slice_param"),
+			kallax.NewSchemaField("alias_array_param"),
+			kallax.NewSchemaField("alias_slice_param"),
+			kallax.NewSchemaField("alias_string_param"),
+			kallax.NewSchemaField("alias_int_param"),
+			kallax.NewSchemaField("dummy_param"),
+			kallax.NewSchemaField("alias_dummy_param"),
+			kallax.NewSchemaField("idproperty_param"),
+			kallax.NewSchemaField("interface_prop_param"),
+			kallax.NewSchemaField("urlparam"),
+			kallax.NewSchemaField("time_param"),
+			kallax.NewSchemaField("alias_arr_alias_string_param"),
+			kallax.NewSchemaField("alias_here_array_param"),
+			kallax.NewSchemaField("array_alias_here_string_param"),
+			kallax.NewSchemaField("scanner_valuer_param"),
 		),
-		ID:  kallax.NewSchemaField("id"),
-		Foo: kallax.NewSchemaField("foo"),
+		ID:                        kallax.NewSchemaField("id"),
+		Embedded:                  kallax.NewSchemaField("embedded"),
+		Inline:                    kallax.NewSchemaField("inline"),
+		MapOfString:               kallax.NewSchemaField("map_of_string"),
+		MapOfInterface:            kallax.NewSchemaField("map_of_interface"),
+		MapOfSomeType:             kallax.NewSchemaField("map_of_some_type"),
+		Foo:                       kallax.NewSchemaField("foo"),
+		StringProperty:            kallax.NewSchemaField("string_property"),
+		Integer:                   kallax.NewSchemaField("integer"),
+		Integer64:                 kallax.NewSchemaField("integer64"),
+		Float32:                   kallax.NewSchemaField("float32"),
+		Boolean:                   kallax.NewSchemaField("boolean"),
+		ArrayParam:                kallax.NewSchemaField("array_param"),
+		SliceParam:                kallax.NewSchemaField("slice_param"),
+		AliasArrayParam:           kallax.NewSchemaField("alias_array_param"),
+		AliasSliceParam:           kallax.NewSchemaField("alias_slice_param"),
+		AliasStringParam:          kallax.NewSchemaField("alias_string_param"),
+		AliasIntParam:             kallax.NewSchemaField("alias_int_param"),
+		DummyParam:                kallax.NewSchemaField("dummy_param"),
+		AliasDummyParam:           kallax.NewSchemaField("alias_dummy_param"),
+		IDPropertyParam:           kallax.NewSchemaField("idproperty_param"),
+		InterfacePropParam:        kallax.NewSchemaField("interface_prop_param"),
+		URLParam:                  kallax.NewSchemaField("urlparam"),
+		TimeParam:                 kallax.NewSchemaField("time_param"),
+		AliasArrAliasStringParam:  kallax.NewSchemaField("alias_arr_alias_string_param"),
+		AliasHereArrayParam:       kallax.NewSchemaField("alias_here_array_param"),
+		ArrayAliasHereStringParam: kallax.NewSchemaField("array_alias_here_string_param"),
+		ScannerValuerParam:        kallax.NewSchemaField("scanner_valuer_param"),
+	},
+	QueryRelationFixture: &schemaQueryRelationFixture{
+		BaseSchema: kallax.NewBaseSchema(
+			"query_relation",
+			"__queryrelationfixture",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{
+				"Owner": kallax.NewForeignKey("owner_id", true),
+			},
+			func() kallax.Record {
+				return new(QueryRelationFixture)
+			},
+			false,
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("name"),
+			kallax.NewSchemaField("owner_id"),
+		),
+		ID:   kallax.NewSchemaField("id"),
+		Name: kallax.NewSchemaField("name"),
 	},
 	ResultSetFixture: &schemaResultSetFixture{
 		BaseSchema: kallax.NewBaseSchema(

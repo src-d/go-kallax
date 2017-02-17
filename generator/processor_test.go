@@ -2,13 +2,14 @@ package generator
 
 import (
 	"go/ast"
-	"go/importer"
 	"go/parser"
 	"go/token"
 	"go/types"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"srcd.works/go-parse-utils.v1"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -321,7 +322,7 @@ func (s *ProcessorSuite) processorFixture(source string) *Processor {
 	s.Nil(err)
 
 	cfg := &types.Config{
-		Importer: importer.For("gc", nil),
+		Importer: parseutil.NewImporter(),
 	}
 	p, err := cfg.Check("foo", fset, []*ast.File{astFile}, nil)
 	s.Nil(err)

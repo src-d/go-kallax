@@ -11,6 +11,8 @@ import (
 	"github.com/Masterminds/squirrel"
 )
 
+type ScalarCond func(col SchemaField, value interface{}) Condition
+
 // Condition represents a condition of filtering in a query.
 type Condition func(Schema) squirrel.Sqlizer
 
