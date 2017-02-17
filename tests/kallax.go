@@ -7,6 +7,7 @@ package tests
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/src-d/go-kallax"
 	"github.com/src-d/go-kallax/types"
@@ -1793,6 +1794,9 @@ func (r *JSONModel) Value(col string) (interface{}, error) {
 	case "foo":
 		return r.Foo, nil
 	case "bar":
+		if r.Bar == (*Bar)(nil) {
+			return nil, nil
+		}
 		return types.JSON(r.Bar), nil
 	case "baz_slice":
 		return types.JSON(r.BazSlice), nil
@@ -2515,6 +2519,16 @@ func (r *Nullable) ColumnAddress(col string) (interface{}, error) {
 		return (*kallax.NumericID)(&r.ID), nil
 	case "t":
 		return types.Nullable(&r.T), nil
+	case "some_json":
+		if r.SomeJSON == nil {
+			r.SomeJSON = new(SomeJSON)
+		}
+		return types.JSON(r.SomeJSON), nil
+	case "scanner":
+		if r.Scanner == nil {
+			r.Scanner = new(kallax.ULID)
+		}
+		return types.Nullable(r.Scanner), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Nullable: %s", col)
@@ -2527,7 +2541,20 @@ func (r *Nullable) Value(col string) (interface{}, error) {
 	case "id":
 		return r.ID, nil
 	case "t":
+		if r.T == (*time.Time)(nil) {
+			return nil, nil
+		}
 		return r.T, nil
+	case "some_json":
+		if r.SomeJSON == (*SomeJSON)(nil) {
+			return nil, nil
+		}
+		return types.JSON(r.SomeJSON), nil
+	case "scanner":
+		if r.Scanner == (*kallax.ULID)(nil) {
+			return nil, nil
+		}
+		return r.Scanner, nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Nullable: %s", col)
@@ -6423,8 +6450,10 @@ type schemaMultiKeySortFixture struct {
 
 type schemaNullable struct {
 	*kallax.BaseSchema
-	ID kallax.SchemaField
-	T  kallax.SchemaField
+	ID       kallax.SchemaField
+	T        kallax.SchemaField
+	SomeJSON *schemaNullableSomeJSON
+	Scanner  kallax.SchemaField
 }
 
 type schemaPerson struct {
@@ -6514,6 +6543,11 @@ func (s *schemaJSONModelBazSlice) At(n int) *schemaJSONModelBazSlice {
 		BaseSchemaField: kallax.NewSchemaField("baz_slice").(*kallax.BaseSchemaField),
 		Mux:             kallax.NewJSONSchemaKey(kallax.JSONText, "baz_slice", fmt.Sprint(n), "Mux"),
 	}
+}
+
+type schemaNullableSomeJSON struct {
+	*kallax.BaseSchemaField
+	Foo kallax.SchemaField
 }
 
 var Schema = &schema{
@@ -6662,9 +6696,16 @@ var Schema = &schema{
 			true,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("t"),
+			kallax.NewSchemaField("some_json"),
+			kallax.NewSchemaField("scanner"),
 		),
 		ID: kallax.NewSchemaField("id"),
 		T:  kallax.NewSchemaField("t"),
+		SomeJSON: &schemaNullableSomeJSON{
+			BaseSchemaField: kallax.NewSchemaField("some_json").(*kallax.BaseSchemaField),
+			Foo:             kallax.NewJSONSchemaKey(kallax.JSONInt, "some_json", "Foo"),
+		},
+		Scanner: kallax.NewSchemaField("scanner"),
 	},
 	Person: &schemaPerson{
 		BaseSchema: kallax.NewBaseSchema(

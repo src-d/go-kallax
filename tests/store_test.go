@@ -31,7 +31,9 @@ func TestStoreSuite(t *testing.T) {
 		)`,
 		`CREATE TABLE IF NOT EXISTS nullable (
 			id serial primary key,
-			t timestamptz
+			t timestamptz,
+			some_json jsonb,
+			scanner uuid
 		)`,
 	}
 	suite.Run(t, &StoreSuite{NewBaseSuite(schema, "store_construct", "store", "store_new", "query", "nullable")})

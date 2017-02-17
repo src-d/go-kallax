@@ -800,6 +800,8 @@ func (j *sqlJSON) Scan(v interface{}) error {
 		return json.Unmarshal(v, j.val)
 	case string:
 		return j.Scan([]byte(v))
+	case nil:
+		return nil
 	}
 
 	return fmt.Errorf("kallax: cannot scan type %s into JSON type", reflect.TypeOf(v))

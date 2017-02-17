@@ -700,6 +700,9 @@ func (f *Field) wrapAddress(ptr string, casted bool) string {
 	}
 
 	if f.IsPtr && !casted {
+		if f.Kind == Interface {
+			return fmt.Sprintf("types.Nullable(%s)", ptr)
+		}
 		return fmt.Sprintf("types.Nullable(&%s)", ptr)
 	}
 
