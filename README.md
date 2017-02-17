@@ -92,6 +92,7 @@ First, let's review the rules and conventions for model fields:
 * Arrays or slices of types mentioned above will be treated as PostgreSQL arrays of their matching type.
 * Fields that are structs (or pointers to structs) or interfaces not implementing [sql.Scanner](https://golang.org/pkg/database/sql/#Scanner) and [driver.Valuer](https://golang.org/pkg/database/sql/driver/#Valuer) will be considered as JSON. Same with arrays or slices of types that follow these rules.
 * Fields that are structs (or pointers to structs) with the struct tag `kallax:",inline"` or are embedded will be considered inline, and their fields would be considered as if they were at the root of the model.
+* All pointer fields are nullable by default. That means you do not need to use `sql.NullInt64`, `sql.NullBool` and the likes because kallax automatically takes care of that for you.
 * By default, the name of a column will be the name of the struct field converted to lower snake case (e.g. `UserName` => `user_name`, `UserID` => `user_id`). You can override it with the struct tag `kallax:"my_custom_name"`.
 * Slices or arrays of structs (or pointers to structs) that are models themselves will be considered a 1:N relationship.
 * A struct or pointer to struct field that is a model itself will be considered a 1:1 relationship.
