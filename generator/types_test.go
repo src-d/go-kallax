@@ -108,31 +108,31 @@ func (s *FieldSuite) TestAddress() {
 	}{
 		{
 			Struct, true, false, "Foo", "", nil,
-			"types.JSON(&r.Foo), nil",
+			"types.JSON(&r.Foo)",
 		},
 		{
 			Map, true, false, "Foo", "", nil,
-			"types.JSON(&r.Foo), nil",
+			"types.JSON(&r.Foo)",
 		},
 		{
 			Struct, false, false, "Foo", "", nil,
-			"&r.Foo, nil",
+			"&r.Foo",
 		},
 		{
 			Array, false, false, "Foo", "[5]string", nil,
-			`types.Array(&r.Foo, 5), nil`,
+			`types.Array(&r.Foo, 5)`,
 		},
 		{
 			Slice, false, false, "Foo", "", nil,
-			"types.Slice(&r.Foo), nil",
+			"types.Slice(&r.Foo)",
 		},
 		{
 			Basic, false, true, "Foo", "", nil,
-			"r.Foo, nil",
+			"types.Nullable(&r.Foo)",
 		},
 		{
 			Basic, false, true, "Foo", "", withParent(mkField("Bar", ""), mkField("Baz", "")),
-			"r.Baz.Bar.Foo, nil",
+			"types.Nullable(&r.Baz.Bar.Foo)",
 		},
 	}
 

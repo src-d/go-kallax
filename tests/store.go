@@ -51,3 +51,9 @@ type MultiKeySortFixture struct {
 func newMultiKeySortFixture() *MultiKeySortFixture {
 	return &MultiKeySortFixture{ID: kallax.NewULID()}
 }
+
+type Nullable struct {
+	kallax.Model `table:"nullable"`
+	ID           int64 `pk:"autoincr"`
+	T            *time.Time
+}

@@ -225,7 +225,7 @@ func (s *ProcessorSuite) TestProcessField() {
 		{"ComplexArray", Array, true, false, false},
 		{"InlineArray", Struct, true, false, false},
 		{"Interface", Interface, true, false, false},
-		{"SQLInterface", Interface, true, false, false}, // TODO false, false, falseº
+		{"SQLInterface", Interface, true, false, false}, // TODO false, false, false
 	}
 
 	m := findModel(pkg, "Foo")

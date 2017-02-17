@@ -73,7 +73,7 @@ func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Fi
 				if f.IsJSON && f.IsPtr {
 					buf.WriteString(fmt.Sprintf(initNilPtrTpl, f.Name, f.Name, td.GenTypeName(f)))
 				}
-				buf.WriteString(fmt.Sprintf("return %s\n", f.Address()))
+				buf.WriteString(fmt.Sprintf("return %s, nil\n", f.Address()))
 			}
 		}
 	}

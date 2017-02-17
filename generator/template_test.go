@@ -47,7 +47,7 @@ return (*kallax.NumericID)(&r.ID), nil
 case "foo":
 return &r.Foo, nil
 case "bar":
-return r.Bar, nil
+return types.Nullable(&r.Bar), nil
 case "arr":
 return types.Slice(&r.Arr), nil
 case "json":

@@ -64,6 +64,38 @@ func Nullable(typ interface{}) sql.Scanner {
 		return &nullDuration{typ}
 	case sql.Scanner:
 		return &nullable{typ}
+	case **string:
+		return &nullPtrString{typ}
+	case **bool:
+		return &nullPtrBool{typ}
+	case **int8:
+		return &nullPtrInt8{typ}
+	case **uint8:
+		return &nullPtrUint8{typ}
+	case **int16:
+		return &nullPtrInt16{typ}
+	case **uint16:
+		return &nullPtrUint16{typ}
+	case **uint:
+		return &nullPtrUint{typ}
+	case **int:
+		return &nullPtrInt{typ}
+	case **uint32:
+		return &nullPtrUint32{typ}
+	case **int32:
+		return &nullPtrInt32{typ}
+	case **uint64:
+		return &nullPtrUint64{typ}
+	case **int64:
+		return &nullPtrInt64{typ}
+	case **float32:
+		return &nullPtrFloat32{typ}
+	case **float64:
+		return &nullPtrFloat64{typ}
+	case **time.Time:
+		return &nullPtrTime{typ}
+	case **time.Duration:
+		return &nullPtrDuration{typ}
 	}
 
 	return &nullableErr{typ}
@@ -88,6 +120,321 @@ func (n *nullable) Scan(v interface{}) error {
 	return n.typ.Scan(v)
 }
 
+type nullPtrString struct {
+	v **string
+}
+
+func (n *nullPtrString) Scan(v interface{}) error {
+	ns := new(sql.NullString)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		*n.v = &ns.String
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrBool struct {
+	v **bool
+}
+
+func (n *nullPtrBool) Scan(v interface{}) error {
+	ns := new(sql.NullBool)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		*n.v = &ns.Bool
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrInt8 struct {
+	v **int8
+}
+
+func (n *nullPtrInt8) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := int8(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrUint8 struct {
+	v **uint8
+}
+
+func (n *nullPtrUint8) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := uint8(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrInt16 struct {
+	v **int16
+}
+
+func (n *nullPtrInt16) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := int16(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrUint16 struct {
+	v **uint16
+}
+
+func (n *nullPtrUint16) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := uint16(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrInt32 struct {
+	v **int32
+}
+
+func (n *nullPtrInt32) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := int32(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrUint32 struct {
+	v **uint32
+}
+
+func (n *nullPtrUint32) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := uint32(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrInt struct {
+	v **int
+}
+
+func (n *nullPtrInt) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := int(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrUint struct {
+	v **uint
+}
+
+func (n *nullPtrUint) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	// TODO: better handling of this type
+	if ns.Valid {
+		v := uint(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrUint64 struct {
+	v **uint64
+}
+
+func (n *nullPtrUint64) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+	// TODO: better handling of this type
+	if ns.Valid {
+		v := uint64(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrInt64 struct {
+	v **int64
+}
+
+func (n *nullPtrInt64) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		*n.v = &ns.Int64
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrFloat32 struct {
+	v **float32
+}
+
+func (n *nullPtrFloat32) Scan(v interface{}) error {
+	ns := new(sql.NullFloat64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := float32(ns.Float64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrFloat64 struct {
+	v **float64
+}
+
+func (n *nullPtrFloat64) Scan(v interface{}) error {
+	ns := new(sql.NullFloat64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		*n.v = &ns.Float64
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrTime struct {
+	v **time.Time
+}
+
+func (n *nullPtrTime) Scan(v interface{}) error {
+	ns := new(pq.NullTime)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		*n.v = &ns.Time
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
+type nullPtrDuration struct {
+	v **time.Duration
+}
+
+func (n *nullPtrDuration) Scan(v interface{}) error {
+	ns := new(sql.NullInt64)
+	if err := ns.Scan(v); err != nil {
+		return err
+	}
+
+	if ns.Valid {
+		v := time.Duration(ns.Int64)
+		*n.v = &v
+	} else {
+		*n.v = nil
+	}
+
+	return nil
+}
+
 type nullString struct {
 	v *string
 }
@@ -97,7 +444,11 @@ func (n *nullString) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = ns.String
+
+	if ns.Valid {
+		*n.v = ns.String
+	}
+
 	return nil
 }
 
@@ -110,7 +461,11 @@ func (n *nullBool) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = ns.Bool
+
+	if ns.Valid {
+		*n.v = ns.Bool
+	}
+
 	return nil
 }
 
@@ -123,7 +478,11 @@ func (n *nullInt8) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = int8(ns.Int64)
+
+	if ns.Valid {
+		*n.v = int8(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -136,7 +495,11 @@ func (n *nullUint8) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = uint8(ns.Int64)
+
+	if ns.Valid {
+		*n.v = uint8(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -149,7 +512,11 @@ func (n *nullInt16) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = int16(ns.Int64)
+
+	if ns.Valid {
+		*n.v = int16(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -162,7 +529,11 @@ func (n *nullUint16) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = uint16(ns.Int64)
+
+	if ns.Valid {
+		*n.v = uint16(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -175,7 +546,11 @@ func (n *nullInt32) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = int32(ns.Int64)
+
+	if ns.Valid {
+		*n.v = int32(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -188,7 +563,11 @@ func (n *nullUint32) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = uint32(ns.Int64)
+
+	if ns.Valid {
+		*n.v = uint32(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -201,7 +580,11 @@ func (n *nullInt) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = int(ns.Int64)
+
+	if ns.Valid {
+		*n.v = int(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -215,7 +598,10 @@ func (n *nullUint) Scan(v interface{}) error {
 		return err
 	}
 	// TODO: better handling of this type
-	*n.v = uint(ns.Int64)
+	if ns.Valid {
+		*n.v = uint(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -229,7 +615,10 @@ func (n *nullUint64) Scan(v interface{}) error {
 		return err
 	}
 	// TODO: better handling of this type
-	*n.v = uint64(ns.Int64)
+	if ns.Valid {
+		*n.v = uint64(ns.Int64)
+	}
+
 	return nil
 }
 
@@ -242,7 +631,11 @@ func (n *nullInt64) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = ns.Int64
+
+	if ns.Valid {
+		*n.v = ns.Int64
+	}
+
 	return nil
 }
 
@@ -255,7 +648,11 @@ func (n *nullFloat32) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = float32(ns.Float64)
+
+	if ns.Valid {
+		*n.v = float32(ns.Float64)
+	}
+
 	return nil
 }
 
@@ -268,7 +665,11 @@ func (n *nullFloat64) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = ns.Float64
+
+	if ns.Valid {
+		*n.v = ns.Float64
+	}
+
 	return nil
 }
 
@@ -281,7 +682,11 @@ func (n *nullTime) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = ns.Time
+
+	if ns.Valid {
+		*n.v = ns.Time
+	}
+
 	return nil
 }
 
@@ -294,7 +699,11 @@ func (n *nullDuration) Scan(v interface{}) error {
 	if err := ns.Scan(v); err != nil {
 		return err
 	}
-	*n.v = time.Duration(ns.Int64)
+
+	if ns.Valid {
+		*n.v = time.Duration(ns.Int64)
+	}
+
 	return nil
 }
 

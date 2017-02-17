@@ -29,8 +29,12 @@ func TestStoreSuite(t *testing.T) {
 			start timestamp,
 			_end timestamp
 		)`,
+		`CREATE TABLE IF NOT EXISTS nullable (
+			id serial primary key,
+			t timestamptz
+		)`,
 	}
-	suite.Run(t, &StoreSuite{NewBaseSuite(schema, "store_construct", "store", "store_new", "query")})
+	suite.Run(t, &StoreSuite{NewBaseSuite(schema, "store_construct", "store", "store_new", "query", "nullable")})
 }
 
 type StoreSuite struct {
@@ -198,4 +202,21 @@ func (s *StoreSuite) TestFindOne() {
 	if s.NotNil(docFound) {
 		s.Equal(docInserted.Foo, docFound.Foo)
 	}
+}
+
+func (s *StoreSuite) TestNullablePtrScan() {
+	store := NewNullableStore(s.db)
+	s.NoError(store.Insert(new(Nullable)))
+	t := time.Now()
+	s.NoError(store.Insert(&Nullable{T: &t}))
+
+	rs, err := store.Find(NewNullableQuery())
+	s.NoError(err)
+
+	records, err := rs.All()
+	s.NoError(err)
+	s.Len(records, 2, "should have scanned both")
+
+	s.Nil(records[0].T)
+	s.NotNil(records[1].T)
 }
