@@ -47,7 +47,7 @@ return (*kallax.NumericID)(&r.ID), nil
 case "foo":
 return &r.Foo, nil
 case "bar":
-return r.Bar, nil
+return types.Nullable(&r.Bar), nil
 case "arr":
 return types.Slice(&r.Arr), nil
 case "arr_aliased":
@@ -113,6 +113,9 @@ return r.ID, nil
 case "foo":
 return r.Foo, nil
 case "bar":
+if r.Bar == (*string)(nil) {
+	return nil, nil
+}
 return r.Bar, nil
 case "aliased":
 return (string)(r.Aliased), nil
@@ -121,6 +124,9 @@ return types.Slice(r.Arr), nil
 case "json":
 return types.JSON(r.JSON), nil
 case "url":
+if r.URL == (*url.URL)(nil) {
+	return nil, nil
+}
 return (*types.URL)(r.URL), nil
 case "url_no_ptr":
 return (*types.URL)(&r.UrlNoPtr), nil

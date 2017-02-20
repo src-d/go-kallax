@@ -27,7 +27,7 @@ func openTestDB() (*sql.DB, error) {
 }
 
 func setupTables(t *testing.T, db *sql.DB) {
-	_, err := db.Exec(`CREATE TABLE model (
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS model (
 		id serial PRIMARY KEY,
 		name varchar(255) not null,
 		email varchar(255) not null,
@@ -35,7 +35,7 @@ func setupTables(t *testing.T, db *sql.DB) {
 	)`)
 	require.NoError(t, err)
 
-	_, err = db.Exec(`CREATE TABLE rel (
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS rel (
 		id serial PRIMARY KEY,
 		model_id integer,
 		foo text

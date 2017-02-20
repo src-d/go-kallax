@@ -677,30 +677,39 @@ func (f *Field) fieldVarAddress() string {
 // pointer to the field.
 func (f *Field) Address() string {
 	name := f.fieldVarAddress()
+	var casted bool
 	if mapped, ok := mappings[f.Type]; ok {
 		name = fmt.Sprintf("(*%s)(%s)", mapped, name)
+		casted = true
 	}
 
-	return f.wrapAddress(name)
+	return f.wrapAddress(name, casted)
 }
 
-func (f *Field) wrapAddress(ptr string) string {
+func (f *Field) wrapAddress(ptr string, casted bool) string {
 	if f.IsJSON {
-		return fmt.Sprintf("types.JSON(%s), nil", ptr)
+		return fmt.Sprintf("types.JSON(%s)", ptr)
 	}
 
 	if f.Kind == Slice {
 		if typ, ok := castSlice(f); ok {
-			return fmt.Sprintf("types.Slice((*%s)(%s)), nil", typ, ptr)
+			return fmt.Sprintf("types.Slice((*%s)(%s))", typ, ptr)
 		}
-		return fmt.Sprintf("types.Slice(%s), nil", ptr)
+		return fmt.Sprintf("types.Slice(%s)", ptr)
 	}
 
 	if f.Kind == Array {
-		return fmt.Sprintf("types.Array(%s, %d), nil", ptr, arrayLen(f))
+		return fmt.Sprintf("types.Array(%s, %d)", ptr, arrayLen(f))
 	}
 
-	return fmt.Sprintf("%s, nil", ptr)
+	if f.IsPtr && !casted {
+		if f.Kind == Interface {
+			return fmt.Sprintf("types.Nullable(%s)", ptr)
+		}
+		return fmt.Sprintf("types.Nullable(&%s)", ptr)
+	}
+
+	return ptr
 }
 
 // Value is the string representation of the code needed to get the value of

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/build"
+	"go/types"
 	"io"
 	"os"
 	"path/filepath"
@@ -70,10 +71,10 @@ func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Fi
 				buf.WriteString(fmt.Sprintf("return (*%s)(%s), nil\n", td.IdentifierType(f), f.fieldVarAddress()))
 			} else {
 				// can't scan a json if is nil
-				if f.IsJSON && f.IsPtr {
+				if (f.IsJSON || f.Kind == Interface) && f.IsPtr {
 					buf.WriteString(fmt.Sprintf(initNilPtrTpl, f.Name, f.Name, td.GenTypeName(f)))
 				}
-				buf.WriteString(fmt.Sprintf("return %s\n", f.Address()))
+				buf.WriteString(fmt.Sprintf("return %s, nil\n", f.Address()))
 			}
 		}
 	}
@@ -96,6 +97,11 @@ func (td *TemplateData) GenColumnValues(model *Model) string {
 	return buf.String()
 }
 
+const nilPtrReturnsUntypedNilTpl = `if %s == (*%s)(nil) {
+	return nil, nil
+}
+`
+
 func (td *TemplateData) genFieldsValues(buf *bytes.Buffer, fields []*Field) {
 	for _, f := range fields {
 		if f.Inline() {
@@ -105,6 +111,9 @@ func (td *TemplateData) genFieldsValues(buf *bytes.Buffer, fields []*Field) {
 			buf.WriteString(fmt.Sprintf("return r.Model.VirtualColumn(col), nil\n"))
 		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
+			if f.IsPtr {
+				buf.WriteString(fmt.Sprintf(nilPtrReturnsUntypedNilTpl, f.fieldVarName(), td.GenTypeName(f)))
+			}
 			buf.WriteString(fmt.Sprintf("return %s\n", f.Value()))
 		}
 	}
@@ -178,7 +187,26 @@ func (td *TemplateData) findJSONSchemas(parent string, f *Field) {
 
 // GenTypeName generates the name of the type in the field.
 func (td *TemplateData) GenTypeName(f *Field) string {
+	if name, ok := findNamed(f.Node.Type(), td.pkg); ok {
+		return name
+	}
+
 	return removeTypePrefix(typeString(f.Node.Type(), td.pkg))
+}
+
+func findNamed(t types.Type, pkg *types.Package) (string, bool) {
+	switch t := t.(type) {
+	case *types.Pointer:
+		return findNamed(t.Elem(), pkg)
+	case *types.Named:
+		if t.Obj().Pkg().Path() == pkg.Path() {
+			return t.Obj().Name(), true
+		}
+
+		return fmt.Sprintf("%s.%s", t.Obj().Pkg().Name(), t.Obj().Name()), true
+	default:
+		return "", false
+	}
 }
 
 // IsPtrSlice returns whether the field is a slice of pointers or not.
