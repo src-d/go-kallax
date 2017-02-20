@@ -4297,6 +4297,8 @@ func (r *QueryFixture) ColumnAddress(col string) (interface{}, error) {
 		return types.JSON(&r.DummyParam), nil
 	case "alias_dummy_param":
 		return types.JSON(&r.AliasDummyParam), nil
+	case "slice_dummy_param":
+		return types.JSON(&r.SliceDummyParam), nil
 	case "idproperty_param":
 		return &r.IDPropertyParam, nil
 	case "interface_prop_param":
@@ -4362,6 +4364,8 @@ func (r *QueryFixture) Value(col string) (interface{}, error) {
 		return types.JSON(r.DummyParam), nil
 	case "alias_dummy_param":
 		return types.JSON(r.AliasDummyParam), nil
+	case "slice_dummy_param":
+		return types.JSON(r.SliceDummyParam), nil
 	case "idproperty_param":
 		return r.IDPropertyParam, nil
 	case "interface_prop_param":
@@ -7837,6 +7841,7 @@ type schemaQueryFixture struct {
 	AliasIntParam             kallax.SchemaField
 	DummyParam                kallax.SchemaField
 	AliasDummyParam           kallax.SchemaField
+	SliceDummyParam           kallax.SchemaField
 	IDPropertyParam           kallax.SchemaField
 	InterfacePropParam        kallax.SchemaField
 	URLParam                  kallax.SchemaField
@@ -8160,6 +8165,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("alias_int_param"),
 			kallax.NewSchemaField("dummy_param"),
 			kallax.NewSchemaField("alias_dummy_param"),
+			kallax.NewSchemaField("slice_dummy_param"),
 			kallax.NewSchemaField("idproperty_param"),
 			kallax.NewSchemaField("interface_prop_param"),
 			kallax.NewSchemaField("urlparam"),
@@ -8189,6 +8195,7 @@ var Schema = &schema{
 		AliasIntParam:             kallax.NewSchemaField("alias_int_param"),
 		DummyParam:                kallax.NewSchemaField("dummy_param"),
 		AliasDummyParam:           kallax.NewSchemaField("alias_dummy_param"),
+		SliceDummyParam:           kallax.NewSchemaField("slice_dummy_param"),
 		IDPropertyParam:           kallax.NewSchemaField("idproperty_param"),
 		InterfacePropParam:        kallax.NewSchemaField("interface_prop_param"),
 		URLParam:                  kallax.NewSchemaField("urlparam"),

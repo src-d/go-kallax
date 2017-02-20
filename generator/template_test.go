@@ -512,7 +512,6 @@ func (s *ProcessorSuite) assertFindableTypeName(f *Field) {
 }
 
 func (s *ProcessorSuite) TestLookupValid() {
-	return
 	fixtureSrc := `
 		package foo
 
@@ -621,14 +620,13 @@ func (s *ProcessorSuite) assertTypeOfFindBy(f *Field) {
 	if f.Name == "Model" {
 		return
 	}
-	fmt.Println(f.Tag)
 	expectedFindByType := f.Tag.Get("type")
 	errorString := fmt.Sprintf("Wrong type for field '%s' %s", f.Name, f.Node.Type())
+	s.True(expectedFindByType != "" && findByType(f) != "", errorString)
 	s.Equal(expectedFindByType, findByType(f), errorString)
 }
 
 func (s *ProcessorSuite) TestShortName() {
-	return
 	fixtureSrc := `
 		package foo
 
@@ -639,7 +637,7 @@ func (s *ProcessorSuite) TestShortName() {
 
 		type mainFixture struct {
 			kallax.Model
-			ID                   kallax.ULID		` + "short:\"kallax.ULID\" `pk:\"\"`" + `
+			ID                   kallax.ULID		` + "`short:\"kallax.ULID\" pk:\"\"`" + `
 
 			StringProp           string				` + "`short:\"string\"`" + `
 			ArrStringProp        []string			` + "`short:\"[]string\"`" + `

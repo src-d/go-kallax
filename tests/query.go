@@ -21,24 +21,24 @@ type QueryFixture struct {
 	Inline    struct {
 		Inline string
 	} `kallax:",inline"`
-	MapOfString      map[string]string
-	MapOfInterface   map[string]interface{}
-	MapOfSomeType    map[string]fixtures.QueryDummy
-	Foo              string
-	StringProperty   string
-	Integer          int
-	Integer64        int64
-	Float32          float32
-	Boolean          bool
-	ArrayParam       [3]string
-	SliceParam       []string
-	AliasArrayParam  fixtures.AliasArray
-	AliasSliceParam  fixtures.AliasSlice
-	AliasStringParam fixtures.AliasString
-	AliasIntParam    fixtures.AliasInt
-	DummyParam       fixtures.QueryDummy
-	AliasDummyParam  fixtures.AliasDummyParam
-	//TODO: SliceDummyParam []fixtures.QueryDummy //ERR: sql: Scan error on column index 25: kallax: cannot scan type %!s(<nil>) into JSON type
+	MapOfString              map[string]string
+	MapOfInterface           map[string]interface{}
+	MapOfSomeType            map[string]fixtures.QueryDummy
+	Foo                      string
+	StringProperty           string
+	Integer                  int
+	Integer64                int64
+	Float32                  float32
+	Boolean                  bool
+	ArrayParam               [3]string
+	SliceParam               []string
+	AliasArrayParam          fixtures.AliasArray
+	AliasSliceParam          fixtures.AliasSlice
+	AliasStringParam         fixtures.AliasString
+	AliasIntParam            fixtures.AliasInt
+	DummyParam               fixtures.QueryDummy
+	AliasDummyParam          fixtures.AliasDummyParam
+	SliceDummyParam          []fixtures.QueryDummy
 	IDPropertyParam          kallax.ULID
 	InterfacePropParam       fixtures.InterfaceImplementation
 	URLParam                 url.URL
