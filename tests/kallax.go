@@ -4288,7 +4288,7 @@ func (r *QueryFixture) ColumnAddress(col string) (interface{}, error) {
 	case "alias_array_param":
 		return types.Array(&r.AliasArrayParam, 3), nil
 	case "alias_slice_param":
-		return types.Slice(&r.AliasSliceParam), nil
+		return types.Slice((*[]string)(&r.AliasSliceParam)), nil
 	case "alias_string_param":
 		return &r.AliasStringParam, nil
 	case "alias_int_param":
@@ -6822,6 +6822,32 @@ func (q *StoreFixtureQuery) FindByID(v ...kallax.ULID) *StoreFixtureQuery {
 // the Foo property is equal to the passed value
 func (q *StoreFixtureQuery) FindByFoo(v string) *StoreFixtureQuery {
 	return q.Where(kallax.Eq(Schema.StoreFixture.Foo, v))
+}
+
+// FindBySliceProp adds a new filter to the query that will require that
+// the SliceProp property contains all the passed values; if no passed values, it will do nothing
+func (q *StoreFixtureQuery) FindBySliceProp(v ...string) *StoreFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.StoreFixture.SliceProp, values...))
+}
+
+// FindByAliasSliceProp adds a new filter to the query that will require that
+// the AliasSliceProp property contains all the passed values; if no passed values, it will do nothing
+func (q *StoreFixtureQuery) FindByAliasSliceProp(v ...string) *StoreFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.StoreFixture.AliasSliceProp, values...))
 }
 
 // StoreFixtureResultSet is the set of results returned by a query to the
