@@ -11,6 +11,8 @@ import (
 	"github.com/Masterminds/squirrel"
 )
 
+// ScalarCond returns a kallax.Condition that compares a property with the passed
+// values, considering its scalar values (eq, gt, gte, lt, lte, neq)
 type ScalarCond func(col SchemaField, value interface{}) Condition
 
 // Condition represents a condition of filtering in a query.
@@ -31,32 +33,32 @@ func Lt(col SchemaField, value interface{}) Condition {
 }
 
 // Gt returns a condition that will be true when `col` is greater than `value`.
-func Gt(col SchemaField, n interface{}) Condition {
+func Gt(col SchemaField, value interface{}) Condition {
 	return func(schema Schema) squirrel.Sqlizer {
-		return squirrel.Gt{col.QualifiedName(schema): n}
+		return squirrel.Gt{col.QualifiedName(schema): value}
 	}
 }
 
 // LtOrEq returns a condition that will be true when `col` is lower than
 // `value` or equal.
-func LtOrEq(col SchemaField, n interface{}) Condition {
+func LtOrEq(col SchemaField, value interface{}) Condition {
 	return func(schema Schema) squirrel.Sqlizer {
-		return squirrel.LtOrEq{col.QualifiedName(schema): n}
+		return squirrel.LtOrEq{col.QualifiedName(schema): value}
 	}
 }
 
 // GtOrEq returns a condition that will be true when `col` is greater than
 // `value` or equal.
-func GtOrEq(col SchemaField, n interface{}) Condition {
+func GtOrEq(col SchemaField, value interface{}) Condition {
 	return func(schema Schema) squirrel.Sqlizer {
-		return squirrel.GtOrEq{col.QualifiedName(schema): n}
+		return squirrel.GtOrEq{col.QualifiedName(schema): value}
 	}
 }
 
 // Neq returns a condition that will be true when `col` is not `value`.
-func Neq(col SchemaField, n interface{}) Condition {
+func Neq(col SchemaField, value interface{}) Condition {
 	return func(schema Schema) squirrel.Sqlizer {
-		return squirrel.NotEq{col.QualifiedName(schema): n}
+		return squirrel.NotEq{col.QualifiedName(schema): value}
 	}
 }
 
