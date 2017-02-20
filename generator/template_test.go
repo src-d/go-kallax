@@ -50,6 +50,8 @@ case "foo":
 return &r.Foo, nil
 case "bar":
 return types.Nullable(&r.Bar), nil
+case "baz":
+return &r.Baz, nil
 case "arr":
 return types.Slice(&r.Arr), nil
 case "arr_aliased":
@@ -91,6 +93,7 @@ const baseTpl = `
 		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 		Bar *string
+		Baz int64
 		Rel Rel
 		Arr []string
 		ArrAliased []Baz
@@ -178,6 +181,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 const expectedColumns = `kallax.NewSchemaField("id"),
 kallax.NewSchemaField("foo"),
 kallax.NewSchemaField("bar"),
+kallax.NewSchemaField("baz"),
 kallax.NewSchemaField("arr"),
 kallax.NewSchemaField("arr_aliased"),
 kallax.NewSchemaField("urlarr"),
