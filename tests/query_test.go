@@ -45,8 +45,6 @@ func TestQuerySuite(t *testing.T) {
 			urlparam varchar(256),
 			time_param timestamp with time zone,
 			alias_arr_alias_string_param text[],
-			alias_arr_alias_slice_param text[][],
-			array_array_param text[][],
 			alias_here_array_param text[],
 			array_alias_here_string_param text[],
 			scanner_valuer_param text
