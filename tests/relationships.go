@@ -45,7 +45,8 @@ type Person struct {
 	ID           int64 `pk:"autoincr"`
 	Name         string
 	Pets         []*Pet `fk:"owner_id"`
-	Car          *Car   `fk:"owner_id"`
+	ArrPets      [2]*Pet
+	Car          *Car `fk:"owner_id"`
 	events       map[string]int
 }
 
