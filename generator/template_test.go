@@ -429,7 +429,8 @@ func (s *ProcessorSuite) TestFindableTypeName() {
 			ID						kallax.ULID			` + "`findable:\"kallax.ULID\" pk:\"\"`" + `
 
 			StringProp 				string 				` + "`findable:\"string\"`" + `
-			ArrStringProp 			[]string 			` + "`findable:\"string\"`" + `
+			SliceStringProp 		[]string 			` + "`findable:\"string\"`" + `
+			ArrStringProp 			[2]string 			` + "`findable:\"string\"`" + `
 			AliasArrStringProp 		AliasArrString 		` + "`findable:\"string\"`" + `
 			AliasStringProp			AliasString 		` + "`findable:\"AliasString\"`" + `
 			ArrAliasStringProp		[]AliasString 		` + "`findable:\"AliasString\"`" + `
@@ -529,7 +530,8 @@ func (s *ProcessorSuite) TestLookupValid() {
 			IntProp              int				` + "`valid:\"int\" type:\"" + sortable + "\"`" + `
 			ArrIntProp           []int				` + "`deep:\"[]int\" type:\"" + collection + "\"`" + `
 			Int64Prop            int64				` + "`valid:\"int64\" type:\"" + sortable + "\"`" + `
-			ArrInt64Prop         []int64			` + "`deep:\"[]int64\" type:\"" + collection + "\"`" + `
+			SliceInt64Prop       []int64			` + "`deep:\"[]int64\" type:\"" + collection + "\"`" + `
+			ArrInt64Prop         [2]int64			` + "`deep:\"[2]int64\" type:\"" + collection + "\"`" + `
 			Float32Prop          float32			` + "`valid:\"float32\" type:\"" + sortable + "\"`" + `
 			ArrFloat32Prop       []float32			` + "`deep:\"[]float32\" type:\"" + collection + "\"`" + `
 			Uint8Prop            uint8				` + "`valid:\"uint8\" type:\"" + sortable + "\"`" + `
@@ -640,7 +642,8 @@ func (s *ProcessorSuite) TestShortName() {
 			ID                   kallax.ULID		` + "`short:\"kallax.ULID\" pk:\"\"`" + `
 
 			StringProp           string				` + "`short:\"string\"`" + `
-			ArrStringProp        []string			` + "`short:\"[]string\"`" + `
+			SliceStringProp      []string			` + "`short:\"[]string\"`" + `
+			ArrStringProp        [2]string			` + "`short:\"[2]string\"`" + `
 			IDProp             	 kallax.ULID		` + "`short:\"kallax.ULID\"`" + `
 			UrlProp            	 url.URL			` + "`short:\"url.URL\"`" + `
 			TimeProp             time.Time			` + "`short:\"time.Time\"`" + `
