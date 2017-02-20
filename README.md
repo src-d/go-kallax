@@ -186,7 +186,7 @@ Kallax will generate one with the following signature:
 func NewUser(username string, password string, emails ...string) (*User, error)
 ```
 
-**IMPORTANT:** if your primary key is not auto-incrementable, you should set an ID for every model you create in your constructor. Or, at least, set it before inserting it.
+**IMPORTANT:** if your primary key is not auto-incrementable, you should set an ID for every model you create in your constructor. Or, at least, set it before saving it. Inserting, updating, deleting or reloading an object with no primary key set will return an error.
 
 If you don't implement your own constructor it's ok, kallax will generate one for you just instantiating your object like this:
 
@@ -242,9 +242,9 @@ Kallax generates a bunch of code for every single model you have and saves it to
 For every model you have, kallax will generate the following for you:
 
 * Internal methods for your model to make it work with kallax and satisfy the [Record](https://godoc.org/github.com/src-d/go-kallax#Record) interface.
-* A store named `{TypeName}Store`: the store is the way to access the data. A store of a given type is the way to access and manipulate data of that type.
-* A query named `{TypeName}Query`: the query is the way you will be able to build programmatically the queries to perform on the store. A store only will accept queries of its own type.
-The query will contain methods for adding criteria to your query for every field of your struct, called `FindBy`s.
+* A store named `{TypeName}Store`: the store is the way to access the data. A store of a given type is the way to access and manipulate data of that type. You can get an instance of the type store with `New{TypeName}Store(*sql.DB)`.
+* A query named `{TypeName}Query`: the query is the way you will be able to build programmatically the queries to perform on the store. A store only will accept queries of its own type. You can create a new query with `New{TypeName}Query()`.
+The query will contain methods for adding criteria to your query for every field of your struct, called `FindBy`s. The query object is not immutable, that is, every condition added to it, changes the query. If you want to reuse part of a query, you can call the `Copy()` method of a query, which will return a query identical to the one used to call the method.
 * A resultset named `{TypeName}ResultSet`: a resultset is the way to iterate over and obtain all elements in a resultset returned by the store. A store of a given type will always return a result set of the matching type, which will only return records of that type.
 * Schema of all the models containing all the fields. That way, you can access the name of a specific field without having to use a string, that is, a typesafe way.
 
@@ -270,7 +270,7 @@ For all of the following sections, we will assume we have a store `store` for ou
 
 ### Insert models
 
-To insert a model we just need to use the `Insert` method of the store and pass it a model. If the model does not have an ID, one will be assigned to it.
+To insert a model we just need to use the `Insert` method of the store and pass it a model. If the primary key is not auto-incrementable and the object does not have one set, the insertion will fail.
 
 ```go
 user := NewUser("fancy_username", "super_secret_password", "foo@email.me")
@@ -329,7 +329,7 @@ If there are any relationships in the model, both the model and the relationship
 
 ### Save models
 
-To save a model we just need to use the `Save` method of the store and pass it a model. It will update the model if it was already persisted or insert it otherwise.
+To save a model we just need to use the `Save` method of the store and pass it a model. `Save` is just a shorthand that will call `Insert` if the model is not yet persisted and `Update` if it is.
 
 ```go
 updated, err := store.Save(user)
@@ -432,7 +432,7 @@ q := NewUserQuery().
 user, err := store.FindOne(q)
 ```
 
-By default, all columns in a row are retrieved. To not retrieve all of them, you can specify the columns to include/exclude.
+By default, all columns in a row are retrieved. To not retrieve all of them, you can specify the columns to include/exclude. Take into account that partial records retrieved from the database will not be writable. To make them writable you will need to [`Reload`](#reloading-a-model) the object.
 
 ```go
 // Select only Username and password
@@ -489,7 +489,7 @@ The default batch size is 50, you can change this using the `BatchSize` method a
 
 ### Reloading a model
 
-If, for example, you have a model that is not writable because you only selected one field you can always reload it and have the full object.
+If, for example, you have a model that is not writable because you only selected one field you can always reload it and have the full object. When the object is reloaded, all the changes made to the object that have not been saved will be discarded and overwritten with the values in the database.
 
 ```go
 err := store.Reload(user)
@@ -541,7 +541,21 @@ store.Transaction(func(s *UserStore) error {
 
 `Transaction` can be used inside a transaction, but it does not open a new one, reuses the existing one.
 
+## Caveats
+
+* It is not possible to use slices or arrays of types that are not one of these types:
+  * Basic types (e.g. `[]string`, `[]int64`) (except for `rune`, `complex64` and `complex128`)
+  * Types that implement `sql.Scanner` and `driver.Valuer`
+  The reason why this is not possible is because kallax implements support for arrays of all basic Go types by hand and also for types implementing `sql.Scanner` and `driver.Valuer` (using reflection in this case), but without having a common interface to operate on them, arbitrary types can not be supported.
+  For example, consider the following type `type Foo string`, using `[]Foo` would not be supported. Know that this will fail during the scanning of rows and not in code-generation time for now. In the future, might be moved to a warning or an error during code generation.
+  Aliases of slice types are supported, though. If we have `type Strings []string`, using `Strings` would be supported, as a cast like this `([]string)(&slice)` it's supported and `[]string` is supported.
+* `time.Time` and `url.URL` need to be used as is. That is, you can not use a type `Foo` being `type Foo time.Time`. `time.Time` and `url.URL` are types that are treated in a special way, if you do that, it would be the same as saying `type Foo struct { ... }` and kallax would no longer be able to identify the correct type.
+
 ## Contributing 
+
+### Reporting bugs
+
+Kallax is a code generation tool, so it obviously has not been tested with all possible types and cases. If you find a case where the code generation is broken, please report an issue providing a minimal snippet for us to be able to reproduce the issue and fix it.
 
 ### Suggesting features
 
