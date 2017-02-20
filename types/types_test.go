@@ -77,6 +77,10 @@ func TestJSON(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, float64(1), val.(float64))
 	})
+
+	t.Run("nil input", func(t *testing.T) {
+		require.NoError(t, JSON(&map[string]interface{}{}).Scan(nil))
+	})
 }
 
 func TestArray(t *testing.T) {
@@ -98,24 +102,41 @@ func TestArray(t *testing.T) {
 
 func TestNullable(t *testing.T) {
 	var (
-		Str      string
-		Int8     int8
-		Uint8    uint8
-		Byte     byte
-		Int16    int16
-		Uint16   uint16
-		Int32    int32
-		Uint32   uint32
-		Int      int
-		Uint     uint
-		Int64    int64
-		Uint64   uint64
-		Float32  float32
-		Float64  float64
-		Bool     bool
-		Time     time.Time
-		Duration time.Duration
-		Url      URL
+		Str         string
+		Int8        int8
+		Uint8       uint8
+		Byte        byte
+		Int16       int16
+		Uint16      uint16
+		Int32       int32
+		Uint32      uint32
+		Int         int
+		Uint        uint
+		Int64       int64
+		Uint64      uint64
+		Float32     float32
+		Float64     float64
+		Bool        bool
+		Time        time.Time
+		Duration    time.Duration
+		Url         URL
+		PtrStr      *string
+		PtrInt8     *int8
+		PtrUint8    *uint8
+		PtrByte     *byte
+		PtrInt16    *int16
+		PtrUint16   *uint16
+		PtrInt32    *int32
+		PtrUint32   *uint32
+		PtrInt      *int
+		PtrUint     *uint
+		PtrInt64    *int64
+		PtrUint64   *uint64
+		PtrFloat32  *float32
+		PtrFloat64  *float64
+		PtrBool     *bool
+		PtrTime     *time.Time
+		PtrDuration *time.Duration
 	)
 	tim := time.Now().UTC()
 	tim = time.Date(tim.Year(), tim.Month(), tim.Day(), tim.Hour(), tim.Minute(), tim.Second(), 0, tim.Location())
@@ -128,114 +149,252 @@ func TestNullable(t *testing.T) {
 		typ          string
 		nonNullInput interface{}
 		dst          interface{}
+		isPtr        bool
 	}{
 		{
 			"string",
 			"text",
 			"foo",
 			&Str,
+			false,
 		},
 		{
 			"int8",
 			"bigint",
 			int8(1),
 			&Int8,
+			false,
 		},
 		{
 			"byte",
 			"bigint",
 			byte(1),
 			&Byte,
+			false,
 		},
 		{
 			"int16",
 			"bigint",
 			int16(1),
 			&Int16,
+			false,
 		},
 		{
 			"int32",
 			"bigint",
 			int32(1),
 			&Int32,
+			false,
 		},
 		{
 			"int",
 			"bigint",
 			int(1),
 			&Int,
+			false,
 		},
 		{
 			"int64",
 			"bigint",
 			int64(1),
 			&Int64,
+			false,
 		},
 		{
 			"uint8",
 			"bigint",
 			uint8(1),
 			&Uint8,
+			false,
 		},
 		{
 			"uint16",
 			"bigint",
 			uint16(1),
 			&Uint16,
+			false,
 		},
 		{
 			"uint32",
 			"bigint",
 			uint32(1),
 			&Uint32,
+			false,
 		},
 		{
 			"uint",
 			"bigint",
 			uint(1),
 			&Uint,
+			false,
 		},
 		{
 			"uint64",
 			"bigint",
 			uint64(1),
 			&Uint64,
+			false,
 		},
 		{
 			"float32",
 			"decimal",
 			float32(.5),
 			&Float32,
+			false,
 		},
 		{
 			"float64",
 			"decimal",
 			float64(.5),
 			&Float64,
+			false,
 		},
 		{
 			"bool",
 			"bool",
 			true,
 			&Bool,
+			false,
 		},
 		{
 			"time.Duration",
 			"bigint",
 			3 * time.Second,
 			&Duration,
+			false,
 		},
 		{
 			"time.Time",
 			"timestamptz",
 			tim,
 			&Time,
+			false,
 		},
 		{
 			"URL",
 			"text",
 			URL(*url),
 			&Url,
+			false,
+		},
+		{
+			"*string",
+			"text",
+			"foo",
+			&PtrStr,
+			true,
+		},
+		{
+			"*int8",
+			"bigint",
+			int8(1),
+			&PtrInt8,
+			true,
+		},
+		{
+			"*byte",
+			"bigint",
+			byte(1),
+			&PtrByte,
+			true,
+		},
+		{
+			"*int16",
+			"bigint",
+			int16(1),
+			&PtrInt16,
+			true,
+		},
+		{
+			"*int32",
+			"bigint",
+			int32(1),
+			&PtrInt32,
+			true,
+		},
+		{
+			"*int",
+			"bigint",
+			int(1),
+			&PtrInt,
+			true,
+		},
+		{
+			"*int64",
+			"bigint",
+			int64(1),
+			&PtrInt64,
+			true,
+		},
+		{
+			"*uint8",
+			"bigint",
+			uint8(1),
+			&PtrUint8,
+			true,
+		},
+		{
+			"*uint16",
+			"bigint",
+			uint16(1),
+			&PtrUint16,
+			true,
+		},
+		{
+			"*uint32",
+			"bigint",
+			uint32(1),
+			&PtrUint32,
+			true,
+		},
+		{
+			"*uint",
+			"bigint",
+			uint(1),
+			&PtrUint,
+			true,
+		},
+		{
+			"*uint64",
+			"bigint",
+			uint64(1),
+			&PtrUint64,
+			true,
+		},
+		{
+			"*float32",
+			"decimal",
+			float32(.5),
+			&PtrFloat32,
+			true,
+		},
+		{
+			"*float64",
+			"decimal",
+			float64(.5),
+			&PtrFloat64,
+			true,
+		},
+		{
+			"*bool",
+			"bool",
+			true,
+			&PtrBool,
+			true,
+		},
+		{
+			"*time.Duration",
+			"bigint",
+			3 * time.Second,
+			&PtrDuration,
+			true,
+		},
+		{
+			"*time.Time",
+			"timestamptz",
+			tim,
+			&PtrTime,
+			true,
 		},
 	}
 
@@ -269,6 +428,9 @@ func TestNullable(t *testing.T) {
 
 		s.Nil(db.QueryRow("SELECT testcol FROM foo").Scan(Nullable(c.dst)), c.name)
 		elem = reflect.ValueOf(c.dst).Elem()
+		if c.isPtr {
+			elem = elem.Elem()
+		}
 		s.Equal(c.nonNullInput, elem.Interface(), c.name)
 
 		_, err = db.Exec("DROP TABLE foo")

@@ -7,6 +7,7 @@ package tests
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/src-d/go-kallax"
 	"github.com/src-d/go-kallax/types"
@@ -1793,6 +1794,9 @@ func (r *JSONModel) Value(col string) (interface{}, error) {
 	case "foo":
 		return r.Foo, nil
 	case "bar":
+		if r.Bar == (*Bar)(nil) {
+			return nil, nil
+		}
 		return types.JSON(r.Bar), nil
 	case "baz_slice":
 		return types.JSON(r.BazSlice), nil
@@ -2495,6 +2499,390 @@ func (rs *MultiKeySortFixtureResultSet) Err() error {
 
 // Close closes the result set.
 func (rs *MultiKeySortFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
+// NewNullable returns a new instance of Nullable.
+func NewNullable() (record *Nullable) {
+	return new(Nullable)
+}
+
+// GetID returns the primary key of the model.
+func (r *Nullable) GetID() kallax.Identifier {
+	return (*kallax.NumericID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *Nullable) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.NumericID)(&r.ID), nil
+	case "t":
+		return types.Nullable(&r.T), nil
+	case "some_json":
+		if r.SomeJSON == nil {
+			r.SomeJSON = new(SomeJSON)
+		}
+		return types.JSON(r.SomeJSON), nil
+	case "scanner":
+		if r.Scanner == nil {
+			r.Scanner = new(kallax.ULID)
+		}
+		return types.Nullable(r.Scanner), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in Nullable: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *Nullable) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+	case "t":
+		if r.T == (*time.Time)(nil) {
+			return nil, nil
+		}
+		return r.T, nil
+	case "some_json":
+		if r.SomeJSON == (*SomeJSON)(nil) {
+			return nil, nil
+		}
+		return types.JSON(r.SomeJSON), nil
+	case "scanner":
+		if r.Scanner == (*kallax.ULID)(nil) {
+			return nil, nil
+		}
+		return r.Scanner, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in Nullable: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *Nullable) NewRelationshipRecord(field string) (kallax.Record, error) {
+	return nil, fmt.Errorf("kallax: model Nullable has no relationships")
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *Nullable) SetRelationship(field string, rel interface{}) error {
+	return fmt.Errorf("kallax: model Nullable has no relationships")
+}
+
+// NullableStore is the entity to access the records of the type Nullable
+// in the database.
+type NullableStore struct {
+	*kallax.Store
+}
+
+// NewNullableStore creates a new instance of NullableStore
+// using a SQL database.
+func NewNullableStore(db *sql.DB) *NullableStore {
+	return &NullableStore{kallax.NewStore(db)}
+}
+
+// Insert inserts a Nullable in the database. A non-persisted object is
+// required for this operation.
+func (s *NullableStore) Insert(record *Nullable) error {
+
+	return s.Store.Insert(Schema.Nullable.BaseSchema, record)
+
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *NullableStore) Update(record *Nullable, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	return s.Store.Update(Schema.Nullable.BaseSchema, record, cols...)
+
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *NullableStore) Save(record *Nullable) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *NullableStore) Delete(record *Nullable) error {
+
+	return s.Store.Delete(Schema.Nullable.BaseSchema, record)
+
+}
+
+// Find returns the set of results for the given query.
+func (s *NullableStore) Find(q *NullableQuery) (*NullableResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewNullableResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *NullableStore) MustFind(q *NullableQuery) *NullableResultSet {
+	return NewNullableResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *NullableStore) Count(q *NullableQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *NullableStore) MustCount(q *NullableQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *NullableStore) FindOne(q *NullableQuery) (*Nullable, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *NullableStore) MustFindOne(q *NullableQuery) *Nullable {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the Nullable with the data in the database and
+// makes it writable.
+func (s *NullableStore) Reload(record *Nullable) error {
+	return s.Store.Reload(Schema.Nullable.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *NullableStore) Transaction(callback func(*NullableStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&NullableStore{store})
+	})
+}
+
+// NullableQuery is the object used to create queries for the Nullable
+// entity.
+type NullableQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewNullableQuery returns a new instance of NullableQuery.
+func NewNullableQuery() *NullableQuery {
+	return &NullableQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.Nullable.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *NullableQuery) Select(columns ...kallax.SchemaField) *NullableQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *NullableQuery) SelectNot(columns ...kallax.SchemaField) *NullableQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *NullableQuery) Copy() *NullableQuery {
+	return &NullableQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *NullableQuery) Order(cols ...kallax.ColumnOrder) *NullableQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *NullableQuery) BatchSize(size uint64) *NullableQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *NullableQuery) Limit(n uint64) *NullableQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *NullableQuery) Offset(n uint64) *NullableQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *NullableQuery) Where(cond kallax.Condition) *NullableQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// NullableResultSet is the set of results returned by a query to the
+// database.
+type NullableResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *Nullable
+	lastErr   error
+}
+
+// NewNullableResultSet creates a new result set for rows of the type
+// Nullable.
+func NewNullableResultSet(rs kallax.ResultSet) *NullableResultSet {
+	return &NullableResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *NullableResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.Nullable.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*Nullable)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *Nullable")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *NullableResultSet) Get() (*Nullable, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *NullableResultSet) ForEach(fn func(*Nullable) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *NullableResultSet) All() ([]*Nullable, error) {
+	var result []*Nullable
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *NullableResultSet) One() (*Nullable, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *NullableResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *NullableResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
@@ -6002,6 +6390,7 @@ type schema struct {
 	EventsSaveFixture         *schemaEventsSaveFixture
 	JSONModel                 *schemaJSONModel
 	MultiKeySortFixture       *schemaMultiKeySortFixture
+	Nullable                  *schemaNullable
 	Person                    *schemaPerson
 	Pet                       *schemaPet
 	QueryFixture              *schemaQueryFixture
@@ -6057,6 +6446,14 @@ type schemaMultiKeySortFixture struct {
 	Name  kallax.SchemaField
 	Start kallax.SchemaField
 	End   kallax.SchemaField
+}
+
+type schemaNullable struct {
+	*kallax.BaseSchema
+	ID       kallax.SchemaField
+	T        kallax.SchemaField
+	SomeJSON *schemaNullableSomeJSON
+	Scanner  kallax.SchemaField
 }
 
 type schemaPerson struct {
@@ -6146,6 +6543,11 @@ func (s *schemaJSONModelBazSlice) At(n int) *schemaJSONModelBazSlice {
 		BaseSchemaField: kallax.NewSchemaField("baz_slice").(*kallax.BaseSchemaField),
 		Mux:             kallax.NewJSONSchemaKey(kallax.JSONText, "baz_slice", fmt.Sprint(n), "Mux"),
 	}
+}
+
+type schemaNullableSomeJSON struct {
+	*kallax.BaseSchemaField
+	Foo kallax.SchemaField
 }
 
 var Schema = &schema{
@@ -6281,6 +6683,29 @@ var Schema = &schema{
 		Name:  kallax.NewSchemaField("name"),
 		Start: kallax.NewSchemaField("start"),
 		End:   kallax.NewSchemaField("_end"),
+	},
+	Nullable: &schemaNullable{
+		BaseSchema: kallax.NewBaseSchema(
+			"nullable",
+			"__nullable",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(Nullable)
+			},
+			true,
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("t"),
+			kallax.NewSchemaField("some_json"),
+			kallax.NewSchemaField("scanner"),
+		),
+		ID: kallax.NewSchemaField("id"),
+		T:  kallax.NewSchemaField("t"),
+		SomeJSON: &schemaNullableSomeJSON{
+			BaseSchemaField: kallax.NewSchemaField("some_json").(*kallax.BaseSchemaField),
+			Foo:             kallax.NewJSONSchemaKey(kallax.JSONInt, "some_json", "Foo"),
+		},
+		Scanner: kallax.NewSchemaField("scanner"),
 	},
 	Person: &schemaPerson{
 		BaseSchema: kallax.NewBaseSchema(

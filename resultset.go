@@ -74,6 +74,7 @@ func (rs *BaseResultSet) Scan(record Record) error {
 		if err != nil {
 			return err
 		}
+
 		pointers[i] = ptr
 	}
 
