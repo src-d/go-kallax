@@ -77,6 +77,10 @@ func TestJSON(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, float64(1), val.(float64))
 	})
+
+	t.Run("nil input", func(t *testing.T) {
+		require.NoError(t, JSON(&map[string]interface{}{}).Scan(nil))
+	})
 }
 
 func TestArray(t *testing.T) {

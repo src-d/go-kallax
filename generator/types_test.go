@@ -131,6 +131,10 @@ func (s *FieldSuite) TestAddress() {
 			"types.Nullable(&r.Foo)",
 		},
 		{
+			Interface, false, true, "Foo", "", nil,
+			"types.Nullable(r.Foo)",
+		},
+		{
 			Basic, false, true, "Foo", "", withParent(mkField("Bar", ""), mkField("Baz", "")),
 			"types.Nullable(&r.Baz.Bar.Foo)",
 		},
