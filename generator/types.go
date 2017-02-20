@@ -695,6 +695,9 @@ func (f *Field) wrapAddress(ptr string, casted bool) string {
 	}
 
 	if f.Kind == Slice {
+		if typ, ok := castSlice(f); ok {
+			return fmt.Sprintf("types.Slice((*%s)(%s))", typ, ptr)
+		}
 		return fmt.Sprintf("types.Slice(%s)", ptr)
 	}
 
@@ -789,6 +792,60 @@ func isTypeOrPtrTo(ptr types.Type, named *types.Named) bool {
 		}
 	}
 	return false
+}
+
+var supportedSliceTypes = map[string]struct{}{
+	"int8":          struct{}{},
+	"uint8":         struct{}{},
+	"byte":          struct{}{},
+	"int16":         struct{}{},
+	"uint16":        struct{}{},
+	"int32":         struct{}{},
+	"uint32":        struct{}{},
+	"int":           struct{}{},
+	"uint":          struct{}{},
+	"int64":         struct{}{},
+	"uint64":        struct{}{},
+	"float32":       struct{}{},
+	"float64":       struct{}{},
+	"bool":          struct{}{},
+	"string":        struct{}{},
+	"time.Time":     struct{}{},
+	"time.Duration": struct{}{},
+	"net/url.URL":   struct{}{},
+}
+
+// castSlice returns the type to which the slice has to be casted and a bool
+// reporting whether the slice can have/needs a casting.
+// A slice only needs a cast if the type is an alias and the slice underlying
+// type is included in `supportedSliceTypes`.
+func castSlice(f *Field) (cast string, ok bool) {
+	if !strings.HasPrefix(f.Type, "[]") {
+		return
+	}
+
+	if f.Node == nil {
+		return
+	}
+
+	if _, isNamed := f.Node.Type().(*types.Named); !isNamed {
+		return
+	}
+
+	prefix := "[]"
+	typ := f.Type[2:]
+	if strings.HasPrefix(typ, "*") {
+		prefix += "*"
+		typ = typ[1:]
+	}
+
+	cast = typ
+	if idx := strings.LastIndex(cast, "/"); idx >= 0 {
+		cast = cast[idx+1:]
+	}
+
+	_, ok = supportedSliceTypes[typ]
+	return prefix + cast, ok
 }
 
 func typeString(ty types.Type, pkg *types.Package) string {
