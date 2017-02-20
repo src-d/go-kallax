@@ -2,11 +2,13 @@ package generator
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/importer"
 	"go/parser"
 	"go/token"
 	"go/types"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -390,4 +392,301 @@ func (s *TemplateSuite) TestExecute() {
 
 func TestTemplate(t *testing.T) {
 	suite.Run(t, new(TemplateSuite))
+}
+
+const (
+	equalizable       string = "equalizable"
+	sortable                 = "sortable"
+	collection               = "collection"
+	multiType                = "multy type"
+	none                     = "none"
+	testSkippedErrMsg        = "Test skipped because testing fixture was not successfully processed"
+)
+
+func (s *ProcessorSuite) TestFindableTypeName() {
+	fixtureSrc := `
+		package foo
+
+		import "time"
+		import "net/url"
+		import "github.com/src-d/go-kallax"
+		import "github.com/src-d/go-kallax/tests/fixtures"
+
+		type mainFixture struct {
+			kallax.Model
+			ID						kallax.ULID			` + "`findable:\"kallax.ULID\" pk:\"\"`" + `
+
+			StringProp 				string 				` + "`findable:\"string\"`" + `
+			ArrStringProp 			[]string 			` + "`findable:\"string\"`" + `
+			AliasArrStringProp 		AliasArrString 		` + "`findable:\"string\"`" + `
+			AliasStringProp			AliasString 		` + "`findable:\"AliasString\"`" + `
+			ArrAliasStringProp		[]AliasString 		` + "`findable:\"AliasString\"`" + `
+			AliasArrAliasStringProp AliasArrAliasString	` + "`findable:\"AliasString\"`" + `
+
+			TimeProp				time.Time			` + "`findable:\"time.Time\"`" + `
+			ArrTimeProp				[]time.Time 		` + "`findable:\"time.Time\"`" + `
+			AliasArrTimeProp		AliasArrTime		` + "`findable:\"time.Time\"`" + `
+
+			IDProp					kallax.ULID			` + "`findable:\"kallax.ULID\"`" + `
+			ArrIDProp				[]kallax.ULID			` + "`findable:\"kallax.ULID\"`" + `
+			AliasArrIDProp			AliasArrID			` + "`findable:\"kallax.ULID\"`" + `
+
+			IfaceProp 				ScannerValuer 		` + "`findable:\"ScannerValuer\"`" + `
+			ArrIfaceProp 			[]ScannerValuer 	` + "`findable:\"ScannerValuer\"`" + `
+			AliasArrIfaceProp 		AliasArrIface 		` + "`findable:\"ScannerValuer\"`" + `
+			AliasIfaceProp 			AliasIface 			` + "`findable:\"AliasIface\"`" + `
+			ArrAliasIfaceProp 		[]AliasIface 		` + "`findable:\"AliasIface\"`" + `
+			AliasArrAliasIfaceProp	AliasArrAliasIface 	` + "`findable:\"AliasIface\"`" + `
+
+			UrlProp					url.URL				` + "`findable:\"url.URL\"`" + `
+			ArrUrlProp				[]url.URL			` + "`findable:\"url.URL\"`" + `
+
+			ExtAliasIfacePtrProp	*ScannerValuer		` + "`findable:\"ScannerValuer\"`" + `
+			ExternalAliasProp		fixtures.AliasInt	` + "`findable:\"fixtures.AliasInt\"`" + `
+			ArrExternalAliasProp	[]fixtures.AliasInt	` + "`findable:\"fixtures.AliasInt\"`" + `
+
+			ArrArrStringProp		[][]string
+			ArrAliasArrString 		[]AliasArrString
+			WhateverProp			Whatever
+			ArrWhateverProp 		[]Whatever
+		}
+
+		type AliasString string
+		type AliasArrString []string
+		type AliasArrAliasString []AliasString
+
+		type AliasTime time.Time
+		type AliasArrTime []time.Time
+		type AliasArrAliasTime []AliasTime
+
+		type AliasArrID []kallax.ULID
+
+		type AliasIface ScannerValuer
+		type AliasArrIface []ScannerValuer
+		type AliasArrAliasIface []AliasIface
+
+		type ScannerValuer struct {
+			fixtures.ScannerValuer
+		}
+
+		type Whatever struct {
+			name string
+		}
+	`
+
+	_, model := s.testedModel(fixtureSrc, "mainFixture")
+	if model == nil {
+		s.Fail(testSkippedErrMsg)
+		return
+	}
+	for _, field := range model.Fields {
+		s.assertFindableTypeName(field)
+	}
+}
+
+func (s *ProcessorSuite) assertFindableTypeName(f *Field) {
+	if f.Name == "Model" {
+		return
+	}
+
+	findableTypeName, ok := findableTypeName(f)
+	if expected := f.Tag.Get("findable"); expected != "" {
+		relativeFindableTypeName := getRelativeTypeName(findableTypeName, "foo")
+		s.True(ok, fmt.Sprintf("Could not be found the findable type name of '%s' %s", f.Name, f.Node.Type()))
+		s.Equal(expected, relativeFindableTypeName, fmt.Sprintf("Wrong findable type of '%s' %s - %s", f.Name, f.Node.Type(), findableTypeName))
+	} else {
+		s.False(ok, fmt.Sprintf("Not findable property: '%s' %s", f.Name, f.Node.Type()))
+	}
+}
+
+func (s *ProcessorSuite) TestLookupValid() {
+	return
+	fixtureSrc := `
+		package foo
+
+		import "time"
+		import "net/url"
+		import "github.com/src-d/go-kallax"
+		import "github.com/src-d/go-kallax/tests/fixtures"
+
+		type mainFixture struct {
+			kallax.Model
+			ID                   kallax.ULID		` + "`valid:\"kallax.ULID\" type:\"" + equalizable + "\" pk:\"\"`" + `
+
+			StringProp           string				` + "`valid:\"string\" type:\"" + equalizable + "\"`" + `
+			ArrStringProp        []string			` + "`deep:\"[]string\" type:\"" + collection + "\"`" + `
+			IntProp              int				` + "`valid:\"int\" type:\"" + sortable + "\"`" + `
+			ArrIntProp           []int				` + "`deep:\"[]int\" type:\"" + collection + "\"`" + `
+			Int64Prop            int64				` + "`valid:\"int64\" type:\"" + sortable + "\"`" + `
+			ArrInt64Prop         []int64			` + "`deep:\"[]int64\" type:\"" + collection + "\"`" + `
+			Float32Prop          float32			` + "`valid:\"float32\" type:\"" + sortable + "\"`" + `
+			ArrFloat32Prop       []float32			` + "`deep:\"[]float32\" type:\"" + collection + "\"`" + `
+			Uint8Prop            uint8				` + "`valid:\"uint8\" type:\"" + sortable + "\"`" + `
+			ArrUint8Prop         []uint8			` + "`deep:\"[]uint8\" type:\"" + collection + "\"`" + `
+			BoolProp             bool				` + "`valid:\"bool\" type:\"" + equalizable + "\"`" + `
+			ArrBoolProp          []bool				` + "`deep:\"[]bool\" type:\"" + collection + "\"`" + `
+			ByteProp             byte				` + "`valid:\"byte\" type:\"" + sortable + "\"`" + `
+			ArrByteProp          []byte				` + "`deep:\"[]byte\" type:\"" + collection + "\"`" + `
+			IDProp               kallax.ULID		` + "`valid:\"kallax.ULID\" type:\"" + equalizable + "\"`" + `
+			ArrIDProp            []kallax.ULID		` + "`deep:\"[]kallax.ULID\" type:\"" + collection + "\"`" + `
+			UrlProp              url.URL			` + "`valid:\"url.URL\" type:\"" + equalizable + "\"`" + `
+			ArrUrlProp           []url.URL			` + "`deep:\"[]url.URL\" type:\"" + collection + "\"`" + `
+			TimeProp             time.Time			` + "`valid:\"time.Time\" type:\"" + sortable + "\"`" + `
+			ArrTimeProp          []time.Time		` + "`deep:\"[]time.Time\" type:\"" + collection + "\"`" + `
+			AliasStringProp      AliasString		` + "`valid:\"string\" type:\"" + equalizable + "\"`" + `
+			AliasAliasStringProp AliasAliasString	` + "`valid:\"string\" type:\"" + equalizable + "\"`" + `
+			AliasArrStringProp   AliasArrString		` + "`deep:\"[]string\" type:\"" + collection + "\"`" + `
+			IfaceProp            EmbScannerValuer	` + "`valid:\"EmbScannerValuer\" type:\"" + equalizable + "\"`" + `
+			AliasEmbIfaceProp    AliasEmbIface		` + "`valid:\"AliasEmbIface\" type:\"" + equalizable + "\"`" + `
+			AliasIfaceProp       AliasIface			` + "`deep:\"struct{}\" type:\"" + none + "\"`" + `
+			ArrWhateverProp      []Whatever			` + "`deep:\"[]Whatever\" type:\"" + collection + "\"`" + `
+		}
+
+		type AliasString string
+		type AliasAliasString AliasString
+		type AliasArrString []string
+		type AliasIface fixtures.ScannerValuer
+		type AliasEmbIface EmbScannerValuer
+
+		type EmbScannerValuer struct {
+			fixtures.ScannerValuer
+		}
+
+		type Whatever struct {
+			name string
+		}
+	`
+
+	pkg, model := s.testedModel(fixtureSrc, "mainFixture")
+	if model == nil {
+		s.Fail(testSkippedErrMsg)
+		return
+	}
+	for _, field := range model.Fields {
+		s.assertLookupValid(field, pkg.pkg)
+		s.assertTypeOfFindBy(field)
+	}
+}
+
+func (s *ProcessorSuite) assertLookupValid(f *Field, pkg *types.Package) {
+	if f.Name == "Model" {
+		return
+	}
+
+	expectedValid := f.Tag.Get("valid")
+	expectedDeep := f.Tag.Get("deep")
+	receivedValid, receivedDeep := lookupValid(f.Node.Pkg(), f.Node.Type())
+	switch {
+	case expectedValid != "" && receivedValid != nil && receivedDeep == nil:
+		validShortName := getRelativeTypeName(shortName(pkg, receivedValid), "foo")
+		s.Equal(expectedValid, validShortName, fmt.Sprintf(
+			"Wrong valid type of '%s' %s\nreceived: %s",
+			f.Name, f.Node.Type(), receivedValid,
+		))
+	case expectedDeep != "" && receivedValid == nil && receivedDeep != nil:
+		deepShortName := getRelativeTypeName(shortName(pkg, receivedDeep), "foo")
+		s.Equal(expectedDeep, deepShortName, fmt.Sprintf(
+			"Wrong deepest underlying type of '%s' %s\nreceived: %s",
+			f.Name, f.Node.Type(), receivedDeep,
+		))
+	default:
+		var recValidName, recDeepestName string
+		if receivedValid != nil {
+			recValidName = receivedValid.String()
+		}
+		if receivedDeep != nil {
+			recDeepestName = receivedDeep.String()
+		}
+		summary := fmt.Sprintf("- valid: %s\n- deepest: %s", recValidName, recDeepestName)
+		s.Fail(fmt.Sprintf(
+			"It must be received only a valid or a deep type for '%s' %s\n%s",
+			f.Name, f.Node.Type(), summary,
+		))
+	}
+}
+
+func (s *ProcessorSuite) assertTypeOfFindBy(f *Field) {
+	if f.Name == "Model" {
+		return
+	}
+	fmt.Println(f.Tag)
+	expectedFindByType := f.Tag.Get("type")
+	errorString := fmt.Sprintf("Wrong type for field '%s' %s", f.Name, f.Node.Type())
+	s.Equal(expectedFindByType, findByType(f), errorString)
+}
+
+func (s *ProcessorSuite) TestShortName() {
+	return
+	fixtureSrc := `
+		package foo
+
+		import "time"
+		import "net/url"
+		import "github.com/src-d/go-kallax"
+		import "github.com/src-d/go-kallax/tests/fixtures"
+
+		type mainFixture struct {
+			kallax.Model
+			ID                   kallax.ULID		` + "short:\"kallax.ULID\" `pk:\"\"`" + `
+
+			StringProp           string				` + "`short:\"string\"`" + `
+			ArrStringProp        []string			` + "`short:\"[]string\"`" + `
+			IDProp             	 kallax.ULID		` + "`short:\"kallax.ULID\"`" + `
+			UrlProp            	 url.URL			` + "`short:\"url.URL\"`" + `
+			TimeProp             time.Time			` + "`short:\"time.Time\"`" + `
+			AliasStringProp      AliasString		` + "`short:\"AliasString\"`" + `
+			ArrAliasStringProp   []AliasString		` + "`short:\"[]AliasString\"`" + `
+			ExternalAliasProp    fixtures.AliasInt	` + "`short:\"fixtures.AliasInt\"`" + `
+			ArrExternalAliasProp []fixtures.AliasInt` + "`short:\"[]fixtures.AliasInt\"`" + `
+			AliasStringPtrProp   *AliasString		` + "`short:\"AliasString\"`" + `
+			ExternalAliasPtrProp *fixtures.AliasInt	` + "`short:\"fixtures.AliasInt\"`" + `
+		}
+
+		type AliasString string
+	`
+
+	pkg, model := s.testedModel(fixtureSrc, "mainFixture")
+	if model == nil {
+		s.Fail(testSkippedErrMsg)
+		return
+	}
+	for _, field := range model.Fields {
+		s.assertShortName(field, pkg.pkg)
+	}
+}
+
+func (s *ProcessorSuite) assertShortName(f *Field, pkg *types.Package) {
+	if f.Name == "Model" {
+		return
+	}
+	expected := f.Tag.Get("short")
+	processedShortName := getRelativeTypeName(shortName(pkg, f.Node.Type()), "foo")
+	s.Equal(expected, processedShortName, fmt.Sprintf("Wrong shortName type of '%s' %s", f.Name, f.Node.Type()))
+}
+
+func (s *ProcessorSuite) testedModel(fixture, name string) (*Package, *Model) {
+	pkg := s.processFixture(fixture)
+	s.NotNil(pkg)
+	model := findModel(pkg, name)
+	s.NotNil(model)
+	return pkg, model
+}
+
+func getRelativeTypeName(typeName, relativeToPackageName string) string {
+	return strings.Replace(typeName, relativeToPackageName+".", "", 1)
+}
+
+func findByType(f *Field) string {
+	switch {
+	case isEqualizable(f) && !isSortable(f) && !isCollection(f):
+		return equalizable
+	case !isEqualizable(f) && isSortable(f) && !isCollection(f):
+		return sortable
+	case !isEqualizable(f) && !isSortable(f) && isCollection(f):
+		return collection
+	case !isEqualizable(f) && !isSortable(f) && !isCollection(f):
+		return none
+	default:
+		return multiType
+	}
 }

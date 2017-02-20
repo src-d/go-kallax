@@ -15,8 +15,12 @@ import (
 	parseutil "gopkg.in/src-d/go-parse-utils.v1"
 )
 
-// BaseModel is the type name of the kallax base model.
-const BaseModel = "github.com/src-d/go-kallax.Model"
+const (
+	// BaseModel is the type name of the kallax base model.
+	BaseModel = "github.com/src-d/go-kallax.Model"
+	//URL is the type name of the net/url.URL.
+	URL = "url.URL"
+)
 
 // Processor is in charge of processing the package in a patch and
 // scan models from it.
@@ -453,7 +457,11 @@ func joinDirectory(directory string, files []string) []string {
 var goPath = os.Getenv("GOPATH")
 
 func typeName(typ types.Type) string {
-	return strings.Replace(typ.String(), goPath+"/src/", "", -1)
+	return removeGoPath(typ.String())
+}
+
+func removeGoPath(path string) string {
+	return strings.Replace(path, goPath+"/src/", "", -1)
 }
 
 func isIgnoredField(s *types.Struct, idx int) bool {

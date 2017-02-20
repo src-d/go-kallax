@@ -541,6 +541,8 @@ func (s *{{.Model.StoreName}}) Remove{{.Name}}(record *{{.Model.Name}}) error {
 
 {{template "query" .}}
 
+{{$.GenFindBy .}}
+
 {{template "resultset" .}}
 
 {{end}}
