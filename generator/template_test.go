@@ -49,7 +49,11 @@ return &r.Foo, nil
 case "bar":
 return r.Bar, nil
 case "arr":
-return types.Slice((*[]string)(&r.Arr)), nil
+return types.Slice(&r.Arr), nil
+case "arr_aliased":
+return types.Slice(&r.ArrAliased), nil
+case "urlarr":
+return types.Slice((*[]*url.URL)(&r.URLArr)), nil
 case "json":
 return types.JSON(&r.JSON), nil
 case "url":
@@ -76,6 +80,10 @@ const baseTpl = `
 		Foo string
 	}
 
+	type Baz string
+
+	type URLs []*url.URL
+
 	type Foo struct {
 		kallax.Model
 		ID int64 ` + "`pk:\"autoincr\"`" + `
@@ -83,6 +91,8 @@ const baseTpl = `
 		Bar *string
 		Rel Rel
 		Arr []string
+		ArrAliased []Baz
+		URLArr URLs
 		JSON JSON
 		URL *url.URL
 		UrlNoPtr url.URL
@@ -161,6 +171,8 @@ const expectedColumns = `kallax.NewSchemaField("id"),
 kallax.NewSchemaField("foo"),
 kallax.NewSchemaField("bar"),
 kallax.NewSchemaField("arr"),
+kallax.NewSchemaField("arr_aliased"),
+kallax.NewSchemaField("urlarr"),
 kallax.NewSchemaField("json"),
 kallax.NewSchemaField("url"),
 kallax.NewSchemaField("url_no_ptr"),

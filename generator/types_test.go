@@ -124,7 +124,7 @@ func (s *FieldSuite) TestAddress() {
 		},
 		{
 			Slice, false, false, "Foo", "[]string", nil,
-			"types.Slice((*[]string)(&r.Foo)), nil",
+			"types.Slice(&r.Foo), nil",
 		},
 		{
 			Basic, false, true, "Foo", "", nil,
