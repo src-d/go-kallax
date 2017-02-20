@@ -1,6 +1,8 @@
 package tests
 
 import (
+	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -171,4 +173,26 @@ func (s *RelationshipsSuite) getPerson() *Person {
 	s.NotNil(pers)
 
 	return pers
+}
+
+func (s *RelationshipsSuite) TestRemoveRelations() {
+	c := map[string]interface{}{
+		"RemovePets":    (func(*PersonStore, *Person, ...*Pet) error)(nil),
+		"RemoveArrPets": (func(*PersonStore, *Person, ...*Pet) error)(nil),
+		"RemoveCar":     (func(*PersonStore, *Person) error)(nil),
+	}
+
+	personStore := NewPersonStore(s.db)
+	storeType := reflect.TypeOf(personStore)
+	for methodName, methodImpl := range c {
+		generatedMethod, ok := storeType.MethodByName(methodName)
+		expectedType := reflect.TypeOf(methodImpl)
+		if !s.True(ok, fmt.Sprintf("Missing '%s' method", methodName)) {
+			continue
+		}
+
+		s.True(generatedMethod.Type.AssignableTo(expectedType),
+			"Wrong implementation of '%s'", methodName,
+		)
+	}
 }
