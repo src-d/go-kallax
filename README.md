@@ -31,6 +31,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Delete models](#delete-models)
 * [Query models](#query-models)
   * [Simple queries](#simple-queries)
+  * [Generated findbys](#generated-findbys)
   * [Query with relationships](#query-with-relationships)
   * [Querying JSON](#querying-json)
 * [Transactions](#transactions)
@@ -441,6 +442,53 @@ NewUserQuery().Select(Schema.User.Username, Schema.User.Password)
 // Select all but password
 NewUserQuery().SelectNot(Schema.User.Password)
 ```
+
+### Generated findbys
+
+Kallax generates a `FindBy` for every field of your model for which it makes sense to do so. What is a `FindBy`? It is a shorthand to add a condition to the query for a specific field.
+
+Consider the following model:
+
+```go
+type Person struct {
+        kallax.Model
+        ID        int64     `pk:"autoincr"`
+        Name      string
+        BirthDate time.Time
+        Age       int
+}
+```
+
+Four `FindBy`s will be generated for this model:
+
+```go
+func (*PersonQuery) FindByID(...int64) *PersonQuery
+func (*PersonQuery) FindByName(string) *PersonQuery
+func (*PersonQuery) FindByBirthDate(kallax.ScalarCond, time.Time) *PersonQuery
+func (*PersonQuery) FindByAge(kallax.ScalarCond, int) *PersonQuery
+```
+
+That way, you can just do the following:
+
+```go
+NewPersonQuery().
+        FindByAge(kallax.GtOrEq, 18).
+        FindByName("Bobby")
+```
+
+instead of:
+
+```go
+NewPersonQuery().
+        Where(kallax.GtOrEq(Schema.Person.Age, 18)).
+        Where(kallax.Eq(Schema.Person.Name, "Bobby"))
+```
+
+Why are there three different types of methods generated?
+
+- The primary key field is treated in a special way and allows multiple IDs to be passed, since searching by multiple IDs is a common operation.
+- Types that are not often searched by equality (integers, floats, times, ...) allow an operator to be passed to them to determine the operator to use.
+- Types that can only be searched by value (strings, bools, ...) only allow a value to be passed.
 
 ### Count results
 
