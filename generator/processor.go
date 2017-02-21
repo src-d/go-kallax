@@ -248,6 +248,11 @@ func (p *Processor) processFields(s *types.Struct, done []*types.Struct, root bo
 		}
 
 		p.processField(field, f.Type(), done, root)
+		if field.Kind == Invalid {
+			fmt.Printf("WARNING: arrays of relationships are not supported. Field %s will be ignored.\n", field.Name)
+			continue
+		}
+
 		fields = append(fields, field)
 	}
 
@@ -303,7 +308,7 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 		var underlying Field
 		p.processField(&underlying, typ.Elem(), done, root)
 		if underlying.Kind == Relationship {
-			field.Kind = Relationship
+			field.Kind = Invalid
 			return
 		}
 
@@ -348,7 +353,7 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 			field.SetFields(subfs)
 		}
 	default:
-		fmt.Printf("Ignored field %s of type %s\n", field.Name, field.Type)
+		fmt.Printf("WARNING: Ignored field %s of type %s\n", field.Name, field.Type)
 	}
 }
 
