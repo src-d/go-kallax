@@ -44,8 +44,9 @@ type Person struct {
 	kallax.Model `table:"persons"`
 	ID           int64 `pk:"autoincr"`
 	Name         string
-	Pets         []*Pet `fk:"owner_id"`
-	Car          *Car   `fk:"owner_id"`
+	Pets         []*Pet  `fk:"owner_id"`
+	PetsArr      [2]*Pet `fk:"owner_id"`
+	Car          *Car    `fk:"owner_id"`
 	events       map[string]int
 }
 

@@ -511,6 +511,8 @@ const (
 	Struct
 	// Relationship is a field which is a relationship to other model/s.
 	Relationship
+	// Invalid is an invalid field type.
+	Invalid
 )
 
 // String returns the constant name of the FieldKind
@@ -530,6 +532,8 @@ func (t FieldKind) String() string {
 		return "Struct"
 	case Relationship:
 		return "Relationship"
+	case Invalid:
+		return "Invalid"
 	default:
 		return "UNKNOWN"
 	}

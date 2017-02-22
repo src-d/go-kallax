@@ -213,7 +213,6 @@ func (s *ProcessorSuite) TestProcessField() {
 		{"BasicPtr", Basic, false, false, true},
 		{"Relationship", Relationship, false, false, false},
 		{"RelSlice", Relationship, false, false, false},
-		{"RelArray", Relationship, false, false, false},
 		{"Map", Map, true, false, false},
 		{"MapAlias", Map, true, false, false},
 		{"AliasSlice", Slice, false, true, false},
@@ -239,6 +238,8 @@ func (s *ProcessorSuite) TestProcessField() {
 		s.Equal(c.isAlias, f.IsAlias, "%s is alias", c.name)
 		s.Equal(c.isPtr, f.IsPtr, "%s is ptr", c.name)
 	}
+
+	s.Nil(findField(m, "RelArray"), "RelArray should not be generated")
 }
 
 func (s *ProcessorSuite) TestCtor() {
