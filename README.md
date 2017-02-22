@@ -1,4 +1,4 @@
-Kallax - PostgreSQL ORM for Go
+<img src="https://cdn.rawgit.com/src-d/go-kallax/master/kallax.svg" width="400" />
 =============================
 
 [![GoDoc](https://godoc.org/github.com/src-d/go-kallax?status.svg)](https://godoc.org/github.com/src-d/go-kallax) [![Build Status](https://travis-ci.org/src-d/go-kallax.svg?branch=master)](https://travis-ci.org/src-d/go-kallax) [![codecov](https://codecov.io/gh/src-d/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/src-d/go-kallax)](https://goreportcard.com/report/github.com/src-d/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
