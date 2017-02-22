@@ -71,7 +71,7 @@ return kallax.VirtualColumn("foo_id", r, new(kallax.NumericID)), nil
 const baseTpl = `
 	package fixture
 
-	import "github.com/src-d/go-kallax"
+	import "gopkg.in/src-d/go-kallax.v1"
 	import "net/url"
 
 	type Rel struct {
@@ -143,7 +143,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 	s.processSource(`
 	package fixture
 
-	import "github.com/src-d/go-kallax"
+	import "gopkg.in/src-d/go-kallax.v1"
 	import "net/url"
 
 	type Aliased string
@@ -201,7 +201,7 @@ func (s *TemplateSuite) TestGenModelColumns() {
 const jsonBaseTpl = `
 	package fixture
 
-	import "github.com/src-d/go-kallax"
+	import "gopkg.in/src-d/go-kallax.v1"
 	import "net/url"
 
 	type Rel struct {
@@ -337,7 +337,7 @@ func (s *TemplateSuite) TestGenTypeName() {
 	s.processSource(`
 	package fixture
 
-	import "github.com/src-d/go-kallax"
+	import "gopkg.in/src-d/go-kallax.v1"
 	import "net/url"
 
 	type Foo struct {
@@ -372,7 +372,7 @@ func (s *TemplateSuite) TestIsPtrSlice() {
 	s.processSource(`
 	package fixture
 
-	import "github.com/src-d/go-kallax"
+	import "gopkg.in/src-d/go-kallax.v1"
 	import "net/url"
 
 	type Foo struct {
@@ -425,8 +425,8 @@ func (s *ProcessorSuite) TestFindableTypeName() {
 
 		import "time"
 		import "net/url"
-		import "github.com/src-d/go-kallax"
-		import "github.com/src-d/go-kallax/tests/fixtures"
+		import "gopkg.in/src-d/go-kallax.v1"
+		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model
@@ -522,8 +522,8 @@ func (s *ProcessorSuite) TestLookupValid() {
 
 		import "time"
 		import "net/url"
-		import "github.com/src-d/go-kallax"
-		import "github.com/src-d/go-kallax/tests/fixtures"
+		import "gopkg.in/src-d/go-kallax.v1"
+		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model
@@ -638,8 +638,8 @@ func (s *ProcessorSuite) TestShortName() {
 
 		import "time"
 		import "net/url"
-		import "github.com/src-d/go-kallax"
-		import "github.com/src-d/go-kallax/tests/fixtures"
+		import "gopkg.in/src-d/go-kallax.v1"
+		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model

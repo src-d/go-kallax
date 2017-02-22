@@ -107,12 +107,12 @@ var reservedKeywords = map[string]struct{}{
 // special types that are not analyzed because SQL already knows
 // how to handle them
 var specialTypes = map[string]string{
-	"github.com/src-d/go-kallax.UUID":      "kallax.UUID",
-	"github.com/src-d/go-kallax.ULID":      "kallax.ULID",
-	"github.com/src-d/go-kallax.NumericID": "kallax.NumericID",
-	"github.com/satori/go.uuid.UUID":       "kallax.UUID",
-	"net/url.URL":                          "url.URL",
-	"time.Time":                            "time.Time",
+	"gopkg.in/src-d/go-kallax.v1.UUID":      "kallax.UUID",
+	"gopkg.in/src-d/go-kallax.v1.ULID":      "kallax.ULID",
+	"gopkg.in/src-d/go-kallax.v1.NumericID": "kallax.NumericID",
+	"github.com/satori/go.uuid.UUID":        "kallax.UUID",
+	"net/url.URL":                           "url.URL",
+	"time.Time":                             "time.Time",
 }
 
 // mappings defines the mapping between specific types and their counterpart
@@ -758,10 +758,10 @@ func (f *Field) TypeSchemaName() string {
 }
 
 var identifierTypes = map[string]string{
-	"github.com/src-d/go-kallax.UUID":      "kallax.UUID",
-	"github.com/src-d/go-kallax.ULID":      "kallax.ULID",
-	"github.com/src-d/go-kallax.NumericID": "kallax.NumericID",
-	"github.com/satori/go.uuid.UUID":       "kallax.UUID",
+	"gopkg.in/src-d/go-kallax.v1.UUID":      "kallax.UUID",
+	"gopkg.in/src-d/go-kallax.v1.ULID":      "kallax.ULID",
+	"gopkg.in/src-d/go-kallax.v1.NumericID": "kallax.NumericID",
+	"github.com/satori/go.uuid.UUID":        "kallax.UUID",
 	"int64": "kallax.NumericID",
 }
 

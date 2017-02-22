@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/src-d/go-kallax"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/src-d/go-kallax.v1"
 )
 
 type ResulsetSuite struct {

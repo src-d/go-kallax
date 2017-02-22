@@ -6,8 +6,8 @@ import (
 
 	"fmt"
 
-	"github.com/src-d/go-kallax"
-	"github.com/src-d/go-kallax/tests/fixtures"
+	"gopkg.in/src-d/go-kallax.v1"
+	"gopkg.in/src-d/go-kallax.v1/tests/fixtures"
 )
 
 type QueryFixture struct {

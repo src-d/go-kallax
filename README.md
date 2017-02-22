@@ -1,7 +1,7 @@
 <img src="https://cdn.rawgit.com/src-d/go-kallax/master/kallax.svg" width="400" />
 =============================
 
-[![GoDoc](https://godoc.org/github.com/src-d/go-kallax?status.svg)](https://godoc.org/github.com/src-d/go-kallax) [![Build Status](https://travis-ci.org/src-d/go-kallax.svg?branch=master)](https://travis-ci.org/src-d/go-kallax) [![codecov](https://codecov.io/gh/src-d/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/src-d/go-kallax)](https://goreportcard.com/report/github.com/src-d/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GoDoc](https://godoc.org/gopkg.in/src-d/go-kallax.v1?status.svg)](https://godoc.org/gopkg.in/src-d/go-kallax.v1) [![Build Status](https://travis-ci.org/src-d/go-kallax.svg?branch=master)](https://travis-ci.org/src-d/go-kallax) [![codecov](https://codecov.io/gh/src-d/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/src-d/go-kallax)](https://goreportcard.com/report/github.com/src-d/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
 Kallax is a PostgreSQL typesafe ORM for the Go language.
@@ -42,7 +42,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
 The recommended way to install `kallax` is:
 
 ```
-go get -u github.com/src-d/kallax/...
+go get -u gopkg.in/src-d/kallax.v1/...
 ```
 
 > *kallax* includes a binary tool used by [go generate](http://blog.golang.org/generate),

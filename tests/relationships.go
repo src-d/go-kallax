@@ -1,6 +1,6 @@
 package tests
 
-import kallax "github.com/src-d/go-kallax"
+import kallax "gopkg.in/src-d/go-kallax.v1"
 
 type Car struct {
 	kallax.Model `table:"cars"`

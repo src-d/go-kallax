@@ -425,7 +425,7 @@ func printDocumentWithNumbers(code string) {
 }
 
 func loadTemplateText(filename string) string {
-	filename = filepath.Join(build.Default.GOPATH, "src/github.com/src-d/go-kallax/generator", filename)
+	filename = filepath.Join(build.Default.GOPATH, "src/gopkg.in/src-d/go-kallax.v1/generator", filename)
 	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)

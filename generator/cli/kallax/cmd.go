@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/src-d/go-kallax/generator"
+	"gopkg.in/src-d/go-kallax.v1/generator"
 
 	"gopkg.in/urfave/cli.v1"
 )

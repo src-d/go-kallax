@@ -2,6 +2,7 @@ language: go
 
 go:
   - 1.7
+  - 1.8
   - tip
 
 matrix:
@@ -21,8 +22,12 @@ before_script:
   - psql -c 'create database kallax_test;' -U postgres
 
 install:
-  - go get -t -v .
-  - go get -t -v ./generator/...
+  - rm -rf $GOPATH/src/gopkg.in/src-d
+  - mkdir -p $GOPATH/src/gopkg.in/src-d
+  - mv $PWD $GOPATH/src/gopkg.in/src-d/go-kallax.v1
+  - cd $GOPATH/src/gopkg.in/src-d/go-kallax.v1
+  - go get -v -t .
+  - go get -v -t ./generator/...
 
 script:
   - make test

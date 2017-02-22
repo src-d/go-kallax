@@ -22,7 +22,7 @@ func (s *ProcessorSuite) TestInlineStruct() {
 	fixtureSrc := `
   package fixture
 
-  import  "github.com/src-d/go-kallax"
+  import  "gopkg.in/src-d/go-kallax.v1"
 
   type Foo struct {}
 
@@ -42,7 +42,7 @@ func (s *ProcessorSuite) TestTags() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"github.com/src-d/go-kallax"
+	import 	"gopkg.in/src-d/go-kallax.v1"
 
 	type Foo struct {
 		kallax.Model
@@ -59,7 +59,7 @@ func (s *ProcessorSuite) TestRecursiveModel() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"github.com/src-d/go-kallax"
+	import 	"gopkg.in/src-d/go-kallax.v1"
 
 	type Recur struct {
 		kallax.Model
@@ -80,7 +80,7 @@ func (s *ProcessorSuite) TestDeepRecursiveStruct() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"github.com/src-d/go-kallax"
+	import 	"gopkg.in/src-d/go-kallax.v1"
 
 	type Recur struct {
 		kallax.Model
@@ -109,7 +109,7 @@ func (s *ProcessorSuite) TestIsEventPresent() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"github.com/src-d/go-kallax"
+	import 	"gopkg.in/src-d/go-kallax.v1"
 
 	type Foo struct {
 		kallax.Model
@@ -148,7 +148,7 @@ func (s *ProcessorSuite) TestProcessField() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"github.com/src-d/go-kallax"
+	import 	"gopkg.in/src-d/go-kallax.v1"
 	import "database/sql/driver"
 
 	type BasicAlias string
@@ -246,7 +246,7 @@ func (s *ProcessorSuite) TestCtor() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"github.com/src-d/go-kallax"
+	import 	"gopkg.in/src-d/go-kallax.v1"
 
 	type Foo struct {
 		kallax.Model
@@ -269,7 +269,7 @@ func (s *ProcessorSuite) TestSQLTypeIsInterface() {
 	fixtureSrc := `
 	package fixture
 
-	import "github.com/src-d/go-kallax"
+	import "gopkg.in/src-d/go-kallax.v1"
 	import "database/sql/driver"
 
 	type Foo struct {
@@ -298,7 +298,7 @@ func (s *ProcessorSuite) TestIsSQLType() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"github.com/src-d/go-kallax"
+	import 	"gopkg.in/src-d/go-kallax.v1"
 
 	type SQLTypeFixture struct {
 		kallax.Model
@@ -340,7 +340,7 @@ func (s *ProcessorSuite) processFixture(source string) *Package {
 }
 
 func (s *ProcessorSuite) TestDo() {
-	p := NewProcessor(filepath.Join(goPath, "src", "github.com/src-d/go-kallax"), []string{"README.md"})
+	p := NewProcessor(filepath.Join(goPath, "src", "gopkg.in/src-d/go-kallax.v1"), []string{"README.md"})
 	pkg, err := p.Do()
 	s.NotNil(pkg)
 	s.NoError(err)
@@ -350,7 +350,7 @@ func (s *ProcessorSuite) TestIsModel() {
 	src := `
 	package fixture
 
-	import "github.com/src-d/go-kallax"
+	import "gopkg.in/src-d/go-kallax.v1"
 
 	type Bar struct {
 		kallax.Model
@@ -392,7 +392,7 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 	src := `
 	package fixture
 
-	import "github.com/src-d/go-kallax"
+	import "gopkg.in/src-d/go-kallax.v1"
 
 	type Bar struct {
 		kallax.Model

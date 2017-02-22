@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/src-d/go-kallax"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/src-d/go-kallax.v1"
 )
 
 type QuerySuite struct {
@@ -118,7 +118,7 @@ func (s *QuerySuite) TestFindById() {
 func (s *QuerySuite) TestFindBy() {
 	store := NewQueryFixtureStore(s.db)
 	s.NotPanics(func() {
-		// TODO enable the following test once ISSUE#96 has been solved https://github.com/src-d/go-kallax/issues/96
+		// TODO enable the following test once ISSUE#96 has been solved https://gopkg.in/src-d/go-kallax.v1/issues/96
 		//s.True(store.MustFindOne(NewQueryFixtureQuery().FindByStringProperty("StringProperty1")).Eq(queryFixtures[1]))
 	})
 	s.Panics(func() {
@@ -126,7 +126,7 @@ func (s *QuerySuite) TestFindBy() {
 	})
 
 	s.NotPanics(func() {
-		// TODO enable the following test once ISSUE#96 has been solved https://github.com/src-d/go-kallax/issues/96
+		// TODO enable the following test once ISSUE#96 has been solved https://gopkg.in/src-d/go-kallax.v1/issues/96
 		//s.True(store.MustFindOne(NewQueryFixtureQuery().FindByBoolean(false)).Eq(queryFixtures[1]))
 	})
 	s.NotPanics(func() {
@@ -136,7 +136,7 @@ func (s *QuerySuite) TestFindBy() {
 	})
 
 	s.NotPanics(func() {
-		// TODO enable the following test once ISSUE#96 has been solved https://github.com/src-d/go-kallax/issues/96
+		// TODO enable the following test once ISSUE#96 has been solved https://gopkg.in/src-d/go-kallax.v1/issues/96
 		//s.True(store.MustFindOne(NewQueryFixtureQuery().FindByInteger(kallax.Eq, 2)).Eq(queryFixtures[2]))
 	})
 	s.Panics(func() {

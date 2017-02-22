@@ -20,6 +20,7 @@ test:
 	done; \
 	go install ./generator/...; \
 	go generate ./tests/...; \
+	git diff --no-prefix -U1000; \
 	if [ `git status | grep 'Changes not staged for commit' | wc -l` != '0' ]; then \
 		echo 'There are differences between the commited tests/kallax.go and the one generated right now'; \
 		exit 2; \

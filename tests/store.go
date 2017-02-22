@@ -3,7 +3,7 @@ package tests
 import (
 	"time"
 
-	"github.com/src-d/go-kallax"
+	"gopkg.in/src-d/go-kallax.v1"
 )
 
 type AliasSliceString []string

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/src-d/go-kallax/types"
+	"gopkg.in/src-d/go-kallax.v1/types"
 )
 
 // ResultSet is the common interface all result sets need to implement.
