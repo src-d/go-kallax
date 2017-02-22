@@ -7,7 +7,7 @@
 // the data access layer.
 // Another of the goals of kallax is make sure all models are, first and
 // foremost, Go structs without having to use database-specific types such as,
-// for example, `sql.NullInt64.
+// for example, `sql.NullInt64`.
 // Support for arrays of all basic Go types and all JSON and arrays operators is
 // provided as well.
 package kallax
