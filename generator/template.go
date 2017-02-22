@@ -623,17 +623,19 @@ func specialTypeShortName(typ types.Type) (string, bool) {
 }
 
 func shortName(pkg *types.Package, typ types.Type) string {
-	var preffix string
+	var prefix string
 	if singleType := collectionElemType(typ); singleType != nil {
+		t := typ.String()
+		idx := strings.Index(t, "]")
+		prefix = t[:idx+1]
 		typ = singleType
-		preffix = "[]"
 	}
 
 	if specialName, ok := specialTypeShortName(typ); ok {
-		return preffix + specialName
+		return prefix + specialName
 	} else {
 		shortName := typeString(typ, pkg)
-		return preffix + strings.Replace(shortName, "*", "", -1)
+		return prefix + strings.Replace(shortName, "*", "", -1)
 	}
 }
 

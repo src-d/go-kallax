@@ -50,6 +50,8 @@ case "foo":
 return &r.Foo, nil
 case "bar":
 return types.Nullable(&r.Bar), nil
+case "baz":
+return &r.Baz, nil
 case "arr":
 return types.Slice(&r.Arr), nil
 case "arr_aliased":
@@ -91,6 +93,7 @@ const baseTpl = `
 		ID int64 ` + "`pk:\"autoincr\"`" + `
 		Foo string
 		Bar *string
+		Baz int64
 		Rel Rel
 		Arr []string
 		ArrAliased []Baz
@@ -178,6 +181,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 const expectedColumns = `kallax.NewSchemaField("id"),
 kallax.NewSchemaField("foo"),
 kallax.NewSchemaField("bar"),
+kallax.NewSchemaField("baz"),
 kallax.NewSchemaField("arr"),
 kallax.NewSchemaField("arr_aliased"),
 kallax.NewSchemaField("urlarr"),
@@ -429,7 +433,8 @@ func (s *ProcessorSuite) TestFindableTypeName() {
 			ID						kallax.ULID			` + "`findable:\"kallax.ULID\" pk:\"\"`" + `
 
 			StringProp 				string 				` + "`findable:\"string\"`" + `
-			ArrStringProp 			[]string 			` + "`findable:\"string\"`" + `
+			SliceStringProp 		[]string 			` + "`findable:\"string\"`" + `
+			ArrStringProp 			[2]string 			` + "`findable:\"string\"`" + `
 			AliasArrStringProp 		AliasArrString 		` + "`findable:\"string\"`" + `
 			AliasStringProp			AliasString 		` + "`findable:\"AliasString\"`" + `
 			ArrAliasStringProp		[]AliasString 		` + "`findable:\"AliasString\"`" + `
@@ -512,7 +517,6 @@ func (s *ProcessorSuite) assertFindableTypeName(f *Field) {
 }
 
 func (s *ProcessorSuite) TestLookupValid() {
-	return
 	fixtureSrc := `
 		package foo
 
@@ -530,7 +534,8 @@ func (s *ProcessorSuite) TestLookupValid() {
 			IntProp              int				` + "`valid:\"int\" type:\"" + sortable + "\"`" + `
 			ArrIntProp           []int				` + "`deep:\"[]int\" type:\"" + collection + "\"`" + `
 			Int64Prop            int64				` + "`valid:\"int64\" type:\"" + sortable + "\"`" + `
-			ArrInt64Prop         []int64			` + "`deep:\"[]int64\" type:\"" + collection + "\"`" + `
+			SliceInt64Prop       []int64			` + "`deep:\"[]int64\" type:\"" + collection + "\"`" + `
+			ArrInt64Prop         [2]int64			` + "`deep:\"[2]int64\" type:\"" + collection + "\"`" + `
 			Float32Prop          float32			` + "`valid:\"float32\" type:\"" + sortable + "\"`" + `
 			ArrFloat32Prop       []float32			` + "`deep:\"[]float32\" type:\"" + collection + "\"`" + `
 			Uint8Prop            uint8				` + "`valid:\"uint8\" type:\"" + sortable + "\"`" + `
@@ -621,14 +626,13 @@ func (s *ProcessorSuite) assertTypeOfFindBy(f *Field) {
 	if f.Name == "Model" {
 		return
 	}
-	fmt.Println(f.Tag)
 	expectedFindByType := f.Tag.Get("type")
 	errorString := fmt.Sprintf("Wrong type for field '%s' %s", f.Name, f.Node.Type())
+	s.True(expectedFindByType != "" && findByType(f) != "", errorString)
 	s.Equal(expectedFindByType, findByType(f), errorString)
 }
 
 func (s *ProcessorSuite) TestShortName() {
-	return
 	fixtureSrc := `
 		package foo
 
@@ -639,10 +643,11 @@ func (s *ProcessorSuite) TestShortName() {
 
 		type mainFixture struct {
 			kallax.Model
-			ID                   kallax.ULID		` + "short:\"kallax.ULID\" `pk:\"\"`" + `
+			ID                   kallax.ULID		` + "`short:\"kallax.ULID\" pk:\"\"`" + `
 
 			StringProp           string				` + "`short:\"string\"`" + `
-			ArrStringProp        []string			` + "`short:\"[]string\"`" + `
+			SliceStringProp      []string			` + "`short:\"[]string\"`" + `
+			ArrStringProp        [2]string			` + "`short:\"[2]string\"`" + `
 			IDProp             	 kallax.ULID		` + "`short:\"kallax.ULID\"`" + `
 			UrlProp            	 url.URL			` + "`short:\"url.URL\"`" + `
 			TimeProp             time.Time			` + "`short:\"time.Time\"`" + `
