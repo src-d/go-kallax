@@ -57,9 +57,17 @@ func (r *batchQueryRunner) next() (Record, error) {
 	}
 
 	if len(r.records) == 0 {
-		records, err := r.loadNextBatch()
-		if err != nil {
-			return nil, err
+		var (
+			records []Record
+			err     error
+		)
+
+		limit := r.q.GetLimit()
+		if limit <= 0 || limit > uint64(r.total) {
+			records, err = r.loadNextBatch()
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		if len(records) == 0 {
