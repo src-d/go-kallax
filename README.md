@@ -42,7 +42,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
 The recommended way to install `kallax` is:
 
 ```
-go get -u gopkg.in/src-d/kallax.v1/...
+go get -u gopkg.in/src-d/go-kallax.v1/...
 ```
 
 > *kallax* includes a binary tool used by [go generate](http://blog.golang.org/generate),
