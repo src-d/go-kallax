@@ -35,6 +35,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Query with relationships](#query-with-relationships)
   * [Querying JSON](#querying-json)
 * [Transactions](#transactions)
+* [Benchmarks](#benchmarks)
 * [Contributing](#contributing)
 
 ## Installation
@@ -599,6 +600,40 @@ store.Transaction(func(s *UserStore) error {
   Aliases of slice types are supported, though. If we have `type Strings []string`, using `Strings` would be supported, as a cast like this `([]string)(&slice)` it's supported and `[]string` is supported.
 * `time.Time` and `url.URL` need to be used as is. That is, you can not use a type `Foo` being `type Foo time.Time`. `time.Time` and `url.URL` are types that are treated in a special way, if you do that, it would be the same as saying `type Foo struct { ... }` and kallax would no longer be able to identify the correct type.
 * Multidimensional arrays or slices are **not supported** except inside a JSON field.
+
+## Benchmarks
+
+Here are some benchmarks against [GORM](https://github.com/jinzhu/gorm) and `database/sql`, which is one of the most popular ORMs for Go. In the future we might add benchmarks for some more complex cases and other available ORMs.
+
+```
+BenchmarkKallaxInsertWithRelationships-4   	     300	   4767574 ns/op	   19130 B/op	     441 allocs/op
+BenchmarkRawSQLInsertWithRelationships-4   	     300	   4467652 ns/op	    3997 B/op	     114 allocs/op
+BenchmarkGORMInsertWithRelationships-4     	     300	   4813566 ns/op	   34550 B/op	     597 allocs/op
+
+BenchmarkKallaxInsert-4                    	     500	   3650913 ns/op	    3569 B/op	      85 allocs/op
+BenchmarkRawSQLInsert-4                    	     500	   3530908 ns/op	     901 B/op	      24 allocs/op
+BenchmarkGORMInsert-4                      	     300	   3716373 ns/op	    4558 B/op	     104 allocs/op
+
+BenchmarkKallaxQueryRelationships/query-4  	    1000	   1535928 ns/op	   59335 B/op	    1557 allocs/op
+BenchmarkRawSQLQueryRelationships/query-4  	      30	  44225743 ns/op	  201288 B/op	    6021 allocs/op
+BenchmarkGORMQueryRelationships/query-4    	     300	   4012112 ns/op	 1068887 B/op	   20827 allocs/op
+
+BenchmarkKallaxQuery/query-4               	    3000	    433453 ns/op	   50697 B/op	    1893 allocs/op
+BenchmarkRawSQLQuery/query-4               	    5000	    368947 ns/op	   37392 B/op	    1522 allocs/op
+BenchmarkGORMQuery/query-4                 	    2000	   1311137 ns/op	  427308 B/op	    7065 allocs/op
+
+PASS
+ok  	gopkg.in/src-d/go-kallax.v1/benchmarks	31.313s
+```
+
+As we can see on the benchmark, the performance loss is not very much compared to raw `database/sql`, while GORMs performance loss is very big and the memory consumption is way higher.
+
+Source code of the benchmarks can be found on the [benchmarks](https://github.com/src-d/go-kallax/tree/master/benchmarks) folder.
+
+**Notes:**
+
+* Benchmarks were run on a 2015 MacBook Pro with i5 and 8GB of RAM and 128GB SSD hard drive running fedora 25.
+* Benchmark of `database/sql` for querying with relationships is implemented with a very naive 1+n solution. That's why the result is that bad.
 
 ## Contributing 
 
