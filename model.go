@@ -1,8 +1,10 @@
 package kallax
 
 import (
+	"bytes"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -212,7 +214,85 @@ func NewULID() ULID {
 
 // Scan implements the Scanner interface.
 func (id *ULID) Scan(src interface{}) error {
-	return (*uuid.UUID)(id).Scan(src)
+	switch src := src.(type) {
+	case []byte:
+		if len(src) != 16 {
+			return id.UnmarshalText(src)
+		}
+
+		var ulid ulid.ULID
+		if err := ulid.UnmarshalBinary(src); err != nil {
+			return err
+		}
+		*id = ULID(ulid)
+		return nil
+	case string:
+		return id.Scan([]byte(src))
+	default:
+		return fmt.Errorf("kallax: cannot scan %T into ULID", src)
+	}
+}
+
+var (
+	urnPrefix  = []byte("urn:uuid:")
+	byteGroups = []int{8, 4, 4, 4, 12}
+)
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+// Following formats are supported:
+// "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+// "{6ba7b810-9dad-11d1-80b4-00c04fd430c8}",
+// "urn:uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+// Implements the exact same code as the UUID UnmarshalText removing the
+// version check.
+func (u *ULID) UnmarshalText(text []byte) (err error) {
+	if len(text) < 32 {
+		err = fmt.Errorf("uuid: UUID string too short: %s", text)
+		return
+	}
+
+	t := text[:]
+	braced := false
+
+	if bytes.Equal(t[:9], urnPrefix) {
+		t = t[9:]
+	} else if t[0] == '{' {
+		braced = true
+		t = t[1:]
+	}
+
+	b := u[:]
+
+	for i, byteGroup := range byteGroups {
+		if i > 0 && t[0] == '-' {
+			t = t[1:]
+		} else if i > 0 && t[0] != '-' {
+			err = fmt.Errorf("kallax: invalid ulid string format")
+			return
+		}
+
+		if len(t) < byteGroup {
+			err = fmt.Errorf("kallax: ulid string too short: %s", text)
+			return
+		}
+
+		if i == 4 && len(t) > byteGroup &&
+			((braced && t[byteGroup] != '}') || len(t[byteGroup:]) > 1 || !braced) {
+			err = fmt.Errorf("kallax: ulid string too long: %s", t)
+			return
+		}
+
+		_, err = hex.Decode(b[:byteGroup/2], t[:byteGroup])
+
+		if err != nil {
+			return
+		}
+
+		t = t[byteGroup:]
+		b = b[byteGroup/2:]
+	}
+
+	return
 }
 
 // Value implements the Valuer interface.

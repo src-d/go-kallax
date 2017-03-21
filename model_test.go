@@ -47,6 +47,8 @@ func TestULID_ScanValue(t *testing.T) {
 
 	r.Equal(expected, id)
 	r.Equal(expected.String(), id.String())
+
+	r.NoError(id.Scan([]byte("015af13d-2271-fb69-2dcd-fb24a1fd7dcc")))
 }
 
 func TestVirtualColumn(t *testing.T) {
