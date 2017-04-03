@@ -295,6 +295,10 @@ func (u *ULID) UnmarshalText(text []byte) (err error) {
 	return
 }
 
+func (id ULID) MarshalText() ([]byte, error) {
+	return []byte(id.String()), nil
+}
+
 // Value implements the Valuer interface.
 func (id ULID) Value() (driver.Value, error) {
 	return uuid.UUID(id).Value()
