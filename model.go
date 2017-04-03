@@ -212,6 +212,14 @@ func NewULID() ULID {
 	return id
 }
 
+// NewULIDFromText creates a new ULID from its string representation. Will
+// return an error if the text is not a valid ULID.
+func NewULIDFromText(text string) (ULID, error) {
+	var id ULID
+	err := id.UnmarshalText([]byte(text))
+	return id, err
+}
+
 // Scan implements the Scanner interface.
 func (id *ULID) Scan(src interface{}) error {
 	switch src := src.(type) {
