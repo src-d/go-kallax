@@ -4290,9 +4290,9 @@ func (r *QueryFixture) ColumnAddress(col string) (interface{}, error) {
 	case "alias_slice_param":
 		return types.Slice((*[]string)(&r.AliasSliceParam)), nil
 	case "alias_string_param":
-		return &r.AliasStringParam, nil
+		return (*string)(&r.AliasStringParam), nil
 	case "alias_int_param":
-		return &r.AliasIntParam, nil
+		return (*int)(&r.AliasIntParam), nil
 	case "dummy_param":
 		return types.JSON(&r.DummyParam), nil
 	case "alias_dummy_param":
