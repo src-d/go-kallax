@@ -66,6 +66,8 @@ case "url_no_ptr":
 return (*types.URL)(&r.UrlNoPtr), nil
 case "foo_id":
 return kallax.VirtualColumn("foo_id", r, new(kallax.NumericID)), nil
+case "basic_alias":
+return (*int)(&r.BasicAlias), nil
 `
 
 const baseTpl = `
@@ -88,6 +90,8 @@ const baseTpl = `
 
 	type URLs []*url.URL
 
+	type Qux int
+
 	type Foo struct {
 		kallax.Model
 		ID int64 ` + "`pk:\"autoincr\"`" + `
@@ -102,6 +106,7 @@ const baseTpl = `
 		URL *url.URL
 		UrlNoPtr url.URL
 		RelInverse Rel ` + "`fk:\",inverse\"`" + `
+		BasicAlias Qux
 	}
 `
 
@@ -189,6 +194,7 @@ kallax.NewSchemaField("json"),
 kallax.NewSchemaField("url"),
 kallax.NewSchemaField("url_no_ptr"),
 kallax.NewSchemaField("foo_id"),
+kallax.NewSchemaField("basic_alias"),
 `
 
 func (s *TemplateSuite) TestGenModelColumns() {
