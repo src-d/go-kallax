@@ -139,7 +139,7 @@ type Metadata struct {
 ### Struct tags
 
 | Tag | Description | Can be used in |
-| --- | --- | --- | --- |
+| --- | --- | --- |
 | `table"table_name"` | Specifies the name of the table for a model. If not provided, the name of the table will be the name of the struct in lower snake case (e.g. `UserPreference` => `user_preference`) | embedded `kallax.Model` |
 | `pk:""` | Specifies the field is a primary key | any field with a valid identifier type |
 | `pk:"autoincr"` | Specifies the field is an auto-incrementable primary key | any field with a valid identifier type |
