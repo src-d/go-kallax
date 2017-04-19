@@ -246,15 +246,47 @@ func JSONContainsAllKeys(col SchemaField, keys ...string) Condition {
 	}
 }
 
+// MatchRegexCase returns a condition that will be true when `col` matches
+// the given POSIX regex. Match is case sensitive.
+func MatchRegexCase(col SchemaField, pattern string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "~", driver.Value(pattern)}
+	}
+}
+
+// MatchRegex returns a condition that will be true when `col` matches
+// the given POSIX regex. Match is case insensitive.
+func MatchRegex(col SchemaField, pattern string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "~*", driver.Value(pattern)}
+	}
+}
+
+// NotMatchRegexCase returns a condition that will be true when `col` does not
+// match the given POSIX regex. Match is case sensitive.
+func NotMatchRegexCase(col SchemaField, pattern string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "!~", driver.Value(pattern)}
+	}
+}
+
+// NotMatchRegex returns a condition that will be true when `col` does not
+// match the given POSIX regex. Match is case insensitive.
+func NotMatchRegex(col SchemaField, pattern string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "!~*", driver.Value(pattern)}
+	}
+}
+
 type (
 	not struct {
 		cond squirrel.Sqlizer
 	}
 
 	colOp struct {
-		col    string
-		op     string
-		valuer driver.Valuer
+		col   string
+		op    string
+		value interface{}
 	}
 
 	colUnaryOp struct {
@@ -282,7 +314,7 @@ func (n not) ToSql() (string, []interface{}, error) {
 }
 
 func (o colOp) ToSql() (string, []interface{}, error) {
-	return fmt.Sprintf("%s %s ?", o.col, o.op), []interface{}{o.valuer}, nil
+	return fmt.Sprintf("%s %s ?", o.col, o.op), []interface{}{o.value}, nil
 }
 
 func (o colUnaryOp) ToSql() (string, []interface{}, error) {
