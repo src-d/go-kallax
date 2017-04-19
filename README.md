@@ -35,6 +35,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Querying JSON](#querying-json)
 * [Transactions](#transactions)
 * [Benchmarks](#benchmarks)
+* [Acknowledgements](#acknowledgements)
 * [Contributing](#contributing)
 
 ## Installation
@@ -633,6 +634,11 @@ Source code of the benchmarks can be found on the [benchmarks](https://github.co
 
 * Benchmarks were run on a 2015 MacBook Pro with i5 and 8GB of RAM and 128GB SSD hard drive running fedora 25.
 * Benchmark of `database/sql` for querying with relationships is implemented with a very naive 1+n solution. That's why the result is that bad.
+
+## Acknowledgements
+
+* Big thank you to the [Masterminds/squirrel](https://github.com/Masterminds/squirrel) library, which is an awesome query builder used internally in this ORM.
+* [lib/pq](https://github.com/lib/pq), the Golang PostgreSQL driver that ships with a ton of support for builtin Go types.
 
 ## Contributing 
 
