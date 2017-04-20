@@ -64,8 +64,8 @@ case "url":
 return (*types.URL)(r.URL), nil
 case "url_no_ptr":
 return (*types.URL)(&r.UrlNoPtr), nil
-case "foo_id":
-return kallax.VirtualColumn("foo_id", r, new(kallax.NumericID)), nil
+case "rel_id":
+return types.Nullable(kallax.VirtualColumn("rel_id", r, new(kallax.NumericID))), nil
 case "basic_alias":
 return (*int)(&r.BasicAlias), nil
 `
@@ -140,7 +140,7 @@ if r.URL == (*url.URL)(nil) {
 return (*types.URL)(r.URL), nil
 case "url_no_ptr":
 return (*types.URL)(&r.UrlNoPtr), nil
-case "foo_id":
+case "rel_id":
 return r.Model.VirtualColumn(col), nil
 `
 
@@ -193,7 +193,7 @@ kallax.NewSchemaField("urlarr"),
 kallax.NewSchemaField("json"),
 kallax.NewSchemaField("url"),
 kallax.NewSchemaField("url_no_ptr"),
-kallax.NewSchemaField("foo_id"),
+kallax.NewSchemaField("rel_id"),
 kallax.NewSchemaField("basic_alias"),
 `
 
@@ -245,6 +245,7 @@ const jsonBaseTpl = `
 		URL *url.URL
 		UrlNoPtr url.URL
 		Rel Rel
+		Inverse Rel ` + "`fk:\",inverse\"`" + `
 		JSONArray []JS
 	}
 `
@@ -256,6 +257,7 @@ Arr kallax.SchemaField
 JSON *schemaFooJSON
 URL kallax.SchemaField
 UrlNoPtr kallax.SchemaField
+InverseFK kallax.SchemaField
 JSONArray *schemaFooJSONArray
 `
 
@@ -326,6 +328,7 @@ Y:kallax.NewJSONSchemaKey(kallax.JSONInt, "json", "Arr", "Y"),
 },
 URL:kallax.NewSchemaField("url"),
 UrlNoPtr:kallax.NewSchemaField("url_no_ptr"),
+InverseFK:kallax.NewSchemaField("rel_id"),
 JSONArray:&schemaFooJSONArray{
 BaseSchemaField: kallax.NewSchemaField("jsonarray").(*kallax.BaseSchemaField),
 Foo:kallax.NewJSONSchemaKey(kallax.JSONText, "jsonarray", "Foo"),

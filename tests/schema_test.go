@@ -43,6 +43,10 @@ func (s *SchemaSuite) TestSchemaMapOfInterface() {
 	s.Equal("map_of_some_type", Schema.SchemaFixture.MapOfSomeType.String())
 }
 
+func (s *SchemaSuite) TestSchemaInverse() {
+	s.Equal("rel_id", Schema.SchemaFixture.InverseFK.String())
+}
+
 func (s *SchemaSuite) TestSchemaIgnored() {
 	schema := reflect.ValueOf(Schema.SchemaFixture)
 	field := reflect.Indirect(schema).FieldByName("ShouldIgnore")
