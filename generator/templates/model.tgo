@@ -96,6 +96,16 @@ func New{{.StoreName}}(db *sql.DB) *{{.StoreName}} {
 	return &{{.StoreName}}{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *{{.StoreName}}) GenericStore() *kallax.Store {
+        return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *{{.StoreName}}) SetGenericStore(store *kallax.Store) {
+        s.Store = store
+}
+
 {{if .HasNonInverses}}
 func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordWithSchema {
         var records []kallax.RecordWithSchema
