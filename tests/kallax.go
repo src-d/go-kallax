@@ -99,14 +99,15 @@ func NewCarStore(db *sql.DB) *CarStore {
 	return &CarStore{kallax.NewStore(db)}
 }
 
-func (s *CarStore) relationshipRecords(record *Car) []kallax.RecordWithSchema {
+func (s *CarStore) inverseRecords(record *Car) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
+
 	if record.Owner != nil {
 		record.AddVirtualColumn("owner_id", record.Owner.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.Person.BaseSchema,
-			record.Owner,
+			Schema: Schema.Person.BaseSchema,
+			Record: record.Owner,
 		})
 	}
 
@@ -121,14 +122,12 @@ func (s *CarStore) Insert(record *Car) error {
 		return err
 	}
 
-	records := s.relationshipRecords(record)
-	if len(records) > 0 {
-		return s.Store.Transaction(func(s *kallax.Store) error {
-			if err := s.Insert(Schema.Car.BaseSchema, record); err != nil {
-				return err
-			}
+	inverseRecords := s.inverseRecords(record)
 
-			for _, r := range records {
+	if len(inverseRecords) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
 				}
@@ -141,6 +140,10 @@ func (s *CarStore) Insert(record *Car) error {
 				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
 					return err
 				}
+			}
+
+			if err := s.Insert(Schema.Car.BaseSchema, record); err != nil {
+				return err
 			}
 
 			if err := record.AfterSave(); err != nil {
@@ -177,15 +180,12 @@ func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int6
 		return 0, err
 	}
 
-	records := s.relationshipRecords(record)
-	if len(records) > 0 {
-		err = s.Store.Transaction(func(s *kallax.Store) error {
-			updated, err = s.Update(Schema.Car.BaseSchema, record, cols...)
-			if err != nil {
-				return err
-			}
+	inverseRecords := s.inverseRecords(record)
 
-			for _, r := range records {
+	if len(inverseRecords) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
 				}
@@ -198,6 +198,11 @@ func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int6
 				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
 					return err
 				}
+			}
+
+			updated, err = s.Update(Schema.Car.BaseSchema, record, cols...)
+			if err != nil {
+				return err
 			}
 
 			if err := record.AfterSave(); err != nil {
@@ -3129,15 +3134,14 @@ func NewPersonStore(db *sql.DB) *PersonStore {
 }
 
 func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSchema {
-	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
 
 	for _, rec := range record.Pets {
 		rec.ClearVirtualColumns()
 		rec.AddVirtualColumn("owner_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.Pet.BaseSchema,
-			rec,
+			Schema: Schema.Pet.BaseSchema,
+			Record: rec,
 		})
 	}
 
@@ -3145,8 +3149,8 @@ func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSch
 		record.Car.ClearVirtualColumns()
 		record.Car.AddVirtualColumn("owner_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.Car.BaseSchema,
-			record.Car,
+			Schema: Schema.Car.BaseSchema,
+			Record: record.Car,
 		})
 	}
 
@@ -3162,8 +3166,10 @@ func (s *PersonStore) Insert(record *Person) error {
 	}
 
 	records := s.relationshipRecords(record)
+
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
+
 			if err := s.Insert(Schema.Person.BaseSchema, record); err != nil {
 				return err
 			}
@@ -3218,8 +3224,10 @@ func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (update
 	}
 
 	records := s.relationshipRecords(record)
+
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
+
 			updated, err = s.Update(Schema.Person.BaseSchema, record, cols...)
 			if err != nil {
 				return err
@@ -3801,14 +3809,15 @@ func NewPetStore(db *sql.DB) *PetStore {
 	return &PetStore{kallax.NewStore(db)}
 }
 
-func (s *PetStore) relationshipRecords(record *Pet) []kallax.RecordWithSchema {
+func (s *PetStore) inverseRecords(record *Pet) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
+
 	if record.Owner != nil {
 		record.AddVirtualColumn("owner_id", record.Owner.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.Person.BaseSchema,
-			record.Owner,
+			Schema: Schema.Person.BaseSchema,
+			Record: record.Owner,
 		})
 	}
 
@@ -3823,14 +3832,12 @@ func (s *PetStore) Insert(record *Pet) error {
 		return err
 	}
 
-	records := s.relationshipRecords(record)
-	if len(records) > 0 {
-		return s.Store.Transaction(func(s *kallax.Store) error {
-			if err := s.Insert(Schema.Pet.BaseSchema, record); err != nil {
-				return err
-			}
+	inverseRecords := s.inverseRecords(record)
 
-			for _, r := range records {
+	if len(inverseRecords) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
 				}
@@ -3843,6 +3850,10 @@ func (s *PetStore) Insert(record *Pet) error {
 				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
 					return err
 				}
+			}
+
+			if err := s.Insert(Schema.Pet.BaseSchema, record); err != nil {
+				return err
 			}
 
 			if err := record.AfterSave(); err != nil {
@@ -3879,15 +3890,12 @@ func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int6
 		return 0, err
 	}
 
-	records := s.relationshipRecords(record)
-	if len(records) > 0 {
-		err = s.Store.Transaction(func(s *kallax.Store) error {
-			updated, err = s.Update(Schema.Pet.BaseSchema, record, cols...)
-			if err != nil {
-				return err
-			}
+	inverseRecords := s.inverseRecords(record)
 
-			for _, r := range records {
+	if len(inverseRecords) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
 				}
@@ -3900,6 +3908,11 @@ func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int6
 				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
 					return err
 				}
+			}
+
+			updated, err = s.Update(Schema.Pet.BaseSchema, record, cols...)
+			if err != nil {
+				return err
 			}
 
 			if err := record.AfterSave(); err != nil {
@@ -4484,15 +4497,14 @@ func NewQueryFixtureStore(db *sql.DB) *QueryFixtureStore {
 }
 
 func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.RecordWithSchema {
-	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
 
 	if record.Relation != nil {
 		record.Relation.ClearVirtualColumns()
 		record.Relation.AddVirtualColumn("owner_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.QueryRelationFixture.BaseSchema,
-			record.Relation,
+			Schema: Schema.QueryRelationFixture.BaseSchema,
+			Record: record.Relation,
 		})
 	}
 
@@ -4508,8 +4520,8 @@ func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.R
 		rec.ClearVirtualColumns()
 		rec.AddVirtualColumn("owner_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.QueryRelationFixture.BaseSchema,
-			rec,
+			Schema: Schema.QueryRelationFixture.BaseSchema,
+			Record: rec,
 		})
 	}
 
@@ -4521,8 +4533,10 @@ func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.R
 func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 
 	records := s.relationshipRecords(record)
+
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
+
 			if err := s.Insert(Schema.QueryFixture.BaseSchema, record); err != nil {
 				return err
 			}
@@ -4559,8 +4573,10 @@ func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	records := s.relationshipRecords(record)
+
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
+
 			updated, err = s.Update(Schema.QueryFixture.BaseSchema, record, cols...)
 			if err != nil {
 				return err
@@ -5294,14 +5310,15 @@ func NewQueryRelationFixtureStore(db *sql.DB) *QueryRelationFixtureStore {
 	return &QueryRelationFixtureStore{kallax.NewStore(db)}
 }
 
-func (s *QueryRelationFixtureStore) relationshipRecords(record *QueryRelationFixture) []kallax.RecordWithSchema {
+func (s *QueryRelationFixtureStore) inverseRecords(record *QueryRelationFixture) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
+
 	if record.Owner != nil {
 		record.AddVirtualColumn("owner_id", record.Owner.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.QueryFixture.BaseSchema,
-			record.Owner,
+			Schema: Schema.QueryFixture.BaseSchema,
+			Record: record.Owner,
 		})
 	}
 
@@ -5312,14 +5329,12 @@ func (s *QueryRelationFixtureStore) relationshipRecords(record *QueryRelationFix
 // required for this operation.
 func (s *QueryRelationFixtureStore) Insert(record *QueryRelationFixture) error {
 
-	records := s.relationshipRecords(record)
-	if len(records) > 0 {
-		return s.Store.Transaction(func(s *kallax.Store) error {
-			if err := s.Insert(Schema.QueryRelationFixture.BaseSchema, record); err != nil {
-				return err
-			}
+	inverseRecords := s.inverseRecords(record)
 
-			for _, r := range records {
+	if len(inverseRecords) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
 				}
@@ -5332,6 +5347,10 @@ func (s *QueryRelationFixtureStore) Insert(record *QueryRelationFixture) error {
 				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
 					return err
 				}
+			}
+
+			if err := s.Insert(Schema.QueryRelationFixture.BaseSchema, record); err != nil {
+				return err
 			}
 
 			return nil
@@ -5350,15 +5369,12 @@ func (s *QueryRelationFixtureStore) Insert(record *QueryRelationFixture) error {
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *QueryRelationFixtureStore) Update(record *QueryRelationFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
-	records := s.relationshipRecords(record)
-	if len(records) > 0 {
-		err = s.Store.Transaction(func(s *kallax.Store) error {
-			updated, err = s.Update(Schema.QueryRelationFixture.BaseSchema, record, cols...)
-			if err != nil {
-				return err
-			}
+	inverseRecords := s.inverseRecords(record)
 
-			for _, r := range records {
+	if len(inverseRecords) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
 				}
@@ -5371,6 +5387,11 @@ func (s *QueryRelationFixtureStore) Update(record *QueryRelationFixture, cols ..
 				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
 					return err
 				}
+			}
+
+			updated, err = s.Update(Schema.QueryRelationFixture.BaseSchema, record, cols...)
+			if err != nil {
+				return err
 			}
 
 			return nil
@@ -6194,15 +6215,14 @@ func NewSchemaFixtureStore(db *sql.DB) *SchemaFixtureStore {
 }
 
 func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []kallax.RecordWithSchema {
-	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
 
 	if record.Nested != nil {
 		record.Nested.ClearVirtualColumns()
 		record.Nested.AddVirtualColumn("schema_fixture_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.SchemaFixture.BaseSchema,
-			record.Nested,
+			Schema: Schema.SchemaFixture.BaseSchema,
+			Record: record.Nested,
 		})
 	}
 
@@ -6222,8 +6242,10 @@ func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []kallax
 func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 
 	records := s.relationshipRecords(record)
+
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
+
 			if err := s.Insert(Schema.SchemaFixture.BaseSchema, record); err != nil {
 				return err
 			}
@@ -6260,8 +6282,10 @@ func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 func (s *SchemaFixtureStore) Update(record *SchemaFixture, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	records := s.relationshipRecords(record)
+
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
+
 			updated, err = s.Update(Schema.SchemaFixture.BaseSchema, record, cols...)
 			if err != nil {
 				return err
