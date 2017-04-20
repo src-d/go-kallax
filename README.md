@@ -544,7 +544,7 @@ If, for example, you have a model that is not writable because you only selected
 err := store.Reload(user)
 ```
 
-Reload will not road any relationships, just the model itself. After a `Reload` the model will **always** be writable.
+Reload will not reload any relationships, just the model itself. After a `Reload` the model will **always** be writable.
 
 ### Querying JSON
 
