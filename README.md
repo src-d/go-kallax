@@ -572,11 +572,12 @@ store.Transaction(func(s *UserStore) error {
 })
 ```
 
-The fact that a transaction receives a store with the type of the model can be a problem if you want to store several models of different types. You can, indeed, create new stores of the other types, but do so with care. Do not use the internal `*kallax.Store`, as it does not perform any type checks or some of the operations the concrete type stores do.
+The fact that a transaction receives a store with the type of the model can be a problem if you want to store several models of different types. Kallax has a method named `StoreFrom` that initializes a store of the type you want to have the same underlying store as some other.
 
 ```go
 store.Transaction(func(s *UserStore) error {
-        postStore := &PostStore{s.Store}
+        var postStore PostStore
+        kallax.StoreFrom(&postStore, s)
 
         for _, p := range posts {
                 if err := postStore.Insert(p); err != nil {

@@ -33,6 +33,24 @@ var (
 	ErrCantSetID = errors.New("kallax: model does not have an auto incrementable primary key, it needs to implement IDSetter interface")
 )
 
+// GenericStorer is a type that contains a generic store and has methods to
+// retrieve it and set it.
+type GenericStorer interface {
+	// GenericStore returns the generic store in this type.
+	GenericStore() *Store
+	// SetGenericStore sets the generic store for this type.
+	SetGenericStore(*Store)
+}
+
+// StoreFrom sets the generic store of `from` in `to`.
+func StoreFrom(to, from GenericStorer) {
+	if to == nil || from == nil {
+		return
+	}
+
+	to.SetGenericStore(from.GenericStore())
+}
+
 // Store is a structure capable of retrieving records from a concrete table in
 // the database.
 type Store struct {

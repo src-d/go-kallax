@@ -99,6 +99,16 @@ func NewCarStore(db *sql.DB) *CarStore {
 	return &CarStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *CarStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *CarStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 func (s *CarStore) inverseRecords(record *Car) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
@@ -629,6 +639,16 @@ func NewEventsAllFixtureStore(db *sql.DB) *EventsAllFixtureStore {
 	return &EventsAllFixtureStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *EventsAllFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *EventsAllFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 // Insert inserts a EventsAllFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *EventsAllFixtureStore) Insert(record *EventsAllFixture) error {
@@ -1062,6 +1082,16 @@ func NewEventsFixtureStore(db *sql.DB) *EventsFixtureStore {
 	return &EventsFixtureStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *EventsFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *EventsFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 // Insert inserts a EventsFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
@@ -1477,6 +1507,16 @@ type EventsSaveFixtureStore struct {
 // using a SQL database.
 func NewEventsSaveFixtureStore(db *sql.DB) *EventsSaveFixtureStore {
 	return &EventsSaveFixtureStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *EventsSaveFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *EventsSaveFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
 }
 
 // Insert inserts a EventsSaveFixture in the database. A non-persisted object is
@@ -1906,6 +1946,16 @@ func NewJSONModelStore(db *sql.DB) *JSONModelStore {
 	return &JSONModelStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *JSONModelStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *JSONModelStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 // Insert inserts a JSONModel in the database. A non-persisted object is
 // required for this operation.
 func (s *JSONModelStore) Insert(record *JSONModel) error {
@@ -2293,6 +2343,16 @@ type MultiKeySortFixtureStore struct {
 // using a SQL database.
 func NewMultiKeySortFixtureStore(db *sql.DB) *MultiKeySortFixtureStore {
 	return &MultiKeySortFixtureStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *MultiKeySortFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *MultiKeySortFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
 }
 
 // Insert inserts a MultiKeySortFixture in the database. A non-persisted object is
@@ -2709,6 +2769,16 @@ type NullableStore struct {
 // using a SQL database.
 func NewNullableStore(db *sql.DB) *NullableStore {
 	return &NullableStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *NullableStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *NullableStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
 }
 
 // Insert inserts a Nullable in the database. A non-persisted object is
@@ -3131,6 +3201,16 @@ type PersonStore struct {
 // using a SQL database.
 func NewPersonStore(db *sql.DB) *PersonStore {
 	return &PersonStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *PersonStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *PersonStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
 }
 
 func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSchema {
@@ -3807,6 +3887,16 @@ type PetStore struct {
 // using a SQL database.
 func NewPetStore(db *sql.DB) *PetStore {
 	return &PetStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *PetStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *PetStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
 }
 
 func (s *PetStore) inverseRecords(record *Pet) []kallax.RecordWithSchema {
@@ -4496,6 +4586,16 @@ func NewQueryFixtureStore(db *sql.DB) *QueryFixtureStore {
 	return &QueryFixtureStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *QueryFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *QueryFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.RecordWithSchema {
 	var records []kallax.RecordWithSchema
 
@@ -4505,14 +4605,6 @@ func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.R
 		records = append(records, kallax.RecordWithSchema{
 			Schema: Schema.QueryRelationFixture.BaseSchema,
 			Record: record.Relation,
-		})
-	}
-
-	if record.Inverse != nil {
-		record.AddVirtualColumn("inverse_id", record.Inverse.GetID())
-		records = append(records, kallax.RecordWithSchema{
-			Schema.QueryRelationFixture.BaseSchema,
-			record.Inverse,
 		})
 	}
 
@@ -4528,14 +4620,46 @@ func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.R
 	return records
 }
 
+func (s *QueryFixtureStore) inverseRecords(record *QueryFixture) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
+
+	if record.Inverse != nil {
+		record.AddVirtualColumn("inverse_id", record.Inverse.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema: Schema.QueryRelationFixture.BaseSchema,
+			Record: record.Inverse,
+		})
+	}
+
+	return records
+}
+
 // Insert inserts a QueryFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 
 	records := s.relationshipRecords(record)
 
-	if len(records) > 0 {
+	inverseRecords := s.inverseRecords(record)
+
+	if len(records) > 0 && len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
 
 			if err := s.Insert(Schema.QueryFixture.BaseSchema, record); err != nil {
 				return err
@@ -4574,8 +4698,25 @@ func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaFi
 
 	records := s.relationshipRecords(record)
 
-	if len(records) > 0 {
+	inverseRecords := s.inverseRecords(record)
+
+	if len(records) > 0 && len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
 
 			updated, err = s.Update(Schema.QueryFixture.BaseSchema, record, cols...)
 			if err != nil {
@@ -5310,6 +5451,16 @@ func NewQueryRelationFixtureStore(db *sql.DB) *QueryRelationFixtureStore {
 	return &QueryRelationFixtureStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *QueryRelationFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *QueryRelationFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 func (s *QueryRelationFixtureStore) inverseRecords(record *QueryRelationFixture) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
@@ -5779,6 +5930,16 @@ func NewResultSetFixtureStore(db *sql.DB) *ResultSetFixtureStore {
 	return &ResultSetFixtureStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *ResultSetFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *ResultSetFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 // Insert inserts a ResultSetFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
@@ -6214,6 +6375,16 @@ func NewSchemaFixtureStore(db *sql.DB) *SchemaFixtureStore {
 	return &SchemaFixtureStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *SchemaFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *SchemaFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []kallax.RecordWithSchema {
 	var records []kallax.RecordWithSchema
 
@@ -6226,11 +6397,18 @@ func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []kallax
 		})
 	}
 
+	return records
+}
+
+func (s *SchemaFixtureStore) inverseRecords(record *SchemaFixture) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
+
 	if record.Inverse != nil {
 		record.AddVirtualColumn("rel_id", record.Inverse.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.SchemaRelationshipFixture.BaseSchema,
-			record.Inverse,
+			Schema: Schema.SchemaRelationshipFixture.BaseSchema,
+			Record: record.Inverse,
 		})
 	}
 
@@ -6243,8 +6421,25 @@ func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 
 	records := s.relationshipRecords(record)
 
-	if len(records) > 0 {
+	inverseRecords := s.inverseRecords(record)
+
+	if len(records) > 0 && len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
 
 			if err := s.Insert(Schema.SchemaFixture.BaseSchema, record); err != nil {
 				return err
@@ -6283,8 +6478,25 @@ func (s *SchemaFixtureStore) Update(record *SchemaFixture, cols ...kallax.Schema
 
 	records := s.relationshipRecords(record)
 
-	if len(records) > 0 {
+	inverseRecords := s.inverseRecords(record)
+
+	if len(records) > 0 && len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
+
+			for _, r := range inverseRecords {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
 
 			updated, err = s.Update(Schema.SchemaFixture.BaseSchema, record, cols...)
 			if err != nil {
@@ -6735,6 +6947,16 @@ func NewSchemaRelationshipFixtureStore(db *sql.DB) *SchemaRelationshipFixtureSto
 	return &SchemaRelationshipFixtureStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *SchemaRelationshipFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *SchemaRelationshipFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 // Insert inserts a SchemaRelationshipFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *SchemaRelationshipFixtureStore) Insert(record *SchemaRelationshipFixture) error {
@@ -7116,6 +7338,16 @@ type StoreFixtureStore struct {
 // using a SQL database.
 func NewStoreFixtureStore(db *sql.DB) *StoreFixtureStore {
 	return &StoreFixtureStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *StoreFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *StoreFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
 }
 
 // Insert inserts a StoreFixture in the database. A non-persisted object is
@@ -7527,6 +7759,16 @@ func NewStoreWithConstructFixtureStore(db *sql.DB) *StoreWithConstructFixtureSto
 	return &StoreWithConstructFixtureStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *StoreWithConstructFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *StoreWithConstructFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
 // Insert inserts a StoreWithConstructFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixture) error {
@@ -7910,6 +8152,16 @@ type StoreWithNewFixtureStore struct {
 // using a SQL database.
 func NewStoreWithNewFixtureStore(db *sql.DB) *StoreWithNewFixtureStore {
 	return &StoreWithNewFixtureStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *StoreWithNewFixtureStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *StoreWithNewFixtureStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
 }
 
 // Insert inserts a StoreWithNewFixture in the database. A non-persisted object is

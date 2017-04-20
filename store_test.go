@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -525,4 +526,27 @@ func (s *StoreSuite) assertNotExists(m *model) {
 
 func TestStore(t *testing.T) {
 	suite.Run(t, new(StoreSuite))
+}
+
+type store1 struct {
+	*Store
+}
+
+func (s *store1) GenericStore() *Store {
+	return s.Store
+}
+
+func (s *store1) SetGenericStore(store *Store) {
+	s.Store = store
+}
+
+func TestStoreFrom(t *testing.T) {
+	var s1 = &store1{new(Store)}
+	var s2 store1
+
+	require := require.New(t)
+	require.NotEqual(s1.Store, s2.Store)
+
+	StoreFrom(&s2, s1)
+	require.Exactly(s1.Store, s2.Store)
 }
