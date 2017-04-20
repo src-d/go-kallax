@@ -34,7 +34,7 @@ func (r *Car) ColumnAddress(col string) (interface{}, error) {
 	case "id":
 		return (*kallax.ULID)(&r.ID), nil
 	case "owner_id":
-		return kallax.VirtualColumn("owner_id", r, new(kallax.NumericID)), nil
+		return types.Nullable(kallax.VirtualColumn("owner_id", r, new(kallax.NumericID))), nil
 	case "model_name":
 		return &r.ModelName, nil
 
@@ -424,7 +424,8 @@ func (q *CarQuery) WithOwner() *CarQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *CarQuery) FindByID(v ...kallax.ULID) *CarQuery {
 	if len(v) == 0 {
 		return q
@@ -436,8 +437,14 @@ func (q *CarQuery) FindByID(v ...kallax.ULID) *CarQuery {
 	return q.Where(kallax.In(Schema.Car.ID, values...))
 }
 
+// FindByOwner adds a new filter to the query that will require that
+// the foreign key of Owner is equal to the passed value.
+func (q *CarQuery) FindByOwner(v int64) *CarQuery {
+	return q.Where(kallax.Eq(Schema.Car.OwnerFK, v))
+}
+
 // FindByModelName adds a new filter to the query that will require that
-// the ModelName property is equal to the passed value
+// the ModelName property is equal to the passed value.
 func (q *CarQuery) FindByModelName(v string) *CarQuery {
 	return q.Where(kallax.Eq(Schema.Car.ModelName, v))
 }
@@ -862,7 +869,8 @@ func (q *EventsAllFixtureQuery) Where(cond kallax.Condition) *EventsAllFixtureQu
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *EventsAllFixtureQuery) FindByID(v ...kallax.ULID) *EventsAllFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -1278,7 +1286,8 @@ func (q *EventsFixtureQuery) Where(cond kallax.Condition) *EventsFixtureQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *EventsFixtureQuery) FindByID(v ...kallax.ULID) *EventsFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -1694,7 +1703,8 @@ func (q *EventsSaveFixtureQuery) Where(cond kallax.Condition) *EventsSaveFixture
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *EventsSaveFixtureQuery) FindByID(v ...kallax.ULID) *EventsSaveFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -2086,7 +2096,8 @@ func (q *JSONModelQuery) Where(cond kallax.Condition) *JSONModelQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *JSONModelQuery) FindByID(v ...kallax.ULID) *JSONModelQuery {
 	if len(v) == 0 {
 		return q
@@ -2099,7 +2110,7 @@ func (q *JSONModelQuery) FindByID(v ...kallax.ULID) *JSONModelQuery {
 }
 
 // FindByFoo adds a new filter to the query that will require that
-// the Foo property is equal to the passed value
+// the Foo property is equal to the passed value.
 func (q *JSONModelQuery) FindByFoo(v string) *JSONModelQuery {
 	return q.Where(kallax.Eq(Schema.JSONModel.Foo, v))
 }
@@ -2474,7 +2485,8 @@ func (q *MultiKeySortFixtureQuery) Where(cond kallax.Condition) *MultiKeySortFix
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *MultiKeySortFixtureQuery) FindByID(v ...kallax.ULID) *MultiKeySortFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -2487,19 +2499,19 @@ func (q *MultiKeySortFixtureQuery) FindByID(v ...kallax.ULID) *MultiKeySortFixtu
 }
 
 // FindByName adds a new filter to the query that will require that
-// the Name property is equal to the passed value
+// the Name property is equal to the passed value.
 func (q *MultiKeySortFixtureQuery) FindByName(v string) *MultiKeySortFixtureQuery {
 	return q.Where(kallax.Eq(Schema.MultiKeySortFixture.Name, v))
 }
 
 // FindByStart adds a new filter to the query that will require that
-// the Start property is equal to the passed value
+// the Start property is equal to the passed value.
 func (q *MultiKeySortFixtureQuery) FindByStart(cond kallax.ScalarCond, v time.Time) *MultiKeySortFixtureQuery {
 	return q.Where(cond(Schema.MultiKeySortFixture.Start, v))
 }
 
 // FindByEnd adds a new filter to the query that will require that
-// the End property is equal to the passed value
+// the End property is equal to the passed value.
 func (q *MultiKeySortFixtureQuery) FindByEnd(cond kallax.ScalarCond, v time.Time) *MultiKeySortFixtureQuery {
 	return q.Where(cond(Schema.MultiKeySortFixture.End, v))
 }
@@ -2889,7 +2901,8 @@ func (q *NullableQuery) Where(cond kallax.Condition) *NullableQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *NullableQuery) FindByID(v ...int64) *NullableQuery {
 	if len(v) == 0 {
 		return q
@@ -2902,13 +2915,13 @@ func (q *NullableQuery) FindByID(v ...int64) *NullableQuery {
 }
 
 // FindByT adds a new filter to the query that will require that
-// the T property is equal to the passed value
+// the T property is equal to the passed value.
 func (q *NullableQuery) FindByT(cond kallax.ScalarCond, v time.Time) *NullableQuery {
 	return q.Where(cond(Schema.Nullable.T, v))
 }
 
 // FindByScanner adds a new filter to the query that will require that
-// the Scanner property is equal to the passed value
+// the Scanner property is equal to the passed value.
 func (q *NullableQuery) FindByScanner(v kallax.ULID) *NullableQuery {
 	return q.Where(kallax.Eq(Schema.Nullable.Scanner, v))
 }
@@ -3576,7 +3589,8 @@ func (q *PersonQuery) WithCar() *PersonQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *PersonQuery) FindByID(v ...int64) *PersonQuery {
 	if len(v) == 0 {
 		return q
@@ -3589,7 +3603,7 @@ func (q *PersonQuery) FindByID(v ...int64) *PersonQuery {
 }
 
 // FindByName adds a new filter to the query that will require that
-// the Name property is equal to the passed value
+// the Name property is equal to the passed value.
 func (q *PersonQuery) FindByName(v string) *PersonQuery {
 	return q.Where(kallax.Eq(Schema.Person.Name, v))
 }
@@ -3722,7 +3736,7 @@ func (r *Pet) ColumnAddress(col string) (interface{}, error) {
 	case "kind":
 		return &r.Kind, nil
 	case "owner_id":
-		return kallax.VirtualColumn("owner_id", r, new(kallax.NumericID)), nil
+		return types.Nullable(kallax.VirtualColumn("owner_id", r, new(kallax.NumericID))), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Pet: %s", col)
@@ -4112,7 +4126,8 @@ func (q *PetQuery) WithOwner() *PetQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *PetQuery) FindByID(v ...kallax.ULID) *PetQuery {
 	if len(v) == 0 {
 		return q
@@ -4125,15 +4140,21 @@ func (q *PetQuery) FindByID(v ...kallax.ULID) *PetQuery {
 }
 
 // FindByName adds a new filter to the query that will require that
-// the Name property is equal to the passed value
+// the Name property is equal to the passed value.
 func (q *PetQuery) FindByName(v string) *PetQuery {
 	return q.Where(kallax.Eq(Schema.Pet.Name, v))
 }
 
 // FindByKind adds a new filter to the query that will require that
-// the Kind property is equal to the passed value
+// the Kind property is equal to the passed value.
 func (q *PetQuery) FindByKind(v string) *PetQuery {
 	return q.Where(kallax.Eq(Schema.Pet.Kind, v))
+}
+
+// FindByOwner adds a new filter to the query that will require that
+// the foreign key of Owner is equal to the passed value.
+func (q *PetQuery) FindByOwner(v int64) *PetQuery {
+	return q.Where(kallax.Eq(Schema.Pet.OwnerFK, v))
 }
 
 // PetResultSet is the set of results returned by a query to the
@@ -4259,6 +4280,8 @@ func (r *QueryFixture) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return (*kallax.ULID)(&r.ID), nil
+	case "inverse_id":
+		return types.Nullable(kallax.VirtualColumn("inverse_id", r, new(kallax.ULID))), nil
 	case "embedded":
 		return types.JSON(&r.Embedded), nil
 	case "inline":
@@ -4326,6 +4349,8 @@ func (r *QueryFixture) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
 		return r.ID, nil
+	case "inverse_id":
+		return r.Model.VirtualColumn(col), nil
 	case "embedded":
 		return types.JSON(r.Embedded), nil
 	case "inline":
@@ -4394,6 +4419,8 @@ func (r *QueryFixture) NewRelationshipRecord(field string) (kallax.Record, error
 	switch field {
 	case "Relation":
 		return new(QueryRelationFixture), nil
+	case "Inverse":
+		return new(QueryRelationFixture), nil
 	case "NRelation":
 		return new(QueryRelationFixture), nil
 
@@ -4411,6 +4438,16 @@ func (r *QueryFixture) SetRelationship(field string, rel interface{}) error {
 		}
 		if !val.GetID().IsEmpty() {
 			r.Relation = val
+		}
+
+		return nil
+	case "Inverse":
+		val, ok := rel.(*QueryRelationFixture)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Inverse", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.Inverse = val
 		}
 
 		return nil
@@ -4456,6 +4493,14 @@ func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.R
 		records = append(records, kallax.RecordWithSchema{
 			Schema.QueryRelationFixture.BaseSchema,
 			record.Relation,
+		})
+	}
+
+	if record.Inverse != nil {
+		record.AddVirtualColumn("inverse_id", record.Inverse.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema.QueryRelationFixture.BaseSchema,
+			record.Inverse,
 		})
 	}
 
@@ -4848,13 +4893,19 @@ func (q *QueryFixtureQuery) WithRelation() *QueryFixtureQuery {
 	return q
 }
 
+func (q *QueryFixtureQuery) WithInverse() *QueryFixtureQuery {
+	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "Inverse", kallax.OneToOne, nil)
+	return q
+}
+
 func (q *QueryFixtureQuery) WithNRelation(cond kallax.Condition) *QueryFixtureQuery {
 	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "NRelation", kallax.OneToMany, cond)
 	return q
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryFixtureQuery) FindByID(v ...kallax.ULID) *QueryFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -4866,50 +4917,57 @@ func (q *QueryFixtureQuery) FindByID(v ...kallax.ULID) *QueryFixtureQuery {
 	return q.Where(kallax.In(Schema.QueryFixture.ID, values...))
 }
 
+// FindByInverse adds a new filter to the query that will require that
+// the foreign key of Inverse is equal to the passed value.
+func (q *QueryFixtureQuery) FindByInverse(v kallax.ULID) *QueryFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryFixture.InverseFK, v))
+}
+
 // FindByInline adds a new filter to the query that will require that
-// the Inline property is equal to the passed value
+// the Inline property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByInline(v string) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.Inline, v))
 }
 
 // FindByFoo adds a new filter to the query that will require that
-// the Foo property is equal to the passed value
+// the Foo property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByFoo(v string) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.Foo, v))
 }
 
 // FindByStringProperty adds a new filter to the query that will require that
-// the StringProperty property is equal to the passed value
+// the StringProperty property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByStringProperty(v string) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.StringProperty, v))
 }
 
 // FindByInteger adds a new filter to the query that will require that
-// the Integer property is equal to the passed value
+// the Integer property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByInteger(cond kallax.ScalarCond, v int) *QueryFixtureQuery {
 	return q.Where(cond(Schema.QueryFixture.Integer, v))
 }
 
 // FindByInteger64 adds a new filter to the query that will require that
-// the Integer64 property is equal to the passed value
+// the Integer64 property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByInteger64(cond kallax.ScalarCond, v int64) *QueryFixtureQuery {
 	return q.Where(cond(Schema.QueryFixture.Integer64, v))
 }
 
 // FindByFloat32 adds a new filter to the query that will require that
-// the Float32 property is equal to the passed value
+// the Float32 property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByFloat32(cond kallax.ScalarCond, v float32) *QueryFixtureQuery {
 	return q.Where(cond(Schema.QueryFixture.Float32, v))
 }
 
 // FindByBoolean adds a new filter to the query that will require that
-// the Boolean property is equal to the passed value
+// the Boolean property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByBoolean(v bool) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.Boolean, v))
 }
 
 // FindByArrayParam adds a new filter to the query that will require that
-// the ArrayParam property contains all the passed values; if no passed values, it will do nothing
+// the ArrayParam property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryFixtureQuery) FindByArrayParam(v ...string) *QueryFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -4922,7 +4980,8 @@ func (q *QueryFixtureQuery) FindByArrayParam(v ...string) *QueryFixtureQuery {
 }
 
 // FindBySliceParam adds a new filter to the query that will require that
-// the SliceParam property contains all the passed values; if no passed values, it will do nothing
+// the SliceParam property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryFixtureQuery) FindBySliceParam(v ...string) *QueryFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -4935,7 +4994,8 @@ func (q *QueryFixtureQuery) FindBySliceParam(v ...string) *QueryFixtureQuery {
 }
 
 // FindByAliasArrayParam adds a new filter to the query that will require that
-// the AliasArrayParam property contains all the passed values; if no passed values, it will do nothing
+// the AliasArrayParam property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryFixtureQuery) FindByAliasArrayParam(v ...string) *QueryFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -4948,7 +5008,8 @@ func (q *QueryFixtureQuery) FindByAliasArrayParam(v ...string) *QueryFixtureQuer
 }
 
 // FindByAliasSliceParam adds a new filter to the query that will require that
-// the AliasSliceParam property contains all the passed values; if no passed values, it will do nothing
+// the AliasSliceParam property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryFixtureQuery) FindByAliasSliceParam(v ...string) *QueryFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -4961,43 +5022,44 @@ func (q *QueryFixtureQuery) FindByAliasSliceParam(v ...string) *QueryFixtureQuer
 }
 
 // FindByAliasStringParam adds a new filter to the query that will require that
-// the AliasStringParam property is equal to the passed value
+// the AliasStringParam property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByAliasStringParam(v fixtures.AliasString) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.AliasStringParam, v))
 }
 
 // FindByAliasIntParam adds a new filter to the query that will require that
-// the AliasIntParam property is equal to the passed value
+// the AliasIntParam property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByAliasIntParam(cond kallax.ScalarCond, v fixtures.AliasInt) *QueryFixtureQuery {
 	return q.Where(cond(Schema.QueryFixture.AliasIntParam, v))
 }
 
 // FindByIDPropertyParam adds a new filter to the query that will require that
-// the IDPropertyParam property is equal to the passed value
+// the IDPropertyParam property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByIDPropertyParam(v kallax.ULID) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.IDPropertyParam, v))
 }
 
 // FindByInterfacePropParam adds a new filter to the query that will require that
-// the InterfacePropParam property is equal to the passed value
+// the InterfacePropParam property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByInterfacePropParam(v fixtures.InterfaceImplementation) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.InterfacePropParam, v))
 }
 
 // FindByURLParam adds a new filter to the query that will require that
-// the URLParam property is equal to the passed value
+// the URLParam property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByURLParam(v url.URL) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.URLParam, v))
 }
 
 // FindByTimeParam adds a new filter to the query that will require that
-// the TimeParam property is equal to the passed value
+// the TimeParam property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByTimeParam(cond kallax.ScalarCond, v time.Time) *QueryFixtureQuery {
 	return q.Where(cond(Schema.QueryFixture.TimeParam, v))
 }
 
 // FindByAliasArrAliasStringParam adds a new filter to the query that will require that
-// the AliasArrAliasStringParam property contains all the passed values; if no passed values, it will do nothing
+// the AliasArrAliasStringParam property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryFixtureQuery) FindByAliasArrAliasStringParam(v ...fixtures.AliasString) *QueryFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -5010,7 +5072,8 @@ func (q *QueryFixtureQuery) FindByAliasArrAliasStringParam(v ...fixtures.AliasSt
 }
 
 // FindByAliasHereArrayParam adds a new filter to the query that will require that
-// the AliasHereArrayParam property contains all the passed values; if no passed values, it will do nothing
+// the AliasHereArrayParam property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryFixtureQuery) FindByAliasHereArrayParam(v ...string) *QueryFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -5023,7 +5086,8 @@ func (q *QueryFixtureQuery) FindByAliasHereArrayParam(v ...string) *QueryFixture
 }
 
 // FindByArrayAliasHereStringParam adds a new filter to the query that will require that
-// the ArrayAliasHereStringParam property contains all the passed values; if no passed values, it will do nothing
+// the ArrayAliasHereStringParam property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryFixtureQuery) FindByArrayAliasHereStringParam(v ...AliasHereString) *QueryFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -5036,7 +5100,7 @@ func (q *QueryFixtureQuery) FindByArrayAliasHereStringParam(v ...AliasHereString
 }
 
 // FindByScannerValuerParam adds a new filter to the query that will require that
-// the ScannerValuerParam property is equal to the passed value
+// the ScannerValuerParam property is equal to the passed value.
 func (q *QueryFixtureQuery) FindByScannerValuerParam(v ScannerValuer) *QueryFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryFixture.ScannerValuerParam, v))
 }
@@ -5167,7 +5231,7 @@ func (r *QueryRelationFixture) ColumnAddress(col string) (interface{}, error) {
 	case "name":
 		return &r.Name, nil
 	case "owner_id":
-		return kallax.VirtualColumn("owner_id", r, new(kallax.ULID)), nil
+		return types.Nullable(kallax.VirtualColumn("owner_id", r, new(kallax.ULID))), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in QueryRelationFixture: %s", col)
@@ -5502,7 +5566,8 @@ func (q *QueryRelationFixtureQuery) WithOwner() *QueryRelationFixtureQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *QueryRelationFixtureQuery) FindByID(v ...kallax.ULID) *QueryRelationFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -5515,9 +5580,15 @@ func (q *QueryRelationFixtureQuery) FindByID(v ...kallax.ULID) *QueryRelationFix
 }
 
 // FindByName adds a new filter to the query that will require that
-// the Name property is equal to the passed value
+// the Name property is equal to the passed value.
 func (q *QueryRelationFixtureQuery) FindByName(v string) *QueryRelationFixtureQuery {
 	return q.Where(kallax.Eq(Schema.QueryRelationFixture.Name, v))
+}
+
+// FindByOwner adds a new filter to the query that will require that
+// the foreign key of Owner is equal to the passed value.
+func (q *QueryRelationFixtureQuery) FindByOwner(v kallax.ULID) *QueryRelationFixtureQuery {
+	return q.Where(kallax.Eq(Schema.QueryRelationFixture.OwnerFK, v))
 }
 
 // QueryRelationFixtureResultSet is the set of results returned by a query to the
@@ -5882,7 +5953,8 @@ func (q *ResultSetFixtureQuery) Where(cond kallax.Condition) *ResultSetFixtureQu
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *ResultSetFixtureQuery) FindByID(v ...kallax.ULID) *ResultSetFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -5895,7 +5967,7 @@ func (q *ResultSetFixtureQuery) FindByID(v ...kallax.ULID) *ResultSetFixtureQuer
 }
 
 // FindByFoo adds a new filter to the query that will require that
-// the Foo property is equal to the passed value
+// the Foo property is equal to the passed value.
 func (q *ResultSetFixtureQuery) FindByFoo(v string) *ResultSetFixtureQuery {
 	return q.Where(kallax.Eq(Schema.ResultSetFixture.Foo, v))
 }
@@ -6035,6 +6107,8 @@ func (r *SchemaFixture) ColumnAddress(col string) (interface{}, error) {
 		return types.JSON(&r.MapOfInterface), nil
 	case "map_of_some_type":
 		return types.JSON(&r.MapOfSomeType), nil
+	case "rel_id":
+		return types.Nullable(kallax.VirtualColumn("rel_id", r, new(kallax.ULID))), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in SchemaFixture: %s", col)
@@ -6058,6 +6132,8 @@ func (r *SchemaFixture) Value(col string) (interface{}, error) {
 		return types.JSON(r.MapOfInterface), nil
 	case "map_of_some_type":
 		return types.JSON(r.MapOfSomeType), nil
+	case "rel_id":
+		return r.Model.VirtualColumn(col), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in SchemaFixture: %s", col)
@@ -6070,6 +6146,8 @@ func (r *SchemaFixture) NewRelationshipRecord(field string) (kallax.Record, erro
 	switch field {
 	case "Nested":
 		return new(SchemaFixture), nil
+	case "Inverse":
+		return new(SchemaRelationshipFixture), nil
 
 	}
 	return nil, fmt.Errorf("kallax: model SchemaFixture has no relationship %s", field)
@@ -6085,6 +6163,16 @@ func (r *SchemaFixture) SetRelationship(field string, rel interface{}) error {
 		}
 		if !val.GetID().IsEmpty() {
 			r.Nested = val
+		}
+
+		return nil
+	case "Inverse":
+		val, ok := rel.(*SchemaRelationshipFixture)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Inverse", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.Inverse = val
 		}
 
 		return nil
@@ -6115,6 +6203,14 @@ func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []kallax
 		records = append(records, kallax.RecordWithSchema{
 			Schema.SchemaFixture.BaseSchema,
 			record.Nested,
+		})
+	}
+
+	if record.Inverse != nil {
+		record.AddVirtualColumn("rel_id", record.Inverse.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema.SchemaRelationshipFixture.BaseSchema,
+			record.Inverse,
 		})
 	}
 
@@ -6409,8 +6505,14 @@ func (q *SchemaFixtureQuery) WithNested() *SchemaFixtureQuery {
 	return q
 }
 
+func (q *SchemaFixtureQuery) WithInverse() *SchemaFixtureQuery {
+	q.AddRelation(Schema.SchemaRelationshipFixture.BaseSchema, "Inverse", kallax.OneToOne, nil)
+	return q
+}
+
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *SchemaFixtureQuery) FindByID(v ...kallax.ULID) *SchemaFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -6423,21 +6525,27 @@ func (q *SchemaFixtureQuery) FindByID(v ...kallax.ULID) *SchemaFixtureQuery {
 }
 
 // FindByString adds a new filter to the query that will require that
-// the String property is equal to the passed value
+// the String property is equal to the passed value.
 func (q *SchemaFixtureQuery) FindByString(v string) *SchemaFixtureQuery {
 	return q.Where(kallax.Eq(Schema.SchemaFixture.String, v))
 }
 
 // FindByInt adds a new filter to the query that will require that
-// the Int property is equal to the passed value
+// the Int property is equal to the passed value.
 func (q *SchemaFixtureQuery) FindByInt(cond kallax.ScalarCond, v int) *SchemaFixtureQuery {
 	return q.Where(cond(Schema.SchemaFixture.Int, v))
 }
 
 // FindByInline adds a new filter to the query that will require that
-// the Inline property is equal to the passed value
+// the Inline property is equal to the passed value.
 func (q *SchemaFixtureQuery) FindByInline(v string) *SchemaFixtureQuery {
 	return q.Where(kallax.Eq(Schema.SchemaFixture.Inline, v))
+}
+
+// FindByInverse adds a new filter to the query that will require that
+// the foreign key of Inverse is equal to the passed value.
+func (q *SchemaFixtureQuery) FindByInverse(v kallax.ULID) *SchemaFixtureQuery {
+	return q.Where(kallax.Eq(Schema.SchemaFixture.InverseFK, v))
 }
 
 // SchemaFixtureResultSet is the set of results returned by a query to the
@@ -6545,6 +6653,377 @@ func (rs *SchemaFixtureResultSet) Err() error {
 
 // Close closes the result set.
 func (rs *SchemaFixtureResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
+// NewSchemaRelationshipFixture returns a new instance of SchemaRelationshipFixture.
+func NewSchemaRelationshipFixture() (record *SchemaRelationshipFixture) {
+	return new(SchemaRelationshipFixture)
+}
+
+// GetID returns the primary key of the model.
+func (r *SchemaRelationshipFixture) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *SchemaRelationshipFixture) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.ULID)(&r.ID), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in SchemaRelationshipFixture: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *SchemaRelationshipFixture) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in SchemaRelationshipFixture: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *SchemaRelationshipFixture) NewRelationshipRecord(field string) (kallax.Record, error) {
+	return nil, fmt.Errorf("kallax: model SchemaRelationshipFixture has no relationships")
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *SchemaRelationshipFixture) SetRelationship(field string, rel interface{}) error {
+	return fmt.Errorf("kallax: model SchemaRelationshipFixture has no relationships")
+}
+
+// SchemaRelationshipFixtureStore is the entity to access the records of the type SchemaRelationshipFixture
+// in the database.
+type SchemaRelationshipFixtureStore struct {
+	*kallax.Store
+}
+
+// NewSchemaRelationshipFixtureStore creates a new instance of SchemaRelationshipFixtureStore
+// using a SQL database.
+func NewSchemaRelationshipFixtureStore(db *sql.DB) *SchemaRelationshipFixtureStore {
+	return &SchemaRelationshipFixtureStore{kallax.NewStore(db)}
+}
+
+// Insert inserts a SchemaRelationshipFixture in the database. A non-persisted object is
+// required for this operation.
+func (s *SchemaRelationshipFixtureStore) Insert(record *SchemaRelationshipFixture) error {
+
+	return s.Store.Insert(Schema.SchemaRelationshipFixture.BaseSchema, record)
+
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *SchemaRelationshipFixtureStore) Update(record *SchemaRelationshipFixture, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	return s.Store.Update(Schema.SchemaRelationshipFixture.BaseSchema, record, cols...)
+
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *SchemaRelationshipFixtureStore) Save(record *SchemaRelationshipFixture) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *SchemaRelationshipFixtureStore) Delete(record *SchemaRelationshipFixture) error {
+
+	return s.Store.Delete(Schema.SchemaRelationshipFixture.BaseSchema, record)
+
+}
+
+// Find returns the set of results for the given query.
+func (s *SchemaRelationshipFixtureStore) Find(q *SchemaRelationshipFixtureQuery) (*SchemaRelationshipFixtureResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewSchemaRelationshipFixtureResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *SchemaRelationshipFixtureStore) MustFind(q *SchemaRelationshipFixtureQuery) *SchemaRelationshipFixtureResultSet {
+	return NewSchemaRelationshipFixtureResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *SchemaRelationshipFixtureStore) Count(q *SchemaRelationshipFixtureQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *SchemaRelationshipFixtureStore) MustCount(q *SchemaRelationshipFixtureQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *SchemaRelationshipFixtureStore) FindOne(q *SchemaRelationshipFixtureQuery) (*SchemaRelationshipFixture, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *SchemaRelationshipFixtureStore) MustFindOne(q *SchemaRelationshipFixtureQuery) *SchemaRelationshipFixture {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the SchemaRelationshipFixture with the data in the database and
+// makes it writable.
+func (s *SchemaRelationshipFixtureStore) Reload(record *SchemaRelationshipFixture) error {
+	return s.Store.Reload(Schema.SchemaRelationshipFixture.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *SchemaRelationshipFixtureStore) Transaction(callback func(*SchemaRelationshipFixtureStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&SchemaRelationshipFixtureStore{store})
+	})
+}
+
+// SchemaRelationshipFixtureQuery is the object used to create queries for the SchemaRelationshipFixture
+// entity.
+type SchemaRelationshipFixtureQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewSchemaRelationshipFixtureQuery returns a new instance of SchemaRelationshipFixtureQuery.
+func NewSchemaRelationshipFixtureQuery() *SchemaRelationshipFixtureQuery {
+	return &SchemaRelationshipFixtureQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.SchemaRelationshipFixture.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *SchemaRelationshipFixtureQuery) Select(columns ...kallax.SchemaField) *SchemaRelationshipFixtureQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *SchemaRelationshipFixtureQuery) SelectNot(columns ...kallax.SchemaField) *SchemaRelationshipFixtureQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *SchemaRelationshipFixtureQuery) Copy() *SchemaRelationshipFixtureQuery {
+	return &SchemaRelationshipFixtureQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *SchemaRelationshipFixtureQuery) Order(cols ...kallax.ColumnOrder) *SchemaRelationshipFixtureQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *SchemaRelationshipFixtureQuery) BatchSize(size uint64) *SchemaRelationshipFixtureQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *SchemaRelationshipFixtureQuery) Limit(n uint64) *SchemaRelationshipFixtureQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *SchemaRelationshipFixtureQuery) Offset(n uint64) *SchemaRelationshipFixtureQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *SchemaRelationshipFixtureQuery) Where(cond kallax.Condition) *SchemaRelationshipFixtureQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
+func (q *SchemaRelationshipFixtureQuery) FindByID(v ...kallax.ULID) *SchemaRelationshipFixtureQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.SchemaRelationshipFixture.ID, values...))
+}
+
+// SchemaRelationshipFixtureResultSet is the set of results returned by a query to the
+// database.
+type SchemaRelationshipFixtureResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *SchemaRelationshipFixture
+	lastErr   error
+}
+
+// NewSchemaRelationshipFixtureResultSet creates a new result set for rows of the type
+// SchemaRelationshipFixture.
+func NewSchemaRelationshipFixtureResultSet(rs kallax.ResultSet) *SchemaRelationshipFixtureResultSet {
+	return &SchemaRelationshipFixtureResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *SchemaRelationshipFixtureResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.SchemaRelationshipFixture.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*SchemaRelationshipFixture)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *SchemaRelationshipFixture")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *SchemaRelationshipFixtureResultSet) Get() (*SchemaRelationshipFixture, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *SchemaRelationshipFixtureResultSet) ForEach(fn func(*SchemaRelationshipFixture) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *SchemaRelationshipFixtureResultSet) All() ([]*SchemaRelationshipFixture, error) {
+	var result []*SchemaRelationshipFixture
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *SchemaRelationshipFixtureResultSet) One() (*SchemaRelationshipFixture, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *SchemaRelationshipFixtureResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *SchemaRelationshipFixtureResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
@@ -6810,7 +7289,8 @@ func (q *StoreFixtureQuery) Where(cond kallax.Condition) *StoreFixtureQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *StoreFixtureQuery) FindByID(v ...kallax.ULID) *StoreFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -6823,13 +7303,14 @@ func (q *StoreFixtureQuery) FindByID(v ...kallax.ULID) *StoreFixtureQuery {
 }
 
 // FindByFoo adds a new filter to the query that will require that
-// the Foo property is equal to the passed value
+// the Foo property is equal to the passed value.
 func (q *StoreFixtureQuery) FindByFoo(v string) *StoreFixtureQuery {
 	return q.Where(kallax.Eq(Schema.StoreFixture.Foo, v))
 }
 
 // FindBySliceProp adds a new filter to the query that will require that
-// the SliceProp property contains all the passed values; if no passed values, it will do nothing
+// the SliceProp property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *StoreFixtureQuery) FindBySliceProp(v ...string) *StoreFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -6842,7 +7323,8 @@ func (q *StoreFixtureQuery) FindBySliceProp(v ...string) *StoreFixtureQuery {
 }
 
 // FindByAliasSliceProp adds a new filter to the query that will require that
-// the AliasSliceProp property contains all the passed values; if no passed values, it will do nothing
+// the AliasSliceProp property contains all the passed values; if no passed values,
+// it will do nothing.
 func (q *StoreFixtureQuery) FindByAliasSliceProp(v ...string) *StoreFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -7216,7 +7698,8 @@ func (q *StoreWithConstructFixtureQuery) Where(cond kallax.Condition) *StoreWith
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *StoreWithConstructFixtureQuery) FindByID(v ...kallax.ULID) *StoreWithConstructFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -7229,7 +7712,7 @@ func (q *StoreWithConstructFixtureQuery) FindByID(v ...kallax.ULID) *StoreWithCo
 }
 
 // FindByFoo adds a new filter to the query that will require that
-// the Foo property is equal to the passed value
+// the Foo property is equal to the passed value.
 func (q *StoreWithConstructFixtureQuery) FindByFoo(v string) *StoreWithConstructFixtureQuery {
 	return q.Where(kallax.Eq(Schema.StoreWithConstructFixture.Foo, v))
 }
@@ -7600,7 +8083,8 @@ func (q *StoreWithNewFixtureQuery) Where(cond kallax.Condition) *StoreWithNewFix
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *StoreWithNewFixtureQuery) FindByID(v ...kallax.ULID) *StoreWithNewFixtureQuery {
 	if len(v) == 0 {
 		return q
@@ -7613,13 +8097,13 @@ func (q *StoreWithNewFixtureQuery) FindByID(v ...kallax.ULID) *StoreWithNewFixtu
 }
 
 // FindByFoo adds a new filter to the query that will require that
-// the Foo property is equal to the passed value
+// the Foo property is equal to the passed value.
 func (q *StoreWithNewFixtureQuery) FindByFoo(v string) *StoreWithNewFixtureQuery {
 	return q.Where(kallax.Eq(Schema.StoreWithNewFixture.Foo, v))
 }
 
 // FindByBar adds a new filter to the query that will require that
-// the Bar property is equal to the passed value
+// the Bar property is equal to the passed value.
 func (q *StoreWithNewFixtureQuery) FindByBar(v string) *StoreWithNewFixtureQuery {
 	return q.Where(kallax.Eq(Schema.StoreWithNewFixture.Bar, v))
 }
@@ -7746,6 +8230,7 @@ type schema struct {
 	QueryRelationFixture      *schemaQueryRelationFixture
 	ResultSetFixture          *schemaResultSetFixture
 	SchemaFixture             *schemaSchemaFixture
+	SchemaRelationshipFixture *schemaSchemaRelationshipFixture
 	StoreFixture              *schemaStoreFixture
 	StoreWithConstructFixture *schemaStoreWithConstructFixture
 	StoreWithNewFixture       *schemaStoreWithNewFixture
@@ -7754,6 +8239,7 @@ type schema struct {
 type schemaCar struct {
 	*kallax.BaseSchema
 	ID        kallax.SchemaField
+	OwnerFK   kallax.SchemaField
 	ModelName kallax.SchemaField
 }
 
@@ -7814,14 +8300,16 @@ type schemaPerson struct {
 
 type schemaPet struct {
 	*kallax.BaseSchema
-	ID   kallax.SchemaField
-	Name kallax.SchemaField
-	Kind kallax.SchemaField
+	ID      kallax.SchemaField
+	Name    kallax.SchemaField
+	Kind    kallax.SchemaField
+	OwnerFK kallax.SchemaField
 }
 
 type schemaQueryFixture struct {
 	*kallax.BaseSchema
 	ID                        kallax.SchemaField
+	InverseFK                 kallax.SchemaField
 	Embedded                  kallax.SchemaField
 	Inline                    kallax.SchemaField
 	MapOfString               kallax.SchemaField
@@ -7854,8 +8342,9 @@ type schemaQueryFixture struct {
 
 type schemaQueryRelationFixture struct {
 	*kallax.BaseSchema
-	ID   kallax.SchemaField
-	Name kallax.SchemaField
+	ID      kallax.SchemaField
+	Name    kallax.SchemaField
+	OwnerFK kallax.SchemaField
 }
 
 type schemaResultSetFixture struct {
@@ -7873,6 +8362,12 @@ type schemaSchemaFixture struct {
 	MapOfString    kallax.SchemaField
 	MapOfInterface kallax.SchemaField
 	MapOfSomeType  kallax.SchemaField
+	InverseFK      kallax.SchemaField
+}
+
+type schemaSchemaRelationshipFixture struct {
+	*kallax.BaseSchema
+	ID kallax.SchemaField
 }
 
 type schemaStoreFixture struct {
@@ -7953,6 +8448,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("model_name"),
 		),
 		ID:        kallax.NewSchemaField("id"),
+		OwnerFK:   kallax.NewSchemaField("owner_id"),
 		ModelName: kallax.NewSchemaField("model_name"),
 	},
 	EventsAllFixture: &schemaEventsAllFixture{
@@ -8128,9 +8624,10 @@ var Schema = &schema{
 			kallax.NewSchemaField("kind"),
 			kallax.NewSchemaField("owner_id"),
 		),
-		ID:   kallax.NewSchemaField("id"),
-		Name: kallax.NewSchemaField("name"),
-		Kind: kallax.NewSchemaField("kind"),
+		ID:      kallax.NewSchemaField("id"),
+		Name:    kallax.NewSchemaField("name"),
+		Kind:    kallax.NewSchemaField("kind"),
+		OwnerFK: kallax.NewSchemaField("owner_id"),
 	},
 	QueryFixture: &schemaQueryFixture{
 		BaseSchema: kallax.NewBaseSchema(
@@ -8139,6 +8636,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
 				"Relation":  kallax.NewForeignKey("owner_id", false),
+				"Inverse":   kallax.NewForeignKey("inverse_id", true),
 				"NRelation": kallax.NewForeignKey("owner_id", false),
 			},
 			func() kallax.Record {
@@ -8146,6 +8644,7 @@ var Schema = &schema{
 			},
 			false,
 			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("inverse_id"),
 			kallax.NewSchemaField("embedded"),
 			kallax.NewSchemaField("inline"),
 			kallax.NewSchemaField("map_of_string"),
@@ -8176,6 +8675,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("scanner_valuer_param"),
 		),
 		ID:                        kallax.NewSchemaField("id"),
+		InverseFK:                 kallax.NewSchemaField("inverse_id"),
 		Embedded:                  kallax.NewSchemaField("embedded"),
 		Inline:                    kallax.NewSchemaField("inline"),
 		MapOfString:               kallax.NewSchemaField("map_of_string"),
@@ -8221,8 +8721,9 @@ var Schema = &schema{
 			kallax.NewSchemaField("name"),
 			kallax.NewSchemaField("owner_id"),
 		),
-		ID:   kallax.NewSchemaField("id"),
-		Name: kallax.NewSchemaField("name"),
+		ID:      kallax.NewSchemaField("id"),
+		Name:    kallax.NewSchemaField("name"),
+		OwnerFK: kallax.NewSchemaField("owner_id"),
 	},
 	ResultSetFixture: &schemaResultSetFixture{
 		BaseSchema: kallax.NewBaseSchema(
@@ -8246,7 +8747,8 @@ var Schema = &schema{
 			"__schemafixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Nested": kallax.NewForeignKey("schema_fixture_id", false),
+				"Nested":  kallax.NewForeignKey("schema_fixture_id", false),
+				"Inverse": kallax.NewForeignKey("rel_id", true),
 			},
 			func() kallax.Record {
 				return new(SchemaFixture)
@@ -8259,6 +8761,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("map_of_string"),
 			kallax.NewSchemaField("map_of_interface"),
 			kallax.NewSchemaField("map_of_some_type"),
+			kallax.NewSchemaField("rel_id"),
 		),
 		ID:             kallax.NewSchemaField("id"),
 		String:         kallax.NewSchemaField("string"),
@@ -8267,6 +8770,21 @@ var Schema = &schema{
 		MapOfString:    kallax.NewSchemaField("map_of_string"),
 		MapOfInterface: kallax.NewSchemaField("map_of_interface"),
 		MapOfSomeType:  kallax.NewSchemaField("map_of_some_type"),
+		InverseFK:      kallax.NewSchemaField("rel_id"),
+	},
+	SchemaRelationshipFixture: &schemaSchemaRelationshipFixture{
+		BaseSchema: kallax.NewBaseSchema(
+			"relationship",
+			"__schemarelationshipfixture",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{},
+			func() kallax.Record {
+				return new(SchemaRelationshipFixture)
+			},
+			false,
+			kallax.NewSchemaField("id"),
+		),
+		ID: kallax.NewSchemaField("id"),
 	},
 	StoreFixture: &schemaStoreFixture{
 		BaseSchema: kallax.NewBaseSchema(

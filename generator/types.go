@@ -584,8 +584,10 @@ func (f *Field) ForeignKey() string {
 	}
 
 	fk := strings.Split(f.Tag.Get("fk"), ",")[0]
-	if fk == "" {
+	if fk == "" && !f.IsInverse() {
 		fk = foreignKeyForModel(f.Model.Name)
+	} else if fk == "" {
+		fk = foreignKeyForModel(f.TypeSchemaName())
 	}
 
 	return fk

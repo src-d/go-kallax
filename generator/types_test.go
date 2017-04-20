@@ -352,19 +352,21 @@ func TestFieldForeignKey(t *testing.T) {
 	cases := []struct {
 		tag      string
 		inverse  bool
+		typ      string
 		expected string
 	}{
-		{`fk:""`, false, "foo_id"},
-		{`fk:"foo_bar_baz"`, false, "foo_bar_baz"},
-		{`fk:",inverse"`, true, "foo_id"},
-		{`fk:"foos,inverse"`, true, "foos"},
-		{``, false, "foo_id"},
+		{`fk:""`, false, "", "foo_id"},
+		{`fk:"foo_bar_baz"`, false, "", "foo_bar_baz"},
+		{`fk:",inverse"`, true, "Bar", "bar_id"},
+		{`fk:"foos,inverse"`, true, "Bar", "foos"},
+		{``, false, "", "foo_id"},
 	}
 
 	for _, c := range cases {
 		f := NewField("", "", reflect.StructTag(c.tag))
 		f.Kind = Relationship
 		f.Model = m
+		f.Type = c.typ
 
 		r.Equal(c.expected, f.ForeignKey(), "foreign key with tag: %s", c.tag)
 		r.Equal(c.inverse, f.IsInverse(), "is inverse: %s", c.tag)
