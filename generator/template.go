@@ -3,7 +3,6 @@ package generator
 import (
 	"bytes"
 	"fmt"
-	"go/build"
 	"go/types"
 	"io"
 	"os"
@@ -430,8 +429,11 @@ func printDocumentWithNumbers(code string) {
 }
 
 func loadTemplateText(filename string) string {
-	filename = filepath.Join(build.Default.GOPATH, "src/gopkg.in/src-d/go-kallax.v1/generator", filename)
-	f, err := os.Open(filename)
+	srcDir, err := getPkgSrcDir("gopkg.in/src-d/go-kallax.v1/generator")
+	if err != nil {
+		panic(err)
+	}
+	f, err := os.Open(filepath.Join(srcDir, filename))
 	if err != nil {
 		panic(err)
 	}

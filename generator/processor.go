@@ -459,14 +459,29 @@ func joinDirectory(directory string, files []string) []string {
 	return result
 }
 
-var goPath = os.Getenv("GOPATH")
+var goPaths = filepath.SplitList(build.Default.GOPATH)
+
+func getPkgSrcDir(importPath string) (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	pkg, err := build.Import(importPath, wd, 0)
+	if err != nil {
+		return "", err
+	}
+	return pkg.Dir, nil
+}
 
 func typeName(typ types.Type) string {
 	return removeGoPath(typ.String())
 }
 
 func removeGoPath(path string) string {
-	return strings.Replace(path, goPath+"/src/", "", -1)
+	for _, goPath := range goPaths {
+		path = strings.Replace(path, goPath+"/src/", "", -1)
+	}
+	return path
 }
 
 func isIgnoredField(s *types.Struct, idx int) bool {
