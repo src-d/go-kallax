@@ -466,7 +466,9 @@ func typeName(typ types.Type) string {
 }
 
 func removeGoPath(path string) string {
-	return strings.Replace(path, goPath+"/src/", "", -1)
+	importPath := filepath.ToSlash(goPath + "/src/")
+	path = filepath.ToSlash(path)
+	return strings.Replace(path, importPath, "", -1)
 }
 
 func isIgnoredField(s *types.Struct, idx int) bool {
