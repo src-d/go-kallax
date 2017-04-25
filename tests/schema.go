@@ -17,6 +17,12 @@ type SchemaFixture struct {
 	MapOfSomeType  map[string]struct {
 		Foo string
 	}
+	Inverse *SchemaRelationshipFixture `fk:"rel_id,inverse"`
+}
+
+type SchemaRelationshipFixture struct {
+	kallax.Model `table:"relationship"`
+	ID           kallax.ULID `pk:""`
 }
 
 func newSchemaFixture() *SchemaFixture {

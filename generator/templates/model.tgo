@@ -96,26 +96,27 @@ func New{{.StoreName}}(db *sql.DB) *{{.StoreName}} {
 	return &{{.StoreName}}{kallax.NewStore(db)}
 }
 
-{{if .HasRelationships}}
+// GenericStore returns the generic store of this store.
+func (s *{{.StoreName}}) GenericStore() *kallax.Store {
+        return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *{{.StoreName}}) SetGenericStore(store *kallax.Store) {
+        s.Store = store
+}
+
+{{if .HasNonInverses}}
 func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordWithSchema {
-        record.ClearVirtualColumns()
         var records []kallax.RecordWithSchema
-        {{range .Relationships}}
-        {{- if .IsInverse -}}
-        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} {
-                record.AddVirtualColumn("{{.ForeignKey}}", record.{{.Name}}.GetID())
-                records = append(records, kallax.RecordWithSchema{
-                        Schema.{{.TypeSchemaName}}.BaseSchema,
-                        {{if not .IsPtr}}&{{end}}record.{{.Name}},
-                })
-        }
-        {{else if .IsOneToManyRelationship}}
+        {{range .NonInverses}}
+        {{if .IsOneToManyRelationship}}
         for _, rec := range record.{{.Name}} {
                 rec.ClearVirtualColumns()
                 rec.AddVirtualColumn("{{.ForeignKey}}", record.GetID())
                 records = append(records, kallax.RecordWithSchema{
-                        Schema.{{.TypeSchemaName}}.BaseSchema,
-                        {{if not ($.IsPtrSlice .)}}&{{end}}rec,
+                        Schema: Schema.{{.TypeSchemaName}}.BaseSchema,
+                        Record: {{if not ($.IsPtrSlice .)}}&{{end}}rec,
                 })
         }
         {{else}}
@@ -123,11 +124,28 @@ func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordW
                 record.{{.Name}}.ClearVirtualColumns()
                 record.{{.Name}}.AddVirtualColumn("{{.ForeignKey}}", record.GetID())
                 records = append(records, kallax.RecordWithSchema{
-                        Schema.{{.TypeSchemaName}}.BaseSchema,
-                        {{if not .IsPtr}}&{{end}}record.{{.Name}},
+                        Schema: Schema.{{.TypeSchemaName}}.BaseSchema,
+                        Record: {{if not .IsPtr}}&{{end}}record.{{.Name}},
                 })
         }
         {{end}}
+        {{end}}
+        return records
+}
+{{end}}
+
+{{if .HasInverses}}
+func (s *{{.StoreName}}) inverseRecords(record *{{.Name}}) []kallax.RecordWithSchema {
+        record.ClearVirtualColumns()
+        var records []kallax.RecordWithSchema
+        {{range .Inverses}}
+        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} {
+                record.AddVirtualColumn("{{.ForeignKey}}", record.{{.Name}}.GetID())
+                records = append(records, kallax.RecordWithSchema{
+                        Schema: Schema.{{.TypeSchemaName}}.BaseSchema,
+                        Record: {{if not .IsPtr}}&{{end}}record.{{.Name}},
+                })
+        }
         {{end}}
         return records
 }
@@ -146,13 +164,34 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
         }
         {{end}}
         {{if .HasRelationships}}
+        {{if .HasNonInverses}}
         records := s.relationshipRecords(record)
-        if len(records) > 0 {
+        {{end}}
+        {{if .HasInverses}}
+        inverseRecords := s.inverseRecords(record)
+        {{end}}
+        if {{if .HasNonInverses}}len(records) > 0{{end}} {{if and (.HasNonInverses) (.HasInverses)}}&&{{end}} {{if .HasInverses}}len(inverseRecords) > 0{{end}} {
                 return s.Store.Transaction(func(s *kallax.Store) error {
+                        {{if .HasInverses}}
+                        for _, r := range inverseRecords {
+                                if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+                                        return err
+                                }
+                                persisted := r.Record.IsPersisted()
+
+                                if _, err := s.Save(r.Schema, r.Record); err != nil {
+                                        return err
+                                }
+
+                                if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+                                        return err
+                                }
+                        }
+                        {{end}}
                         if err := s.Insert(Schema.{{.Name}}.BaseSchema, record); err != nil {
                                 return err
                         }
-
+                        {{if .HasNonInverses}}
                         for _, r := range records {
                                 if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
                                         return err
@@ -167,6 +206,7 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
                                         return err
                                 }
                         }
+                        {{end}}
 
                         {{if .Events.Has "AfterInsert"}}
                         if err := record.AfterInsert(); err != nil {
@@ -224,14 +264,37 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
         }
         {{end}}
         {{if .HasRelationships}}
+        {{if .HasNonInverses}}
         records := s.relationshipRecords(record)
-        if len(records) > 0 {
+        {{end}}
+        {{if .HasInverses}}
+        inverseRecords := s.inverseRecords(record)
+        {{end}}
+        if {{if .HasNonInverses}}len(records) > 0{{end}} {{if and (.HasNonInverses) (.HasInverses)}}&&{{end}} {{if .HasInverses}}len(inverseRecords) > 0{{end}} {
                 err = s.Store.Transaction(func(s *kallax.Store) error {
+                        {{if .HasInverses}}
+                        for _, r := range inverseRecords {
+                                if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+                                        return err
+                                }
+                                persisted := r.Record.IsPersisted()
+
+                                if _, err := s.Save(r.Schema, r.Record); err != nil {
+                                        return err
+                                }
+
+                                if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+                                        return err
+                                }
+                        }
+                        {{end}}
+
                         updated, err = s.Update(Schema.{{.Name}}.BaseSchema, record, cols...)
                         if err != nil {
                                 return err
                         }
 
+                        {{if .HasNonInverses}}
                         for _, r := range records {
                                 if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
                                         return err
@@ -246,6 +309,7 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
                                         return err
                                 }
                         }
+                        {{end}}
 
                         {{if .Events.Has "AfterUpdate"}}
                         if err := record.AfterUpdate(); err != nil {

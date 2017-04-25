@@ -35,6 +35,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Querying JSON](#querying-json)
 * [Transactions](#transactions)
 * [Benchmarks](#benchmarks)
+* [Acknowledgements](#acknowledgements)
 * [Contributing](#contributing)
 
 ## Installation
@@ -139,7 +140,7 @@ type Metadata struct {
 ### Struct tags
 
 | Tag | Description | Can be used in |
-| --- | --- | --- | --- |
+| --- | --- | --- |
 | `table"table_name"` | Specifies the name of the table for a model. If not provided, the name of the table will be the name of the struct in lower snake case (e.g. `UserPreference` => `user_preference`) | embedded `kallax.Model` |
 | `pk:""` | Specifies the field is a primary key | any field with a valid identifier type |
 | `pk:"autoincr"` | Specifies the field is an auto-incrementable primary key | any field with a valid identifier type |
@@ -543,7 +544,7 @@ If, for example, you have a model that is not writable because you only selected
 err := store.Reload(user)
 ```
 
-Reload will not road any relationships, just the model itself. After a `Reload` the model will **always** be writable.
+Reload will not reload any relationships, just the model itself. After a `Reload` the model will **always** be writable.
 
 ### Querying JSON
 
@@ -571,11 +572,12 @@ store.Transaction(func(s *UserStore) error {
 })
 ```
 
-The fact that a transaction receives a store with the type of the model can be a problem if you want to store several models of different types. You can, indeed, create new stores of the other types, but do so with care. Do not use the internal `*kallax.Store`, as it does not perform any type checks or some of the operations the concrete type stores do.
+The fact that a transaction receives a store with the type of the model can be a problem if you want to store several models of different types. Kallax has a method named `StoreFrom` that initializes a store of the type you want to have the same underlying store as some other.
 
 ```go
 store.Transaction(func(s *UserStore) error {
-        postStore := &PostStore{s.Store}
+        var postStore PostStore
+        kallax.StoreFrom(&postStore, s)
 
         for _, p := range posts {
                 if err := postStore.Insert(p); err != nil {
@@ -633,6 +635,11 @@ Source code of the benchmarks can be found on the [benchmarks](https://github.co
 
 * Benchmarks were run on a 2015 MacBook Pro with i5 and 8GB of RAM and 128GB SSD hard drive running fedora 25.
 * Benchmark of `database/sql` for querying with relationships is implemented with a very naive 1+n solution. That's why the result is that bad.
+
+## Acknowledgements
+
+* Big thank you to the [Masterminds/squirrel](https://github.com/Masterminds/squirrel) library, which is an awesome query builder used internally in this ORM.
+* [lib/pq](https://github.com/lib/pq), the Golang PostgreSQL driver that ships with a ton of support for builtin Go types.
 
 ## Contributing 
 

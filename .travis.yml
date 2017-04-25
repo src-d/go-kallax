@@ -30,7 +30,7 @@ install:
   - go get -v -t ./generator/...
 
 script:
-  - make test
+  - GOPATH="$GOPATH:/tmp/dummyGoPath" make test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

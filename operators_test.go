@@ -56,6 +56,14 @@ func (s *OpsSuite) TestOperators() {
 		{"Or", Or(Neq(f("name"), "Joe"), Eq(f("age"), 1)), 3},
 		{"In", In(f("name"), "Joe", "Jane"), 2},
 		{"NotIn", NotIn(f("name"), "Joe", "Jane"), 1},
+		{"MatchRegexCase upper", MatchRegexCase(f("name"), "J.*"), 2},
+		{"MatchRegexCase lower", MatchRegexCase(f("name"), "j.*"), 0},
+		{"MatchRegex upper", MatchRegex(f("name"), "J.*"), 2},
+		{"MatchRegex lower", MatchRegex(f("name"), "j.*"), 2},
+		{"NotMatchRegexCase upper", NotMatchRegexCase(f("name"), "J.*"), 1},
+		{"NotMatchRegexCase lower", NotMatchRegexCase(f("name"), "j.*"), 3},
+		{"NotMatchRegex upper", NotMatchRegex(f("name"), "J.*"), 1},
+		{"NotMatchRegex lower", NotMatchRegex(f("name"), "j.*"), 1},
 	}
 
 	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))

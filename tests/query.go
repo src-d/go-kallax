@@ -15,6 +15,7 @@ type QueryFixture struct {
 	ID           kallax.ULID `pk:""`
 
 	Relation  *QueryRelationFixture   `fk:"owner_id"`
+	Inverse   *QueryRelationFixture   `fk:"inverse_id,inverse"`
 	NRelation []*QueryRelationFixture `fk:"owner_id"`
 	Embedded  fixtures.QueryDummy
 	Ignored   fixtures.QueryDummy `kallax:"-"`

@@ -116,6 +116,16 @@ func (s *RelationshipsSuite) TestEvents() {
 	s.assertEvents(car.events, "BeforeDelete", "AfterDelete")
 }
 
+func (s *RelationshipsSuite) TestSaveWithInverse() {
+	p := NewPerson("Foo")
+	car := NewCar("Bar", p)
+
+	store := NewCarStore(s.db)
+	s.NoError(store.Insert(car))
+
+	s.NotNil(s.getPerson())
+}
+
 func (s *RelationshipsSuite) assertEvents(evs map[string]int, events ...string) {
 	for _, e := range events {
 		s.Equal(1, evs[e])

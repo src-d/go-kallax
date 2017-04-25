@@ -61,9 +61,9 @@ func (td *TemplateData) genFieldsColumnAddresses(buf *bytes.Buffer, fields []*Fi
 	for _, f := range fields {
 		if f.Inline() {
 			td.genFieldsColumnAddresses(buf, f.Fields)
-		} else if f.Kind == Relationship && f.IsInverse() {
+		} else if isOneToOneRelationship(f) && f.IsInverse() {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ForeignKey()))
-			buf.WriteString(fmt.Sprintf("return kallax.VirtualColumn(\"%s\", r, new(%s)), nil\n", f.ForeignKey(), td.foreignKeyType(f)))
+			buf.WriteString(fmt.Sprintf("return types.Nullable(kallax.VirtualColumn(\"%s\", r, new(%s))), nil\n", f.ForeignKey(), td.foreignKeyType(f)))
 		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
 			if f.IsPrimaryKey() {
@@ -110,7 +110,7 @@ func (td *TemplateData) genFieldsValues(buf *bytes.Buffer, fields []*Field) {
 	for _, f := range fields {
 		if f.Inline() {
 			td.genFieldsValues(buf, f.Fields)
-		} else if f.Kind == Relationship && f.IsInverse() {
+		} else if isOneToOneRelationship(f) && f.IsInverse() {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ForeignKey()))
 			buf.WriteString(fmt.Sprintf("return r.Model.VirtualColumn(col), nil\n"))
 		} else if f.Kind != Relationship {
@@ -135,7 +135,7 @@ func (td *TemplateData) genFieldsColumns(buf *bytes.Buffer, fields []*Field) {
 	for _, f := range fields {
 		if f.Inline() {
 			td.genFieldsColumns(buf, f.Fields)
-		} else if f.Kind == Relationship && f.IsInverse() {
+		} else if isOneToOneRelationship(f) && f.IsInverse() {
 			buf.WriteString(fmt.Sprintf("kallax.NewSchemaField(\"%s\"),\n", f.ForeignKey()))
 		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("kallax.NewSchemaField(\"%s\"),\n", f.ColumnName()))
@@ -153,12 +153,14 @@ func (td *TemplateData) GenModelSchema(model *Model) string {
 
 func (td *TemplateData) genFieldsSchema(buf *bytes.Buffer, parent string, fields []*Field) {
 	for _, f := range fields {
-		if f.Kind == Relationship {
+		if f.Kind == Relationship && !f.IsInverse() {
 			continue
 		}
 
 		if f.Inline() {
 			td.genFieldsSchema(buf, parent, f.Fields)
+		} else if isOneToOneRelationship(f) && f.IsInverse() {
+			buf.WriteString(fmt.Sprintf("%sFK kallax.SchemaField\n", f.Name))
 		} else {
 			buf.WriteString(f.Name + " ")
 
@@ -359,12 +361,14 @@ func (td *TemplateData) GenSchemaInit(model *Model) string {
 
 func (td *TemplateData) genFieldsInit(buf *bytes.Buffer, parent string, fields []*Field, root bool) {
 	for _, f := range fields {
-		if f.Kind == Relationship {
+		if f.Kind == Relationship && !f.IsInverse() {
 			continue
 		}
 
 		if f.Inline() {
 			td.genFieldsInit(buf, parent, f.Fields, true)
+		} else if isOneToOneRelationship(f) && f.IsInverse() {
+			buf.WriteString(fmt.Sprintf("%sFK:kallax.NewSchemaField(\"%s\"),\n", f.Name, f.ForeignKey()))
 		} else {
 			buf.WriteString(f.Name + ":")
 			var schemaName = f.Name
@@ -471,7 +475,8 @@ const (
 	// The passed values to the FindBy will be used in an kallax.ArrayContains
 	tplFindByCollection = `
 		// FindBy%[1]s adds a new filter to the query that will require that
-		// the %[1]s property contains all the passed values; if no passed values, it will do nothing
+		// the %[1]s property contains all the passed values; if no passed values, 
+		// it will do nothing.
 		func (q *%[2]s) FindBy%[1]s(v ...%[3]s) *%[2]s {
 		    if len(v) == 0 {return q}
 		    values := make([]interface{}, len(v))
@@ -482,7 +487,7 @@ const (
 	// properties that will be searched with an kallax.Eq condition.
 	tplFindByEquality = `
 		// FindBy%[1]s adds a new filter to the query that will require that
-		// the %[1]s property is equal to the passed value
+		// the %[1]s property is equal to the passed value.
 		func (q *%[2]s) FindBy%[1]s(v %[3]s) *%[2]s {
 			return q.Where(kallax.Eq(Schema.%[4]s.%[1]s, v))
 		}`
@@ -490,7 +495,7 @@ const (
 	// properties that can be compared regarding to a kallax.ScalarCond condition.
 	tplFindByCondition = `
 		// FindBy%[1]s adds a new filter to the query that will require that
-		// the %[1]s property is equal to the passed value
+		// the %[1]s property is equal to the passed value.
 		func (q *%[2]s) FindBy%[1]s(cond kallax.ScalarCond, v %[3]s) *%[2]s {
 			return q.Where(cond(Schema.%[4]s.%[1]s, v))
 		}`
@@ -498,12 +503,21 @@ const (
 	// The passed values to the FindBy will be used in an kallax.In condition.
 	tplFindByID = `
 		// FindBy%[1]s adds a new filter to the query that will require that
-		// the %[1]s property is equal to one of the passed values; if no passed values, it will do nothing
+		// the %[1]s property is equal to one of the passed values; if no passed values, 
+		// it will do nothing.
 		func (q *%[2]s) FindBy%[1]s(v ...%[3]s) *%[2]s {
 			if len(v) == 0 {return q}
 			values := make([]interface{}, len(v))
 			for i, val := range v {values[i] = val}
 			return q.Where(kallax.In(Schema.%[4]s.%[1]s, values...))
+		}`
+	// tplFindByFK is the template of the FindBy autogenerated for the primary key.
+	// The passed values to the FindBy will be used in an kallax.In condition.
+	tplFindByFK = `
+		// FindBy%[1]s adds a new filter to the query that will require that
+		// the foreign key of %[1]s is equal to the passed value.
+		func (q *%[2]s) FindBy%[1]s(v %[3]s) *%[2]s {
+			return q.Where(kallax.Eq(Schema.%[4]s.%[1]sFK, v))
 		}`
 )
 
@@ -520,28 +534,30 @@ func (td *TemplateData) genFindBy(buf *bytes.Buffer, parent *Model, fields []*Fi
 		switch {
 		case f.Inline():
 			td.genFindBy(buf, parent, f.Fields)
-		case f.Name == "ID":
-			writeTplCode(buf, parent, f, tplFindByID)
+		case f.IsPrimaryKey():
+			writeFindByTpl(buf, parent, f.Name, f, tplFindByID)
+		case isOneToOneRelationship(f) && f.IsInverse():
+			model := td.FindModel(f.TypeSchemaName())
+			writeFindByTpl(buf, parent, f.Name, model.ID, tplFindByFK)
 		case isEqualizable(f):
-			writeTplCode(buf, parent, f, tplFindByEquality)
+			writeFindByTpl(buf, parent, f.Name, f, tplFindByEquality)
 		case isSortable(f):
-			writeTplCode(buf, parent, f, tplFindByCondition)
+			writeFindByTpl(buf, parent, f.Name, f, tplFindByCondition)
 		case isCollection(f):
-			writeTplCode(buf, parent, f, tplFindByCollection)
+			writeFindByTpl(buf, parent, f.Name, f, tplFindByCollection)
 		}
 	}
 }
 
-func writeTplCode(buf *bytes.Buffer, parent *Model, f *Field, tpl string) {
+func writeFindByTpl(buf *bytes.Buffer, parent *Model, name string, f *Field, tpl string) {
 	findableTypeName, ok := findableTypeName(f)
 	if !ok {
 		return
 	}
 
-	property := f.Name
 	query := parent.QueryName
 	model := parent.Name
-	buf.WriteString(fmt.Sprintf(tpl, property, query, findableTypeName, model))
+	buf.WriteString(fmt.Sprintf(tpl, name, query, findableTypeName, model))
 }
 
 // findableTypeName returns the short name of the type that can be used to search
@@ -570,6 +586,10 @@ func findableTypeName(f *Field) (string, bool) {
 	}
 
 	return "", false
+}
+
+func isOneToOneRelationship(f *Field) bool {
+	return f.Kind == Relationship && !f.IsOneToManyRelationship()
 }
 
 // lookupValid returns the first valid type looking into the underlying types of

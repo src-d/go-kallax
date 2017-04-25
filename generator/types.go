@@ -440,9 +440,41 @@ func (m *Model) Relationships() []*Field {
 	return relationshipsOnFields(m.Fields)
 }
 
+// Inverses returns the inverse relationships of the model.
+func (m *Model) Inverses() []*Field {
+	var inverses []*Field
+	for _, f := range relationshipsOnFields(m.Fields) {
+		if f.IsInverse() {
+			inverses = append(inverses, f)
+		}
+	}
+	return inverses
+}
+
+// NonInverses returns the relationships of the model that are not inverses.
+func (m *Model) NonInverses() []*Field {
+	var rels []*Field
+	for _, f := range relationshipsOnFields(m.Fields) {
+		if !f.IsInverse() {
+			rels = append(rels, f)
+		}
+	}
+	return rels
+}
+
 // HasRelationships returns whether the model has relationships or not.
 func (m *Model) HasRelationships() bool {
 	return len(m.Relationships()) > 0
+}
+
+// HasInverses returns whether the model has inverse relationships or not.
+func (m *Model) HasInverses() bool {
+	return len(m.Inverses()) > 0
+}
+
+// HasNonInverses returns whether the model has non inverse relationships or not.
+func (m *Model) HasNonInverses() bool {
+	return len(m.NonInverses()) > 0
 }
 
 func relationshipsOnFields(fields []*Field) []*Field {
@@ -584,8 +616,10 @@ func (f *Field) ForeignKey() string {
 	}
 
 	fk := strings.Split(f.Tag.Get("fk"), ",")[0]
-	if fk == "" {
+	if fk == "" && !f.IsInverse() {
 		fk = foreignKeyForModel(f.Model.Name)
+	} else if fk == "" {
+		fk = foreignKeyForModel(f.TypeSchemaName())
 	}
 
 	return fk
