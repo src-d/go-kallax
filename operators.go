@@ -62,6 +62,14 @@ func Neq(col SchemaField, value interface{}) Condition {
 	}
 }
 
+// Like returns a condition that will be true when `col` matches the given value.
+// See https://www.postgresql.org/docs/9.6/static/functions-matching.html.
+func Like(col SchemaField, value string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return like{col.QualifiedName(schema), value}
+	}
+}
+
 // Or returns the given conditions joined by logical ors.
 func Or(conds ...Condition) Condition {
 	return func(schema Schema) squirrel.Sqlizer {
@@ -302,6 +310,11 @@ type (
 		col    string
 		values []interface{}
 	}
+
+	like struct {
+		col   string
+		value string
+	}
 )
 
 func (n not) ToSql() (string, []interface{}, error) {
@@ -337,6 +350,10 @@ func (o containsAny) ToSql() (string, []interface{}, error) {
 		o.col,
 		strings.Join(placeholders, ", "),
 	), args, nil
+}
+
+func (o like) ToSql() (string, []interface{}, error) {
+	return fmt.Sprintf("%s LIKE ?", o.col), []interface{}{o.value}, nil
 }
 
 func condsToSqlizers(conds []Condition, schema Schema) []squirrel.Sqlizer {
