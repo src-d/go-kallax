@@ -5,13 +5,11 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"path/filepath"
 	"reflect"
 	"testing"
 
-	"srcd.works/go-parse-utils.v1"
-
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/src-d/go-parse-utils.v1"
 )
 
 type ProcessorSuite struct {
@@ -340,7 +338,9 @@ func (s *ProcessorSuite) processFixture(source string) *Package {
 }
 
 func (s *ProcessorSuite) TestDo() {
-	p := NewProcessor(filepath.Join(goPath, "src", "gopkg.in/src-d/go-kallax.v1"), []string{"README.md"})
+	srcDir, err := getPkgSrcDir("gopkg.in/src-d/go-kallax.v1")
+	s.Nil(err)
+	p := NewProcessor(srcDir, []string{"README.md"})
 	pkg, err := p.Do()
 	s.NotNil(pkg)
 	s.NoError(err)
