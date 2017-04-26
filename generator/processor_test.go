@@ -5,7 +5,6 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -340,7 +339,7 @@ func (s *ProcessorSuite) processFixture(source string) *Package {
 }
 
 func (s *ProcessorSuite) TestDo() {
-	p := NewProcessor(filepath.Join(goPath, "src", "gopkg.in/src-d/go-kallax.v1"), []string{"README.md"})
+	p := NewProcessor(pkgAbsPath, []string{"README.md"})
 	pkg, err := p.Do()
 	s.NotNil(pkg)
 	s.NoError(err)

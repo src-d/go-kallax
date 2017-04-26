@@ -13,7 +13,7 @@ addons:
   postgresql: "9.4"
 
 env:
-  - DBNAME=kallax_test DBUSER=postgres DBPASS=''
+  - DBNAME=kallax_test DBUSER=postgres DBPASS='' GOPATH=/tmp/whatever:$GOPATH
 
 services:
   - postgresql
