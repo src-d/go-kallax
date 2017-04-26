@@ -49,6 +49,7 @@ func (s *OpsSuite) TestOperators() {
 		{"Gt", Gt(f("age"), 1), 2},
 		{"Lt", Lt(f("age"), 2), 1},
 		{"Neq", Neq(f("name"), "Joe"), 2},
+		{"Like", Like(f("name"), "J%"), 2},
 		{"GtOrEq", GtOrEq(f("age"), 2), 2},
 		{"LtOrEq", LtOrEq(f("age"), 3), 3},
 		{"Not", Not(Eq(f("name"), "Joe")), 2},
