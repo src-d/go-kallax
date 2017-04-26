@@ -39,14 +39,14 @@ func (s *StoreSuite) TearDownTest() {
 
 func (s *StoreSuite) TestInsert() {
 	m := newModel("a", "a@a.a", 1)
-	s.Nil(s.store.Insert(ModelSchema, m))
+	s.NoError(s.store.Insert(ModelSchema, m))
 	s.True(m.IsPersisted(), "model should be persisted now")
 	s.assertModel(m)
 }
 
 func (s *StoreSuite) TestInsert_Fail() {
 	m := newModel("a", "a@a.a@", 1)
-	s.NotNil(s.errStore.Insert(ModelSchema, m))
+	s.Error(s.errStore.Insert(ModelSchema, m))
 }
 
 func (s *StoreSuite) TestInsert_NotNew() {
@@ -57,13 +57,13 @@ func (s *StoreSuite) TestInsert_NotNew() {
 
 func (s *StoreSuite) TestInsert_IDEmpty() {
 	var m = new(model)
-	s.Nil(s.store.Insert(ModelSchema, m))
+	s.NoError(s.store.Insert(ModelSchema, m))
 	s.False(m.GetID().IsEmpty())
 }
 
 func (s *StoreSuite) TestUpdate() {
 	var m = newModel("a", "a@a.a", 1)
-	s.Nil(s.store.Insert(ModelSchema, m))
+	s.NoError(s.store.Insert(ModelSchema, m))
 
 	var newModel = newModel("a", "a@a.a", 1)
 	newModel.ID = m.ID
@@ -79,7 +79,7 @@ func (s *StoreSuite) TestUpdate() {
 	m.Email = "b@b.b"
 	m.Name = "b"
 	rows, err := s.store.Update(ModelSchema, m)
-	s.Nil(err)
+	s.NoError(err)
 	s.Equal(int64(1), rows, "rows affected")
 	s.assertModel(m)
 
@@ -90,15 +90,15 @@ func (s *StoreSuite) TestUpdate() {
 
 func (s *StoreSuite) TestUpdate_ColumnNotFound() {
 	var m = newModel("a", "a@a.a", 1)
-	s.Nil(s.store.Insert(ModelSchema, m))
+	s.NoError(s.store.Insert(ModelSchema, m))
 
 	_, err := s.store.Update(ModelSchema, m, f("not_exists"))
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *StoreSuite) TestUpdate_NotUpdated() {
 	var m = newModel("a", "a@a.a", 1)
-	s.Nil(s.store.Insert(ModelSchema, m))
+	s.NoError(s.store.Insert(ModelSchema, m))
 
 	m.ID = 567
 	_, err := s.store.Update(ModelSchema, m)
@@ -110,19 +110,19 @@ func (s *StoreSuite) TestUpdate_Fail() {
 	m.setPersisted()
 
 	_, err := s.errStore.Update(ModelSchema, m)
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *StoreSuite) TestSave() {
 	m := newModel("a", "a@a.a", 1)
 	updated, err := s.store.Save(ModelSchema, m)
-	s.Nil(err)
+	s.NoError(err)
 	s.False(updated)
 	s.assertModel(m)
 
 	m.Age = 5
 	updated, err = s.store.Save(ModelSchema, m)
-	s.Nil(err)
+	s.NoError(err)
 	s.True(updated)
 
 	m.setWritable(false)
@@ -132,10 +132,10 @@ func (s *StoreSuite) TestSave() {
 
 func (s *StoreSuite) TestDelete() {
 	m := newModel("a", "a@a.a", 1)
-	s.Nil(s.store.Insert(ModelSchema, m))
+	s.NoError(s.store.Insert(ModelSchema, m))
 	s.assertModel(m)
 
-	s.Nil(s.store.Delete(ModelSchema, m))
+	s.NoError(s.store.Delete(ModelSchema, m))
 	s.assertNotExists(m)
 
 	var mod model
@@ -143,50 +143,64 @@ func (s *StoreSuite) TestDelete() {
 }
 
 func (s *StoreSuite) TestRawQuery() {
-	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
 
 	rs, err := s.store.RawQuery("SELECT name FROM model WHERE age > $1", 1)
-	s.Nil(err)
+	s.NoError(err)
 
 	var names []string
 	for rs.Next() {
 		_, err := rs.Get(ModelSchema)
 		s.Equal(ErrRawScan, err)
 		var name string
-		s.Nil(rs.RawScan(&name))
+		s.NoError(rs.RawScan(&name))
 		names = append(names, name)
 	}
 	s.Equal([]string{"Jane", "Anna"}, names)
 }
 
+func (s *StoreSuite) TestRawQuery_Transaction() {
+	s.NoError(s.store.Transaction(func(store *Store) error {
+		rs, err := store.RawQuery("SELECT 1 + 1")
+		s.NoError(err)
+
+		var n int
+		rs.Next()
+		s.NoError(rs.RawScan(&n))
+		s.Equal(2, n)
+		s.NoError(rs.Close())
+		return nil
+	}))
+}
+
 func (s *StoreSuite) TestRawQuery_Fail() {
 	rs, err := s.errStore.RawQuery("SELECT name FROM model WHERE age > $1", 1)
 	s.Nil(rs)
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *StoreSuite) TestRawExec() {
-	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
 
 	rows, err := s.store.RawExec("DELETE FROM model WHERE age > $1", 1)
-	s.Nil(err)
+	s.NoError(err)
 	s.Equal(int64(2), rows)
 }
 
 func (s *StoreSuite) TestRawExec_Fail() {
 	rows, err := s.errStore.RawExec("DELETE FROM model WHERE age > $1", 1)
 	s.Equal(int64(0), rows)
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *StoreSuite) TestFind() {
-	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
 
 	q := NewBaseQuery(ModelSchema)
 	q.Select(f("name"))
@@ -209,11 +223,11 @@ func (s *StoreSuite) TestFind() {
 func (s *StoreSuite) TestFind_Fail() {
 	q := NewBaseQuery(ModelSchema)
 	_, err := s.errStore.Find(q)
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *StoreSuite) TestMustFind() {
-	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
 
 	q := NewBaseQuery(ModelSchema)
 	s.NotPanics(func() {
@@ -230,7 +244,7 @@ func (s *StoreSuite) assertFound(rs ResultSet, expected ...string) {
 	var names []string
 	for rs.Next() {
 		record, err := rs.Get(ModelSchema)
-		s.Nil(err)
+		s.NoError(err)
 		m, ok := record.(*model)
 		s.True(ok)
 		s.True(m.IsPersisted())
@@ -240,9 +254,9 @@ func (s *StoreSuite) assertFound(rs ResultSet, expected ...string) {
 }
 
 func (s *StoreSuite) TestCount() {
-	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
-	s.Nil(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Jane", "", 2)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Anna", "", 2)))
 
 	q := NewBaseQuery(ModelSchema)
 	q.Select(f("name"))
@@ -254,7 +268,7 @@ func (s *StoreSuite) TestCount() {
 }
 
 func (s *StoreSuite) TestMustCount() {
-	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
 
 	q := NewBaseQuery(ModelSchema)
 
@@ -269,13 +283,13 @@ func (s *StoreSuite) TestMustCount() {
 
 func (s *StoreSuite) TestTransaction() {
 	err := s.store.Transaction(func(store *Store) error {
-		s.Nil(store.Insert(ModelSchema, newModel("Joe", "", 1)))
+		s.NoError(store.Insert(ModelSchema, newModel("Joe", "", 1)))
 
 		return store.Transaction(func(store *Store) error {
 			return store.Insert(ModelSchema, newModel("Anna", "", 1))
 		})
 	})
-	s.Nil(err)
+	s.NoError(err)
 	s.assertCount(2)
 }
 
@@ -283,21 +297,31 @@ func (s *StoreSuite) TestTransaction_CantOpen() {
 	err := s.errStore.Transaction(func(store *Store) error {
 		return nil
 	})
-	s.NotNil(err)
+	s.Error(err)
 }
 
 func (s *StoreSuite) TestTransaction_Rollback() {
 	err := s.store.Transaction(func(store *Store) error {
-		s.Nil(store.Insert(ModelSchema, newModel("Joe", "", 1)))
-		s.Nil(store.Insert(ModelSchema, newModel("Anna", "", 1)))
+		s.NoError(store.Insert(ModelSchema, newModel("Joe", "", 1)))
+		s.NoError(store.Insert(ModelSchema, newModel("Anna", "", 1)))
 		return fmt.Errorf("kallax: we're never ever, ever, getting store together")
 	})
-	s.NotNil(err)
+	s.Error(err)
 	s.assertCount(0)
 }
 
+func (s *StoreSuite) TestTransaction_RawExec() {
+	err := s.store.Transaction(func(store *Store) error {
+		_, err := store.RawExec("INSERT INTO model (name, email, age) VALUES ($1, $2, $3)", "foo", "bar", 1)
+		s.NoError(err)
+		return nil
+	})
+	s.NoError(err)
+	s.assertCount(1)
+}
+
 func (s *StoreSuite) TestReload() {
-	s.Nil(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
+	s.NoError(s.store.Insert(ModelSchema, newModel("Joe", "", 1)))
 
 	// If we don't select all the fields, the records
 	// retrieved will not be writable, as it could be a potential danger
@@ -305,7 +329,7 @@ func (s *StoreSuite) TestReload() {
 	q := NewBaseQuery(ModelSchema)
 	q.Select(NewSchemaField("name"), ModelSchema.ID())
 	rs, err := s.store.Find(q)
-	s.Nil(err)
+	s.NoError(err)
 	s.True(rs.Next())
 
 	var m = new(model)
@@ -316,7 +340,7 @@ func (s *StoreSuite) TestReload() {
 	var ok bool
 	m, ok = record.(*model)
 	s.True(ok)
-	s.Nil(err)
+	s.NoError(err)
 
 	// Model is not writable, as we said
 	s.False(m.IsWritable())
@@ -326,7 +350,7 @@ func (s *StoreSuite) TestReload() {
 	s.Equal(ErrNotWritable, err)
 
 	// Now, the model is reloaded with all the fields
-	s.Nil(s.store.Reload(ModelSchema, m))
+	s.NoError(s.store.Reload(ModelSchema, m))
 
 	// And so, it becomes writable
 	s.True(m.IsWritable())
@@ -337,7 +361,7 @@ func (s *StoreSuite) TestReload_Fail() {
 	var m = newModel("Joe", "", 1)
 	m.setPersisted()
 
-	s.NotNil(s.errStore.Reload(ModelSchema, m))
+	s.Error(s.errStore.Reload(ModelSchema, m))
 }
 
 func (s *StoreSuite) TestReload_NotFound() {
@@ -350,22 +374,22 @@ func (s *StoreSuite) TestReload_NotFound() {
 
 func (s *StoreSuite) TestFind_1to1() {
 	m := newModel("Foo", "bar", 1)
-	s.Nil(s.store.Insert(ModelSchema, m))
+	s.NoError(s.store.Insert(ModelSchema, m))
 
 	rel := newRel(m.GetID(), "foo")
-	s.Nil(s.store.Insert(RelSchema, rel))
+	s.NoError(s.store.Insert(RelSchema, rel))
 
 	// just to see it does not randomly takes the most recent one
-	s.Nil(s.store.Insert(RelSchema, newRel(new(NumericID), "foo")))
+	s.NoError(s.store.Insert(RelSchema, newRel(new(NumericID), "foo")))
 
 	q := NewBaseQuery(ModelSchema)
 	q.AddRelation(RelSchema, "rel", OneToOne, nil)
 	rs, err := s.store.Find(q)
-	s.Nil(err)
+	s.NoError(err)
 
 	s.True(rs.Next())
 	record, err := rs.Get(ModelSchema)
-	s.Nil(err)
+	s.NoError(err)
 	model, ok := record.(*model)
 	s.True(ok)
 
@@ -379,28 +403,28 @@ func (s *StoreSuite) TestFind_1to1() {
 
 func (s *StoreSuite) rel1ToNFixtures() {
 	m := newModel("Foo", "bar", 1)
-	s.Nil(s.store.Insert(ModelSchema, m))
+	s.NoError(s.store.Insert(ModelSchema, m))
 
 	rels := []string{"foo", "bar", "baz"}
 	for _, v := range rels {
 		rel := newRel(m.GetID(), v)
-		s.Nil(s.store.Insert(RelSchema, rel))
+		s.NoError(s.store.Insert(RelSchema, rel))
 	}
 
-	s.Nil(s.store.Insert(RelSchema, newRel(new(NumericID), "qux")))
+	s.NoError(s.store.Insert(RelSchema, newRel(new(NumericID), "qux")))
 }
 
 func (s *StoreSuite) TestFind_1toN() {
 	s.rel1ToNFixtures()
 
 	q := NewBaseQuery(ModelSchema)
-	s.Nil(q.AddRelation(RelSchema, "rels", OneToMany, nil))
+	s.NoError(q.AddRelation(RelSchema, "rels", OneToMany, nil))
 	rs, err := s.store.Find(q)
-	s.Nil(err)
+	s.NoError(err)
 
 	s.True(rs.Next())
 	record, err := rs.Get(ModelSchema)
-	s.Nil(err)
+	s.NoError(err)
 	model, ok := record.(*model)
 	s.True(ok)
 
@@ -418,13 +442,13 @@ func (s *StoreSuite) TestFind_1toN_Filter() {
 	s.rel1ToNFixtures()
 
 	q := NewBaseQuery(ModelSchema)
-	s.Nil(q.AddRelation(RelSchema, "rels", OneToMany, Eq(NewSchemaField("foo"), "bar")))
+	s.NoError(q.AddRelation(RelSchema, "rels", OneToMany, Eq(NewSchemaField("foo"), "bar")))
 	rs, err := s.store.Find(q)
-	s.Nil(err)
+	s.NoError(err)
 
 	s.True(rs.Next())
 	record, err := rs.Get(ModelSchema)
-	s.Nil(err)
+	s.NoError(err)
 	model, ok := record.(*model)
 	s.True(ok)
 
@@ -440,17 +464,17 @@ func (s *StoreSuite) TestFind_1toNAnd1to1() {
 	s.rel1ToNFixtures()
 
 	q := NewBaseQuery(ModelSchema)
-	s.Nil(q.AddRelation(RelSchema, "rels", OneToMany, nil))
-	s.Nil(q.AddRelation(RelSchema, "rel", OneToOne, nil))
+	s.NoError(q.AddRelation(RelSchema, "rels", OneToMany, nil))
+	s.NoError(q.AddRelation(RelSchema, "rel", OneToOne, nil))
 	rs, err := s.store.Find(q)
-	s.Nil(err)
+	s.NoError(err)
 
 	var foo string
 	s.Equal(ErrRawScanBatching, rs.RawScan(&foo))
 
 	s.True(rs.Next())
 	record, err := rs.Get(ModelSchema)
-	s.Nil(err)
+	s.NoError(err)
 	model, ok := record.(*model)
 	s.True(ok)
 
@@ -465,23 +489,23 @@ func (s *StoreSuite) TestFind_1toNMultiple() {
 	rels := []string{"foo", "bar", "baz"}
 	for i := 0; i < 100; i++ {
 		m := newModel(fmt.Sprint(i), fmt.Sprint(i), i)
-		s.Nil(s.store.Insert(ModelSchema, m))
+		s.NoError(s.store.Insert(ModelSchema, m))
 
 		for _, v := range rels {
-			s.Nil(s.store.Insert(RelSchema, newRel(m.GetID(), fmt.Sprintf("%s%d", v, i))))
+			s.NoError(s.store.Insert(RelSchema, newRel(m.GetID(), fmt.Sprintf("%s%d", v, i))))
 		}
 	}
 
 	q := NewBaseQuery(ModelSchema)
 	q.BatchSize(20)
-	s.Nil(q.AddRelation(RelSchema, "rels", OneToMany, nil))
+	s.NoError(q.AddRelation(RelSchema, "rels", OneToMany, nil))
 	rs, err := s.store.Find(q)
-	s.Nil(err)
+	s.NoError(err)
 
 	var i int
 	for rs.Next() {
 		record, err := rs.Get(ModelSchema)
-		s.Nil(err, "row #%d", i)
+		s.NoError(err, "row #%d", i)
 
 		model, ok := record.(*model)
 		s.True(ok, "row #%d", i)
@@ -502,7 +526,7 @@ func (s *StoreSuite) assertModel(m *model) {
 	var result model
 	err := s.db.QueryRow("SELECT id, name, email, age FROM model WHERE id = $1", m.GetID()).
 		Scan(result.GetID(), &result.Name, &result.Email, &result.Age)
-	s.Nil(err)
+	s.NoError(err)
 
 	if err == nil {
 		s.Equal(m.GetID(), result.GetID())
@@ -514,7 +538,7 @@ func (s *StoreSuite) assertModel(m *model) {
 
 func (s *StoreSuite) assertCount(n int64) {
 	var count int64
-	s.Nil(s.db.QueryRow("SELECT COUNT(*) FROM model").Scan(&count))
+	s.NoError(s.db.QueryRow("SELECT COUNT(*) FROM model").Scan(&count))
 	s.Equal(n, count)
 }
 

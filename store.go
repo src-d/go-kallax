@@ -217,7 +217,7 @@ func (s *Store) Delete(schema Schema, record Record) error {
 // WARNING: A result set created from a raw query can only be scanned using the
 // RawScan method of ResultSet, instead of Scan.
 func (s *Store) RawQuery(sql string, params ...interface{}) (ResultSet, error) {
-	rows, err := s.db.Query(sql, params...)
+	rows, err := s.proxy.Query(sql, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (s *Store) RawQuery(sql string, params ...interface{}) (ResultSet, error) {
 // RawExec executes a raw SQL query with the given parameters and returns
 // the number of affected rows.
 func (s *Store) RawExec(sql string, params ...interface{}) (int64, error) {
-	result, err := s.db.Exec(sql, params...)
+	result, err := s.proxy.Exec(sql, params...)
 	if err != nil {
 		return 0, err
 	}
@@ -252,7 +252,7 @@ func (s *Store) Find(q Query) (ResultSet, error) {
 		builder = builder.Limit(limit)
 	}
 
-	rows, err := builder.RunWith(s.db).Query()
+	rows, err := builder.RunWith(s.proxy).Query()
 	if err != nil {
 		return nil, err
 	}
