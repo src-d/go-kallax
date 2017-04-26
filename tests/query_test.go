@@ -87,16 +87,6 @@ func (s *QuerySuite) TestQuery() {
 	s.Panics(func() {
 		s.Equal("bar", store.MustFindOne(queryErr).Foo)
 	})
-
-	foobar := newQueryFixture("foo bar")
-	s.Nil(store.Insert(foobar))
-
-	likeQuery := NewQueryFixtureQuery()
-	likeQuery.Where(kallax.Like(Schema.QueryFixture.Foo, "%fo%"))
-
-	s.NotPanics(func() {
-		s.Equal("foo bar", store.MustFindOne(likeQuery).Foo)
-	})
 }
 
 func (s *QuerySuite) TestFindById() {
