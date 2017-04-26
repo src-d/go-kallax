@@ -7,7 +7,6 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -459,16 +458,19 @@ func joinDirectory(directory string, files []string) []string {
 	return result
 }
 
-var goPath = os.Getenv("GOPATH")
-
 func typeName(typ types.Type) string {
 	return removeGoPath(typ.String())
 }
 
 func removeGoPath(path string) string {
-	importPath := filepath.ToSlash(goPath + "/src/")
 	path = filepath.ToSlash(path)
-	return strings.Replace(path, importPath, "", -1)
+	for _, p := range parseutil.DefaultGoPath {
+		p = filepath.ToSlash(p + "/src/")
+		if strings.HasPrefix(path, p) {
+			return strings.Replace(path, p, "", -1)
+		}
+	}
+	return path
 }
 
 func isIgnoredField(s *types.Struct, idx int) bool {
