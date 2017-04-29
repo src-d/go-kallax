@@ -62,11 +62,19 @@ func Neq(col SchemaField, value interface{}) Condition {
 	}
 }
 
-// Like returns a condition that will be true when `col` matches the given value.
+// Like returns a condition that will be true when `col` matches the given `value`.
 // See https://www.postgresql.org/docs/9.6/static/functions-matching.html.
 func Like(col SchemaField, value string) Condition {
 	return func(schema Schema) squirrel.Sqlizer {
 		return &colOp{col.QualifiedName(schema), "LIKE", value}
+	}
+}
+
+// SimilarTo returns a condition that will be true when `col` matches the given `value`.
+// See https://www.postgresql.org/docs/9.6/static/functions-matching.html.
+func SimilarTo(col SchemaField, value string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "SIMILAR TO", value}
 	}
 }
 

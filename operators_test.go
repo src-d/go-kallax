@@ -50,6 +50,7 @@ func (s *OpsSuite) TestOperators() {
 		{"Lt", Lt(f("age"), 2), 1},
 		{"Neq", Neq(f("name"), "Joe"), 2},
 		{"Like", Like(f("name"), "J%"), 2},
+		{"Similar", SimilarTo(f("name"), "An{2}a"), 1},
 		{"GtOrEq", GtOrEq(f("age"), 2), 2},
 		{"LtOrEq", LtOrEq(f("age"), 3), 3},
 		{"Not", Not(Eq(f("name"), "Joe")), 2},
