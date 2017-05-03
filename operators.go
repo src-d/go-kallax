@@ -63,6 +63,7 @@ func Neq(col SchemaField, value interface{}) Condition {
 }
 
 // Like returns a condition that will be true when `col` matches the given `value`.
+// The match is case-sensitive.
 // See https://www.postgresql.org/docs/9.6/static/functions-matching.html.
 func Like(col SchemaField, value string) Condition {
 	return func(schema Schema) squirrel.Sqlizer {
@@ -70,11 +71,30 @@ func Like(col SchemaField, value string) Condition {
 	}
 }
 
-// SimilarTo returns a condition that will be true when `col` matches the given `value`.
+// Ilike returns a condition that will be true when `col` matches the given `value`.
+// The match is case-insensitive.
+// See https://www.postgresql.org/docs/9.6/static/functions-matching.html.
+func Ilike(col SchemaField, value string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "ILIKE", value}
+	}
+}
+
+// SimilarTo returns a condition that will be true when `col` matches the given
+// `value`.
 // See https://www.postgresql.org/docs/9.6/static/functions-matching.html.
 func SimilarTo(col SchemaField, value string) Condition {
 	return func(schema Schema) squirrel.Sqlizer {
 		return &colOp{col.QualifiedName(schema), "SIMILAR TO", value}
+	}
+}
+
+// NotSimilarTo returns a condition that will be true when `col` does not match
+// the given `value`.
+// See https://www.postgresql.org/docs/9.6/static/functions-matching.html.
+func NotSimilarTo(col SchemaField, value string) Condition {
+	return func(schema Schema) squirrel.Sqlizer {
+		return &colOp{col.QualifiedName(schema), "NOT SIMILAR TO", value}
 	}
 }
 
