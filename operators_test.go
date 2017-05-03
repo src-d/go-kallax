@@ -49,8 +49,12 @@ func (s *OpsSuite) TestOperators() {
 		{"Gt", Gt(f("age"), 1), 2},
 		{"Lt", Lt(f("age"), 2), 1},
 		{"Neq", Neq(f("name"), "Joe"), 2},
-		{"Like", Like(f("name"), "J%"), 2},
-		{"Similar", SimilarTo(f("name"), "An{2}a"), 1},
+		{"Like upper", Like(f("name"), "J%"), 2},
+		{"Like lower", Like(f("name"), "j%"), 0},
+		{"Ilike upper", Ilike(f("name"), "J%"), 2},
+		{"Ilike lower", Ilike(f("name"), "j%"), 2},
+		{"SimilarTo", SimilarTo(f("name"), "An{2}a"), 1},
+		{"NotSimilarTo", NotSimilarTo(f("name"), "An{2}a"), 2},
 		{"GtOrEq", GtOrEq(f("age"), 2), 2},
 		{"LtOrEq", LtOrEq(f("age"), 3), 3},
 		{"Not", Not(Eq(f("name"), "Joe")), 2},
@@ -76,7 +80,7 @@ func (s *OpsSuite) TestOperators() {
 		q := NewBaseQuery(ModelSchema)
 		q.Where(c.cond)
 
-		s.Equal(s.store.MustCount(q), c.count, c.name)
+		s.Equal(c.count, s.store.MustCount(q), c.name)
 	}
 }
 
