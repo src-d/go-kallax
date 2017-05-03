@@ -14,7 +14,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "kallax"
-	app.Version = "1.1.3"
+	app.Version = "1.1.4"
 	app.Usage = "generate kallax models"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
