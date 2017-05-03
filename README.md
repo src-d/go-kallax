@@ -34,6 +34,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Query with relationships](#query-with-relationships)
   * [Querying JSON](#querying-json)
 * [Transactions](#transactions)
+* [Debug SQL queries](#debug-sql-queries)
 * [Benchmarks](#benchmarks)
 * [Acknowledgements](#acknowledgements)
 * [Contributing](#contributing)
@@ -601,6 +602,26 @@ store.Transaction(func(s *UserStore) error {
   Aliases of slice types are supported, though. If we have `type Strings []string`, using `Strings` would be supported, as a cast like this `([]string)(&slice)` it's supported and `[]string` is supported.
 * `time.Time` and `url.URL` need to be used as is. That is, you can not use a type `Foo` being `type Foo time.Time`. `time.Time` and `url.URL` are types that are treated in a special way, if you do that, it would be the same as saying `type Foo struct { ... }` and kallax would no longer be able to identify the correct type.
 * Multidimensional arrays or slices are **not supported** except inside a JSON field.
+
+## Debug SQL queries
+
+It is possible to debug the SQL queries being executed with kallax. To do that, you just need to call the `Debug` method of a store. This returns a new store with debugging enabled.
+
+```go
+store.Debug().Find(myQuery)
+```
+
+This will log to stdout using `log.Printf` `kallax: Query: THE QUERY SQL STATEMENT, args: [arg1 arg2]`.
+
+You can use a custom logger (any function with a type `func(string, ...interface{})` using the `DebugWith` method instead.
+
+```go
+func myLogger(message string, args ...interface{}) {
+        myloglib.Debugf("%s, args: %v", message, args)
+}
+
+store.DebugWith(myLogger).Find(myQuery)
+```
 
 ## Benchmarks
 

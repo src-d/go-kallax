@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/lann/builder"
@@ -51,6 +52,40 @@ func StoreFrom(to, from GenericStorer) {
 	to.SetGenericStore(from.GenericStore())
 }
 
+// LoggerFunc is a function that takes a log message with some arguments and
+// logs it.
+type LoggerFunc func(string, ...interface{})
+
+// debugProxy is a database proxy that logs all SQL statements executed.
+type debugProxy struct {
+	logger LoggerFunc
+	proxy  squirrel.DBProxy
+}
+
+func defaultLogger(message string, args ...interface{}) {
+	log.Printf("%s, args: %v", message, args)
+}
+
+func (p *debugProxy) Exec(query string, args ...interface{}) (sql.Result, error) {
+	p.logger(fmt.Sprintf("kallax: Exec: %s", query), args...)
+	return p.proxy.Exec(query, args...)
+}
+
+func (p *debugProxy) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	p.logger(fmt.Sprintf("kallax: Query: %s", query), args...)
+	return p.proxy.Query(query, args...)
+}
+
+func (p *debugProxy) QueryRow(query string, args ...interface{}) squirrel.RowScanner {
+	p.logger(fmt.Sprintf("kallax: QueryRow: %s", query), args...)
+	return p.proxy.QueryRow(query, args...)
+}
+
+func (p *debugProxy) Prepare(query string) (*sql.Stmt, error) {
+	p.logger(fmt.Sprintf("kallax: Prepare: %s", query))
+	return p.proxy.Prepare(query)
+}
+
 // Store is a structure capable of retrieving records from a concrete table in
 // the database.
 type Store struct {
@@ -76,6 +111,22 @@ func newStoreWithTransaction(tx *sql.Tx) *Store {
 	return &Store{
 		proxy:   proxy,
 		builder: builder,
+	}
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *Store) Debug() *Store {
+	return s.DebugWith(defaultLogger)
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *Store) DebugWith(logger LoggerFunc) *Store {
+	return &Store{
+		builder: s.builder,
+		db:      s.db,
+		proxy:   &debugProxy{logger, s.proxy},
 	}
 }
 
