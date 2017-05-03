@@ -462,10 +462,24 @@ func typeName(typ types.Type) string {
 	return removeGoPath(typ.String())
 }
 
+var separator = filepath.Separator
+
+// toSlash is an identical implementation of filepath.ToSlash. Is only
+// implemented so we can change the separator on runtime for testing purposes,
+// since filepath.Separator is a constant.
+// Parts of the code using filepath.ToSlash that need cross-platform tests
+// should use this instead.
+func toSlash(path string) string {
+	if separator == '/' {
+		return path
+	}
+	return strings.Replace(path, string(separator), "/", -1)
+}
+
 func removeGoPath(path string) string {
-	path = filepath.ToSlash(path)
+	path = toSlash(path)
 	for _, p := range parseutil.DefaultGoPath {
-		p = filepath.ToSlash(p + "/src/")
+		p = toSlash(p + "/src/")
 		if strings.HasPrefix(path, p) {
 			return strings.Replace(path, p, "", -1)
 		}

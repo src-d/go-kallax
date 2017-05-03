@@ -8,8 +8,9 @@ import (
 	"reflect"
 	"testing"
 
-	"srcd.works/go-parse-utils.v1"
+	"gopkg.in/src-d/go-parse-utils.v1"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -436,6 +437,46 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 
 func TestProcessor(t *testing.T) {
 	suite.Run(t, new(ProcessorSuite))
+}
+
+func TestRemoveGoPath(t *testing.T) {
+	oldGoPath := parseutil.DefaultGoPath
+	oldSep := separator
+	defer func() {
+		parseutil.DefaultGoPath = oldGoPath
+		separator = oldSep
+	}()
+
+	cases := []struct {
+		typ    string
+		result string
+		gopath []string
+		sep    rune
+	}{
+		{
+			`E:\workspace\gopath\src\gopkg.in\src-d\go-kallax.v1\tests\fixtures.AliasString`,
+			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			[]string{
+				`E:\workspace\gopath`,
+			},
+			'\\',
+		},
+		{
+			"/home/workspace/gopath/src/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			[]string{
+				"/home/foo/go",
+				"/home/workspace/gopath",
+			},
+			'/',
+		},
+	}
+
+	for _, c := range cases {
+		parseutil.DefaultGoPath = parseutil.GoPath(c.gopath)
+		separator = c.sep
+		require.Equal(t, c.result, removeGoPath(c.typ), c.typ)
+	}
 }
 
 func findModel(pkg *Package, name string) *Model {
