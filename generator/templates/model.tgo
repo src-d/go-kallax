@@ -106,6 +106,18 @@ func (s *{{.StoreName}}) SetGenericStore(store *kallax.Store) {
         s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *{{.StoreName}}) Debug() *{{.StoreName}} {
+        return &{{.StoreName}}{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *{{.StoreName}}) DebugWith(logger kallax.LoggerFunc) *{{.StoreName}} {
+        return &{{.StoreName}}{s.Store.DebugWith(logger)}
+}
+
 {{if .HasNonInverses}}
 func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordWithSchema {
         var records []kallax.RecordWithSchema

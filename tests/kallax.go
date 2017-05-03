@@ -109,6 +109,18 @@ func (s *CarStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *CarStore) Debug() *CarStore {
+	return &CarStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *CarStore) DebugWith(logger kallax.LoggerFunc) *CarStore {
+	return &CarStore{s.Store.DebugWith(logger)}
+}
+
 func (s *CarStore) inverseRecords(record *Car) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
@@ -649,6 +661,18 @@ func (s *EventsAllFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *EventsAllFixtureStore) Debug() *EventsAllFixtureStore {
+	return &EventsAllFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *EventsAllFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsAllFixtureStore {
+	return &EventsAllFixtureStore{s.Store.DebugWith(logger)}
+}
+
 // Insert inserts a EventsAllFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *EventsAllFixtureStore) Insert(record *EventsAllFixture) error {
@@ -1092,6 +1116,18 @@ func (s *EventsFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *EventsFixtureStore) Debug() *EventsFixtureStore {
+	return &EventsFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *EventsFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsFixtureStore {
+	return &EventsFixtureStore{s.Store.DebugWith(logger)}
+}
+
 // Insert inserts a EventsFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
@@ -1517,6 +1553,18 @@ func (s *EventsSaveFixtureStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *EventsSaveFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *EventsSaveFixtureStore) Debug() *EventsSaveFixtureStore {
+	return &EventsSaveFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *EventsSaveFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsSaveFixtureStore {
+	return &EventsSaveFixtureStore{s.Store.DebugWith(logger)}
 }
 
 // Insert inserts a EventsSaveFixture in the database. A non-persisted object is
@@ -1956,6 +2004,18 @@ func (s *JSONModelStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *JSONModelStore) Debug() *JSONModelStore {
+	return &JSONModelStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *JSONModelStore) DebugWith(logger kallax.LoggerFunc) *JSONModelStore {
+	return &JSONModelStore{s.Store.DebugWith(logger)}
+}
+
 // Insert inserts a JSONModel in the database. A non-persisted object is
 // required for this operation.
 func (s *JSONModelStore) Insert(record *JSONModel) error {
@@ -2353,6 +2413,18 @@ func (s *MultiKeySortFixtureStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *MultiKeySortFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *MultiKeySortFixtureStore) Debug() *MultiKeySortFixtureStore {
+	return &MultiKeySortFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *MultiKeySortFixtureStore) DebugWith(logger kallax.LoggerFunc) *MultiKeySortFixtureStore {
+	return &MultiKeySortFixtureStore{s.Store.DebugWith(logger)}
 }
 
 // Insert inserts a MultiKeySortFixture in the database. A non-persisted object is
@@ -2779,6 +2851,18 @@ func (s *NullableStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *NullableStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *NullableStore) Debug() *NullableStore {
+	return &NullableStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *NullableStore) DebugWith(logger kallax.LoggerFunc) *NullableStore {
+	return &NullableStore{s.Store.DebugWith(logger)}
 }
 
 // Insert inserts a Nullable in the database. A non-persisted object is
@@ -3211,6 +3295,18 @@ func (s *PersonStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *PersonStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *PersonStore) Debug() *PersonStore {
+	return &PersonStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *PersonStore) DebugWith(logger kallax.LoggerFunc) *PersonStore {
+	return &PersonStore{s.Store.DebugWith(logger)}
 }
 
 func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSchema {
@@ -3897,6 +3993,18 @@ func (s *PetStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *PetStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *PetStore) Debug() *PetStore {
+	return &PetStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *PetStore) DebugWith(logger kallax.LoggerFunc) *PetStore {
+	return &PetStore{s.Store.DebugWith(logger)}
 }
 
 func (s *PetStore) inverseRecords(record *Pet) []kallax.RecordWithSchema {
@@ -4594,6 +4702,18 @@ func (s *QueryFixtureStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *QueryFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *QueryFixtureStore) Debug() *QueryFixtureStore {
+	return &QueryFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *QueryFixtureStore) DebugWith(logger kallax.LoggerFunc) *QueryFixtureStore {
+	return &QueryFixtureStore{s.Store.DebugWith(logger)}
 }
 
 func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []kallax.RecordWithSchema {
@@ -5461,6 +5581,18 @@ func (s *QueryRelationFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *QueryRelationFixtureStore) Debug() *QueryRelationFixtureStore {
+	return &QueryRelationFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *QueryRelationFixtureStore) DebugWith(logger kallax.LoggerFunc) *QueryRelationFixtureStore {
+	return &QueryRelationFixtureStore{s.Store.DebugWith(logger)}
+}
+
 func (s *QueryRelationFixtureStore) inverseRecords(record *QueryRelationFixture) []kallax.RecordWithSchema {
 	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
@@ -5940,6 +6072,18 @@ func (s *ResultSetFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *ResultSetFixtureStore) Debug() *ResultSetFixtureStore {
+	return &ResultSetFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *ResultSetFixtureStore) DebugWith(logger kallax.LoggerFunc) *ResultSetFixtureStore {
+	return &ResultSetFixtureStore{s.Store.DebugWith(logger)}
+}
+
 // Insert inserts a ResultSetFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
@@ -6383,6 +6527,18 @@ func (s *SchemaFixtureStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *SchemaFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *SchemaFixtureStore) Debug() *SchemaFixtureStore {
+	return &SchemaFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *SchemaFixtureStore) DebugWith(logger kallax.LoggerFunc) *SchemaFixtureStore {
+	return &SchemaFixtureStore{s.Store.DebugWith(logger)}
 }
 
 func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []kallax.RecordWithSchema {
@@ -6957,6 +7113,18 @@ func (s *SchemaRelationshipFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *SchemaRelationshipFixtureStore) Debug() *SchemaRelationshipFixtureStore {
+	return &SchemaRelationshipFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *SchemaRelationshipFixtureStore) DebugWith(logger kallax.LoggerFunc) *SchemaRelationshipFixtureStore {
+	return &SchemaRelationshipFixtureStore{s.Store.DebugWith(logger)}
+}
+
 // Insert inserts a SchemaRelationshipFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *SchemaRelationshipFixtureStore) Insert(record *SchemaRelationshipFixture) error {
@@ -7348,6 +7516,18 @@ func (s *StoreFixtureStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *StoreFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *StoreFixtureStore) Debug() *StoreFixtureStore {
+	return &StoreFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *StoreFixtureStore) DebugWith(logger kallax.LoggerFunc) *StoreFixtureStore {
+	return &StoreFixtureStore{s.Store.DebugWith(logger)}
 }
 
 // Insert inserts a StoreFixture in the database. A non-persisted object is
@@ -7769,6 +7949,18 @@ func (s *StoreWithConstructFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
 }
 
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *StoreWithConstructFixtureStore) Debug() *StoreWithConstructFixtureStore {
+	return &StoreWithConstructFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *StoreWithConstructFixtureStore) DebugWith(logger kallax.LoggerFunc) *StoreWithConstructFixtureStore {
+	return &StoreWithConstructFixtureStore{s.Store.DebugWith(logger)}
+}
+
 // Insert inserts a StoreWithConstructFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixture) error {
@@ -8162,6 +8354,18 @@ func (s *StoreWithNewFixtureStore) GenericStore() *kallax.Store {
 // SetGenericStore changes the generic store of this store.
 func (s *StoreWithNewFixtureStore) SetGenericStore(store *kallax.Store) {
 	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *StoreWithNewFixtureStore) Debug() *StoreWithNewFixtureStore {
+	return &StoreWithNewFixtureStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *StoreWithNewFixtureStore) DebugWith(logger kallax.LoggerFunc) *StoreWithNewFixtureStore {
+	return &StoreWithNewFixtureStore{s.Store.DebugWith(logger)}
 }
 
 // Insert inserts a StoreWithNewFixture in the database. A non-persisted object is
