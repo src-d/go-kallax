@@ -791,6 +791,10 @@ func (f *Field) TypeSchemaName() string {
 	return parts[len(parts)-1]
 }
 
+func (f *Field) SQLType() string {
+	return f.Tag.Get("sqltype")
+}
+
 var identifierTypes = map[string]string{
 	"gopkg.in/src-d/go-kallax.v1.UUID":      "kallax.UUID",
 	"gopkg.in/src-d/go-kallax.v1.ULID":      "kallax.ULID",

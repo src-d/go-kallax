@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -37,8 +36,28 @@ func main() {
 		{
 			Name:   "gen",
 			Usage:  "Generate kallax models",
-			Action: app.Action,
+			Action: generateModels,
 			Flags:  app.Flags,
+		},
+		{
+			Name:   "migrate",
+			Usage:  "Generate migrations for current kallax models",
+			Action: migrateAction,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "out, o",
+					Usage: "Output directory of migrations",
+				},
+				cli.StringFlag{
+					Name:  "name, n",
+					Usage: "Descriptive name for the migration",
+					Value: "migration",
+				},
+				cli.StringSliceFlag{
+					Name:  "input, i",
+					Usage: "List of directories to scan models from. You can use this flag as many times as you want.",
+				},
+			},
 		},
 	}
 
@@ -50,7 +69,12 @@ func generateModels(c *cli.Context) error {
 	output := c.String("output")
 	excluded := c.StringSlice("exclude")
 
-	if !isDirectory(input) {
+	ok, err := isDirectory(input)
+	if err != nil {
+		return fmt.Errorf("kallax: can't check input directory: %s", err)
+	}
+
+	if !ok {
 		return fmt.Errorf("kallax: Input path should be a directory %s", input)
 	}
 
@@ -69,11 +93,55 @@ func generateModels(c *cli.Context) error {
 	return nil
 }
 
-func isDirectory(name string) bool {
-	info, err := os.Stat(name)
-	if err != nil {
-		log.Fatal(err)
+func migrateAction(c *cli.Context) error {
+	dirs := c.StringSlice("input")
+	dir := c.String("out")
+	name := c.String("name")
+
+	var pkgs []*generator.Package
+	for _, dir := range dirs {
+		ok, err := isDirectory(dir)
+		if err != nil {
+			return fmt.Errorf("kallax: cannot check directory in `input`: %s", err)
+		}
+
+		if !ok {
+			return fmt.Errorf("kallax: `input` must be a valid directory")
+		}
+
+		p := generator.NewProcessor(dir, nil)
+		p.Silent()
+		pkg, err := p.Do()
+		if err != nil {
+			return err
+		}
+
+		pkgs = append(pkgs, pkg)
 	}
 
-	return info.IsDir()
+	ok, err := isDirectory(dir)
+	if err != nil {
+		return fmt.Errorf("kallax: cannot check directory in `out`: %s", err)
+	}
+
+	if !ok {
+		return fmt.Errorf("kallax: `out` must be a valid directory")
+	}
+
+	g := generator.NewMigrationGenerator(name, dir)
+	migration, err := g.Build(pkgs...)
+	if err != nil {
+		return err
+	}
+
+	return g.Generate(migration)
+}
+
+func isDirectory(name string) (bool, error) {
+	info, err := os.Stat(name)
+	if err != nil {
+		return false, err
+	}
+
+	return info.IsDir(), nil
 }
