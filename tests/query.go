@@ -41,13 +41,13 @@ type QueryFixture struct {
 	AliasDummyParam           fixtures.AliasDummyParam
 	SliceDummyParam           []fixtures.QueryDummy
 	IDPropertyParam           kallax.ULID
-	InterfacePropParam        fixtures.InterfaceImplementation
+	InterfacePropParam        fixtures.InterfaceImplementation `sqltype:"jsonb"`
 	URLParam                  url.URL
 	TimeParam                 time.Time
 	AliasArrAliasStringParam  fixtures.AliasArrAliasString
 	AliasHereArrayParam       AliasHereArray
 	ArrayAliasHereStringParam []AliasHereString
-	ScannerValuerParam        ScannerValuer
+	ScannerValuerParam        ScannerValuer `sqltype:"jsonb"`
 }
 
 type AliasHereString string

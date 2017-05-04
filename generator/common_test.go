@@ -1,9 +1,13 @@
 package generator
 
 import (
+	"go/ast"
+	"go/parser"
 	"go/token"
 	"go/types"
 	"reflect"
+
+	parseutil "srcd.works/go-parse-utils.v1"
 )
 
 func mkField(name, typ string, fields ...*Field) *Field {
@@ -49,4 +53,34 @@ func withTag(f *Field, tag string) *Field {
 
 func inline(f *Field) *Field {
 	return withTag(f, `kallax:",inline"`)
+}
+
+func processorFixture(source string) (*Processor, error) {
+	fset := &token.FileSet{}
+	astFile, err := parser.ParseFile(fset, "fixture.go", source, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := &types.Config{
+		Importer: parseutil.NewImporter(),
+	}
+	p, err := cfg.Check("foo", fset, []*ast.File{astFile}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	prc := NewProcessor("fixture", []string{"foo.go"})
+	prc.Package = p
+	return prc, nil
+}
+
+func processFixture(source string) (*Package, error) {
+	prc, err := processorFixture(source)
+	if err != nil {
+		return nil, err
+	}
+
+	prc.Silent()
+	return prc.processPackage()
 }

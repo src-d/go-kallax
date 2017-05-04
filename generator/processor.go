@@ -30,6 +30,7 @@ type Processor struct {
 	Ignore map[string]struct{}
 	// Package is the scanned package.
 	Package *types.Package
+	silent  bool
 }
 
 // NewProcessor creates a new Processor for the given path and ignored files.
@@ -42,6 +43,17 @@ func NewProcessor(path string, ignore []string) *Processor {
 	return &Processor{
 		Path:   path,
 		Ignore: i,
+	}
+}
+
+// Silent makes the processor not spit any output to stdout.
+func (p *Processor) Silent() {
+	p.silent = true
+}
+
+func (p *Processor) write(msg string, args ...interface{}) {
+	if !p.silent {
+		fmt.Println(fmt.Sprintf(msg, args...))
 	}
 }
 
@@ -115,7 +127,7 @@ func (p *Processor) processPackage() (*Package, error) {
 	pkg := NewPackage(p.Package)
 	var ctors []*types.Func
 
-	fmt.Println("Package: ", pkg.Name)
+	p.write("Package: %s", pkg.Name)
 
 	s := p.Package.Scope()
 	var models []*Model
@@ -131,7 +143,8 @@ func (p *Processor) processPackage() (*Package, error) {
 				if m, err := p.processModel(name, str, t); err != nil {
 					return nil, err
 				} else if m != nil {
-					fmt.Printf("Model: %s\n", m)
+					p.write("Model: %s", m)
+
 					if err := m.Validate(); err != nil {
 						return nil, err
 					}
@@ -248,7 +261,7 @@ func (p *Processor) processFields(s *types.Struct, done []*types.Struct, root bo
 
 		p.processField(field, f.Type(), done, root)
 		if field.Kind == Invalid {
-			fmt.Printf("WARNING: arrays of relationships are not supported. Field %s will be ignored.\n", field.Name)
+			p.write("WARNING: arrays of relationships are not supported. Field %s will be ignored.", field.Name)
 			continue
 		}
 
@@ -352,7 +365,7 @@ func (p *Processor) processField(field *Field, typ types.Type, done []*types.Str
 			field.SetFields(subfs)
 		}
 	default:
-		fmt.Printf("WARNING: Ignored field %s of type %s\n", field.Name, field.Type)
+		p.write("WARNING: Ignored field %s of type %s.", field.Name, field.Type)
 	}
 }
 
@@ -477,14 +490,26 @@ func toSlash(path string) string {
 }
 
 func removeGoPath(path string) string {
+	var prefix string
+	if strings.HasPrefix(path, "[]*") {
+		prefix = "[]*"
+		path = path[3:]
+	} else if strings.HasPrefix(path, "[]") {
+		prefix = "[]"
+		path = path[2:]
+	} else if strings.HasPrefix(path, "*") {
+		prefix = "*"
+		path = path[1:]
+	}
+
 	path = toSlash(path)
 	for _, p := range parseutil.DefaultGoPath {
 		p = toSlash(p + "/src/")
 		if strings.HasPrefix(path, p) {
-			return strings.Replace(path, p, "", -1)
+			return prefix + strings.Replace(path, p, "", -1)
 		}
 	}
-	return path
+	return prefix + path
 }
 
 func isIgnoredField(s *types.Struct, idx int) bool {

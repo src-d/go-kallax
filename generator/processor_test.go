@@ -1,9 +1,6 @@
 package generator
 
 import (
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"go/types"
 	"reflect"
 	"testing"
@@ -318,24 +315,14 @@ func (s *ProcessorSuite) TestIsSQLType() {
 }
 
 func (s *ProcessorSuite) processorFixture(source string) *Processor {
-	fset := &token.FileSet{}
-	astFile, err := parser.ParseFile(fset, "fixture.go", source, 0)
-	s.Nil(err)
-
-	cfg := &types.Config{
-		Importer: parseutil.NewImporter(),
-	}
-	p, err := cfg.Check("foo", fset, []*ast.File{astFile}, nil)
-	s.Nil(err)
-
-	prc := NewProcessor("fixture", []string{"foo.go"})
-	prc.Package = p
+	prc, err := processorFixture(source)
+	s.Require().NoError(err)
 	return prc
 }
 
 func (s *ProcessorSuite) processFixture(source string) *Package {
-	pkg, err := s.processorFixture(source).processPackage()
-	s.Nil(err)
+	pkg, err := processFixture(source)
+	s.Require().NoError(err)
 	return pkg
 }
 
