@@ -95,7 +95,7 @@ func (g *MigrationGenerator) Build(pkgs ...*Package) (*Migration, error) {
 		return nil, err
 	}
 
-	return NewMigration(old, new), nil
+	return NewMigration(old, new)
 }
 
 // Generate will generate the given migration.
