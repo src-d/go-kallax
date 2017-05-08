@@ -611,6 +611,13 @@ Kallax can generate migrations for your schema automatically, if you want to. It
 
 Sometimes, kallax won't be able to infer a type or you will want a specific column type for a field. You can specify so with the `sqltype` struct tag on a field.
 
+```go
+type Model struct {
+        kallax.Model `table:"foo"`
+        Stuff SuperCustomType `sqltype:"bytea"`
+}
+```
+
 You can see the [**full list of default type mappings**](#type-mappings) between Go and SQL.
 
 ### Generate migrations
@@ -648,7 +655,7 @@ These are the flags available for `up` and `down`:
 | `--dsn` | database connection string | required |
 | `--steps` or `-s` | maximum number of migrations to run | `0` |
 | `--all` | migrate all the way up (only available for `up` | 
-| `--version` or `-v` | final version of the database we want after running the migration. The version is the timestampt value at the beginning of migration files | `0` |
+| `--version` or `-v` | final version of the database we want after running the migration. The version is the timestamp value at the beginning of migration files | `0` |
 
 * If no `--steps` or `--version` are provided to `down`, they will do nothing. If `--all` is provided to `up`, it will upgrade the database all the way up.
 * If `--steps` and `--version` are provided to either `up` or `down` it will use only `--version`, as it is more specific.
