@@ -19,12 +19,29 @@ type Migration struct {
 }
 
 // NewMigration creates a new migration from the old and the new schema.
-func NewMigration(old, new *DBSchema) *Migration {
-	var migration = &Migration{}
-	migration.Up = SchemaDiff(old, new)
-	migration.Down = migration.Up.ReverseChangeSet(old)
+func NewMigration(old, new *DBSchema) (*Migration, error) {
+	var (
+		migration = &Migration{}
+		err       error
+		oldTables = old.index()
+		newTables = new.index()
+	)
+
+	migration.Up, err = SchemaDiff(old, new).
+		sorted(oldTables, newTables)
+	if err != nil {
+		return nil, err
+	}
+
+	migration.Down, err = migration.Up.
+		ReverseChangeSet(old).
+		sorted(newTables, oldTables)
+	if err != nil {
+		return nil, err
+	}
+
 	migration.Lock = new
-	return migration
+	return migration, nil
 }
 
 // DBSchema represents a schema of all the models in the database.
@@ -56,12 +73,34 @@ func (s *DBSchema) Table(name string) *TableSchema {
 	return nil
 }
 
+func (s *DBSchema) index() map[string]*TableSchema {
+	var result = make(map[string]*TableSchema)
+	for _, t := range s.Tables {
+		result[t.Name] = t
+	}
+	return result
+}
+
 // TableSchema represents the SQL schema of a table.
 type TableSchema struct {
 	// Name is the table name.
 	Name string
 	// Columns are the schemas of the columns in the table.
 	Columns []*ColumnSchema
+}
+
+func (s *TableSchema) relationships() []string {
+	var rels = make(map[string]struct{})
+	var result []string
+	for _, c := range s.Columns {
+		if c.Reference != nil {
+			if _, ok := rels[c.Reference.Table]; !ok {
+				result = append(result, c.Reference.Table)
+				rels[c.Reference.Table] = struct{}{}
+			}
+		}
+	}
+	return result
 }
 
 func (s *TableSchema) String() string {
@@ -210,8 +249,81 @@ func (r *Reference) String() string {
 // ChangeSet is a set of changes to be made in a migration.
 type ChangeSet []Change
 
+// sorted sorts the given changeset with the given order:
+// - first the create tables ordered by their relationships. For example,
+//  if profiles depends on
+//   users, users will be created first, and then profiles.
+// - second the drop tables, ordered in reverse order by their relationships.
+//   For example, if profiles depends on users, profiles will be removed first
+//   and then users.
+// - Finally, rest of the changes.
+// dropIndex and createIndex are indexes of table name to table schema
+// used to look for dependencies of changes in drops and creates respectively.
+func (cs ChangeSet) sorted(dropIndex, createIndex map[string]*TableSchema) (ChangeSet, error) {
+	var (
+		createTables = make(map[string]Change)
+		dropTables   = make(map[string]Change)
+		createGraph  = newGraph()
+		dropGraph    = newGraph()
+		others       ChangeSet
+		result       ChangeSet
+	)
+
+	for _, c := range cs {
+		switch c := c.(type) {
+		case *CreateTable:
+			createTables[c.Name] = c
+			if rels := createIndex[c.Name].relationships(); len(rels) > 0 {
+				for _, r := range rels {
+					createGraph.dependsOn(r, c.Name)
+				}
+			} else {
+				createGraph.add(c.Name)
+			}
+		case *DropTable:
+			dropTables[c.Name] = c
+			if rels := dropIndex[c.Name].relationships(); len(rels) > 0 {
+				for _, r := range rels {
+					dropGraph.dependsOn(r, c.Name)
+				}
+			} else {
+				dropGraph.add(c.Name)
+			}
+		default:
+			others = append(others, c)
+		}
+	}
+
+	creates, err := createGraph.resolve()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, c := range creates {
+		if change, ok := createTables[c]; ok {
+			result = append(result, change)
+		}
+	}
+
+	drops, err := dropGraph.resolve()
+	if err != nil {
+		return nil, err
+	}
+
+	drops = reverse(drops)
+	for _, d := range drops {
+		if change, ok := dropTables[d]; ok {
+			result = append(result, change)
+		}
+	}
+
+	result = append(result, others...)
+	return result, nil
+}
+
 func (cs ChangeSet) MarshalText() ([]byte, error) {
 	var buf bytes.Buffer
+	buf.WriteString("BEGIN;\n\n")
 	for _, c := range cs {
 		bytes, err := c.MarshalText()
 		if err != nil {
@@ -220,6 +332,7 @@ func (cs ChangeSet) MarshalText() ([]byte, error) {
 		buf.Write(bytes)
 		buf.WriteRune('\n')
 	}
+	buf.WriteString("COMMIT;\n")
 	return buf.Bytes(), nil
 }
 
@@ -356,6 +469,103 @@ func (c *ManualChange) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("+++ THIS REQUIRES MANUAL MIGRATION: %s +++\n", c.Msg)), nil
 }
 
+type graph struct {
+	nodeList []string
+	nodes    map[string]*node
+}
+
+type resolutionCtx struct {
+	resolved   map[string]struct{}
+	unresolved map[string]struct{}
+	names      []string
+}
+
+func newGraph() *graph {
+	return &graph{nil, make(map[string]*node)}
+}
+
+// add adds a new root node that has no dependencies.
+func (g *graph) add(name string) *graph {
+	if _, ok := g.nodes[name]; !ok {
+		g.nodeList = append(g.nodeList, name)
+		g.nodes[name] = newNode(name)
+	}
+	return g
+}
+
+func (g *graph) dependsOn(dependant, dependency string) *graph {
+	g.node(dependency).addDependant(g.node(dependant))
+	g.node(dependant).addDependency(g.node(dependency))
+	return g
+}
+
+func (g *graph) node(name string) *node {
+	g.add(name)
+	return g.nodes[name]
+}
+
+func (g *graph) resolve() ([]string, error) {
+	ctx := &resolutionCtx{
+		make(map[string]struct{}),
+		make(map[string]struct{}),
+		nil,
+	}
+
+	for _, n := range g.nodeList {
+		node := g.nodes[n]
+		if len(node.dependencies) == 0 {
+			if err := g.nodes[n].resolve(ctx); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if len(g.nodes) != len(ctx.names) {
+		return nil, fmt.Errorf("kallax: unable to resolve all the table dependencies. There is probably a circular dependency somewhere.")
+	}
+
+	return ctx.names, nil
+}
+
+type node struct {
+	name         string
+	dependants   []*node
+	dependencies []*node
+}
+
+func newNode(name string) *node {
+	return &node{name, nil, nil}
+}
+
+func (n *node) addDependant(node *node) {
+	n.dependants = append(n.dependants, node)
+}
+
+func (n *node) addDependency(node *node) {
+	n.dependencies = append(n.dependencies, node)
+}
+
+func (n *node) resolve(ctx *resolutionCtx) error {
+	ctx.unresolved[n.name] = struct{}{}
+
+	for _, dep := range n.dependants {
+		if _, ok := ctx.resolved[dep.name]; !ok {
+			if _, ok := ctx.unresolved[dep.name]; ok {
+				return fmt.Errorf("kallax: there is a circular dependency between %s and %s", n.name, dep.name)
+			}
+
+			if err := dep.resolve(ctx); err != nil {
+				return err
+			}
+		}
+	}
+
+	delete(ctx.unresolved, n.name)
+	ctx.resolved[n.name] = struct{}{}
+	ctx.names = append(ctx.names, n.name)
+	return nil
+}
+
 // SchemaDiff generates a change set with the diff between two schemas.
 func SchemaDiff(old, new *DBSchema) ChangeSet {
 	var cs ChangeSet
@@ -452,9 +662,9 @@ type packageTransformer struct {
 	tableIndex map[string]string
 	// pkIndex is a map from a table name to its primary key
 	pkIndex map[string]*Field
-	// inverses keeps all inverses indexed by type name
+	// fks keeps all fks indexed by type name
 	// so they can be added later.
-	inverses map[string][]*ColumnSchema
+	fks map[string][]*ColumnSchema
 }
 
 func newPackageTransformer() *packageTransformer {
@@ -463,7 +673,7 @@ func newPackageTransformer() *packageTransformer {
 		tables:     make(map[string]*TableSchema),
 		tableIndex: make(map[string]string),
 		pkIndex:    make(map[string]*Field),
-		inverses:   make(map[string][]*ColumnSchema),
+		fks:        make(map[string][]*ColumnSchema),
 	}
 }
 
@@ -482,28 +692,28 @@ func (t *packageTransformer) transform(pkgs ...*Package) (*DBSchema, error) {
 		}
 	}
 
-	if err := t.applyInverses(); err != nil {
+	if err := t.applyForeignKeys(); err != nil {
 		return nil, err
 	}
 
 	return t.schema, nil
 }
 
-func (t *packageTransformer) applyInverses() error {
-	for typ, inverses := range t.inverses {
+func (t *packageTransformer) applyForeignKeys() error {
+	for typ, fks := range t.fks {
 		table, ok := t.tableIndex[typ]
 		if !ok {
 			return fmt.Errorf("kallax: unable to find a table for model %s. Is the model package on the input for this command?", typ)
 		}
 
 		schema := t.tables[table]
-		for _, inv := range inverses {
-			if col := schema.Column(inv.Name); col != nil {
-				if !col.Equals(inv) {
-					return fmt.Errorf("kallax: there is an inverse definition conflicting with the column definition of column %s in the table %s. Please, make sure both definitions match.", inv.Name, table)
+		for _, fk := range fks {
+			if col := schema.Column(fk.Name); col != nil {
+				if !col.Equals(fk) {
+					return fmt.Errorf("kallax: there is an inverse definition conflicting with the column definition of column %s in the table %s. Please, make sure both definitions match.", fk.Name, table)
 				}
 			} else {
-				schema.Columns = append(schema.Columns, inv)
+				schema.Columns = append(schema.Columns, fk)
 			}
 		}
 	}
@@ -556,9 +766,9 @@ func (t *packageTransformer) transformFields(fields []*Field, columns map[string
 				return nil, err
 			}
 
-			if f.Kind == Relationship && f.IsInverse() {
+			if f.Kind == Relationship && !f.IsInverse() {
 				typ := removeTypePrefix(f.Type)
-				t.inverses[typ] = append(t.inverses[typ], column)
+				t.fks[typ] = append(t.fks[typ], column)
 			} else if col, ok := columns[f.ColumnName()]; ok {
 				if !col.Equals(column) {
 					return nil, fmt.Errorf("kallax: there are two conflicting definitions for column %s on table %s: \n- %s\n- %s", col.Name, f.Model.Table, col, column)
@@ -628,7 +838,7 @@ func (t *packageTransformer) transformType(f *Field, pk bool) (ColumnType, error
 		return typ, nil
 	}
 
-	if f.Kind == Relationship && !f.IsInverse() {
+	if f.Kind == Relationship && f.IsInverse() {
 		typ := removeTypePrefix(f.Type)
 		table, ok := t.tableIndex[typ]
 		if !ok {
@@ -653,7 +863,7 @@ func (t *packageTransformer) transformType(f *Field, pk bool) (ColumnType, error
 }
 
 func (t *packageTransformer) transformRef(f *Field) (*Reference, error) {
-	if f.Kind == Relationship && !f.IsInverse() {
+	if f.Kind == Relationship && f.IsInverse() {
 		typ := removeTypePrefix(f.Type)
 		table, ok := t.tableIndex[typ]
 		if !ok {
@@ -698,4 +908,13 @@ var idTypeMappings = map[string]ColumnType{
 	"kallax.ULID":      UUIDColumn,
 	"kallax.UUID":      UUIDColumn,
 	"kallax.NumericID": SerialColumn,
+}
+
+func reverse(slice []string) []string {
+	result := make([]string, len(slice))
+	len := len(slice)
+	for i := len - 1; i >= 0; i-- {
+		result[i] = slice[len-1-i]
+	}
+	return result
 }

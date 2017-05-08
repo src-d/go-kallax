@@ -21,7 +21,7 @@ func TestMigrationGeneratorLoadLock(t *testing.T) {
 	require.NotNil(t, schema)
 	require.Len(t, schema.Tables, 0)
 
-	content, err := mkModel(mkTable("foo")).MarshalText()
+	content, err := mkSchema(mkTable("foo")).MarshalText()
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile(filepath.Join(dir, string(migrationLock)), content, 0755)
@@ -39,7 +39,7 @@ func TestMigrationGeneratorBuild(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	g := NewMigrationGenerator("migration", dir)
-	content, err := mkModel(mkTable("foo")).MarshalText()
+	content, err := mkSchema(mkTable("foo")).MarshalText()
 	require.NoError(t, err)
 
 	err = ioutil.WriteFile(filepath.Join(dir, string(migrationLock)), content, 0755)
@@ -51,9 +51,10 @@ func TestMigrationGeneratorBuild(t *testing.T) {
 }
 
 func TestMigrationGeneratorGenerate(t *testing.T) {
-	old := mkModel(table1)
-	new := mkModel(table1, table2)
-	migration := NewMigration(old, new)
+	old := mkSchema(table1)
+	new := mkSchema(table1, table2)
+	migration, err := NewMigration(old, new)
+	require.NoError(t, err)
 
 	dir, err := ioutil.TempDir("", "kallax-migration-generator")
 	require.NoError(t, err)
@@ -69,11 +70,11 @@ func TestMigrationGeneratorGenerate(t *testing.T) {
 
 	content, err := ioutil.ReadFile(g.migrationFile(migrationUp, g.now()))
 	require.NoError(t, err)
-	require.Equal(t, expectedTable2+"\n\n", string(content))
+	require.Equal(t, "BEGIN;\n\n"+expectedTable2+"\n\nCOMMIT;\n", string(content))
 
 	content, err = ioutil.ReadFile(g.migrationFile(migrationDown, g.now()))
 	require.NoError(t, err)
-	require.Equal(t, "DROP TABLE table2;\n\n", string(content))
+	require.Equal(t, "BEGIN;\n\nDROP TABLE table2;\n\nCOMMIT;\n", string(content))
 
 	expected, err := migration.Lock.MarshalText()
 	require.NoError(t, err)

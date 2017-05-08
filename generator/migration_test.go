@@ -8,9 +8,10 @@ import (
 )
 
 func TestNewMigration(t *testing.T) {
-	old := mkModel(table1)
-	new := mkModel(table1, table2)
-	migration := NewMigration(old, new)
+	old := mkSchema(table1)
+	new := mkSchema(table1, table2)
+	migration, err := NewMigration(old, new)
+	require.NoError(t, err)
 
 	expectedUp := ChangeSet{&CreateTable{table2}}
 	expectedDown := ChangeSet{&DropTable{"table2"}}
@@ -61,7 +62,7 @@ func TestChangeSet(t *testing.T) {
 			&DropTable{"foo"},
 			&DropColumn{"col", "table"},
 		},
-		"DROP TABLE foo;\n\nALTER TABLE table DROP COLUMN col;\n\n",
+		"BEGIN;\n\nDROP TABLE foo;\n\nALTER TABLE table DROP COLUMN col;\n\nCOMMIT;\n",
 	)
 }
 
@@ -123,7 +124,7 @@ func assertChange(t *testing.T, c Change, expected string) {
 }
 
 func TestSchemaDiff(t *testing.T) {
-	old := mkModel(
+	old := mkSchema(
 		mkTable("removed"),
 		mkTable(
 			"shared",
@@ -131,7 +132,7 @@ func TestSchemaDiff(t *testing.T) {
 		),
 	)
 
-	new := mkModel(
+	new := mkSchema(
 		mkTable(
 			"shared",
 			mkCol("foo", TextColumn, false, false, nil),
@@ -244,7 +245,7 @@ func TestColumnSchemaDiff(t *testing.T) {
 
 func TestReverseChange(t *testing.T) {
 	require := require.New(t)
-	old := mkModel(
+	old := mkSchema(
 		mkTable(
 			"foo",
 			mkCol("bar", SmallIntColumn, false, false, nil),
@@ -401,6 +402,36 @@ func TestColumnSchemaEquals(t *testing.T) {
 	}
 }
 
+func TestChangeSetSorted(t *testing.T) {
+	old := mkSchema(
+		mkTable("table2"),
+		mkTable(
+			"table1",
+			mkCol("foo", SerialColumn, false, false, mkRef("table2", "bar")),
+		),
+		mkTable("table3"),
+	)
+	new := mkSchema(
+		mkTable("table3"),
+		mkTable("table4"),
+		mkTable(
+			"table5",
+			mkCol("foo", SerialColumn, false, false, mkRef("table4", "bar")),
+		),
+	)
+	cs := SchemaDiff(old, new)
+	expected := ChangeSet{
+		&CreateTable{new.Table("table4")},
+		&CreateTable{new.Table("table5")},
+		&DropTable{"table1"},
+		&DropTable{"table2"},
+	}
+
+	sorted, err := cs.sorted(old.index(), new.index())
+	require.NoError(t, err)
+	require.Equal(t, expected, sorted)
+}
+
 type PackageTransformerSuite struct {
 	suite.Suite
 	t   *packageTransformer
@@ -421,9 +452,7 @@ type User struct {
 	Username string
 	// array field
 	Emails []string
-	// user_id should not be added twice on profile,
-	// even though it is defined as an inverse here
-	Profile *Profile ` + "`fk:\"user_id,inverse\"`" + `
+	Profile *Profile
 }
 
 type Profile struct {
@@ -431,12 +460,14 @@ type Profile struct {
 	ID int64 ` + "`pk:\"autoincr\"`" + `
 	Color string ` + "`sqltype:\"char(6)\"`" + `
 	Background url.URL
-	User *User ` + "`fk:\"user_id\"`" + `
+	// should be added here because is an inverse and not
+	// in user
+	User *User ` + "`fk:\"user_id,inverse\"`" + `
 	Spouse *kallax.ULID
-	// an inverse without reference in the other model
+	// a fk without reference in the other model
 	// should be added anyway
 	// should be added as bigint, as it is not a pk
-	Metadata *ProfileMetadata ` + "`fk:\"profile_id,inverse\"`" + `
+	Metadata *ProfileMetadata
 }
 
 type ProfileMetadata struct {
@@ -461,7 +492,7 @@ func (s *PackageTransformerSuite) TestTransform() {
 	require.NoError(err)
 	require.NotNil(schema)
 
-	expected := mkModel(
+	expected := mkSchema(
 		mkTable(
 			"profiles",
 			mkCol("id", SerialColumn, true, false, nil),
@@ -488,15 +519,15 @@ func (s *PackageTransformerSuite) TestTransform() {
 }
 
 func (s *PackageTransformerSuite) TestApplyInverses_TableNotFound() {
-	s.t.inverses["foo"] = []*ColumnSchema{
+	s.t.fks["foo"] = []*ColumnSchema{
 		mkCol("foo", TextColumn, false, false, nil),
 	}
 
-	s.Error(s.t.applyInverses())
+	s.Error(s.t.applyForeignKeys())
 }
 
 func (s *PackageTransformerSuite) TestApplyInverses_ConfictingCol() {
-	s.t.inverses["foo"] = []*ColumnSchema{
+	s.t.fks["foo"] = []*ColumnSchema{
 		mkCol("foo", TextColumn, false, false, nil),
 	}
 	s.t.tableIndex["foo"] = "foo"
@@ -506,7 +537,7 @@ func (s *PackageTransformerSuite) TestApplyInverses_ConfictingCol() {
 		mkCol("foo", IntegerColumn, false, false, nil),
 	)
 
-	s.Error(s.t.applyInverses())
+	s.Error(s.t.applyForeignKeys())
 }
 
 func (s *PackageTransformerSuite) TestTransform_RepeatedTable() {
@@ -522,7 +553,31 @@ func TestPackageTransformer(t *testing.T) {
 	suite.Run(t, new(PackageTransformerSuite))
 }
 
-func mkModel(tables ...*TableSchema) *DBSchema {
+func TestGraphResolve(t *testing.T) {
+	require := require.New(t)
+	g := newGraph().
+		add("a").
+		add("b").
+		dependsOn("c", "b").
+		dependsOn("d", "c").
+		dependsOn("e", "b").
+		dependsOn("e", "a")
+
+	result, err := g.resolve()
+	require.NoError(err)
+	require.Equal([]string{"e", "a", "d", "c", "b"}, result)
+
+	g = newGraph().
+		add("a").
+		dependsOn("c", "b").
+		dependsOn("a", "c").
+		dependsOn("b", "a")
+
+	_, err = g.resolve()
+	require.Error(err)
+}
+
+func mkSchema(tables ...*TableSchema) *DBSchema {
 	return &DBSchema{tables}
 }
 
