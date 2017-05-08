@@ -30,18 +30,18 @@ func (s *TemplateSuite) SetupTest() {
 func (s *TemplateSuite) processSource(source string) {
 	fset := &token.FileSet{}
 	astFile, err := parser.ParseFile(fset, "fixture.go", source, 0)
-	s.Nil(err)
+	s.NoError(err)
 
 	cfg := &types.Config{
 		Importer: importer.For("gc", nil),
 	}
 	p, err := cfg.Check("foo", fset, []*ast.File{astFile}, nil)
-	s.Nil(err)
+	s.NoError(err)
 
 	prc := NewProcessor("fixture", []string{"foo.go"})
 	prc.Package = p
 	s.td.Package, err = prc.processPackage()
-	s.Nil(err)
+	s.NoError(err)
 }
 
 const expectedAddresses = `case "id":
@@ -406,6 +406,35 @@ func (s *TemplateSuite) TestIsPtrSlice() {
 	for _, c := range cases {
 		s.Equal(c.expected, s.td.IsPtrSlice(findField(m, c.field)), c.field)
 	}
+}
+
+const expectedTimeTruncations = `record.CreatedAt = record.CreatedAt.Truncate(time.Microsecond)
+record.UpdatedAt = record.UpdatedAt.Truncate(time.Microsecond)
+record.T = record.T.Truncate(time.Microsecond)
+if record.TPtr != nil {
+record.TPtr = func(t time.Time) *time.Time { return &t }(record.TPtr.Truncate(time.Microsecond))
+}
+`
+
+func (s *TemplateSuite) TestGenTimeTruncations() {
+	s.processSource(`
+	package fixture
+
+	import "gopkg.in/src-d/go-kallax.v1"
+	import "time"
+
+	type Foo struct {
+		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
+		kallax.Timestamps
+		T time.Time
+		TPtr *time.Time
+		Foo string
+	}
+	`)
+
+	m := findModel(s.td.Package, "Foo")
+	s.Equal(expectedTimeTruncations, s.td.GenTimeTruncations(m))
 }
 
 func (s *TemplateSuite) TestExecute() {
