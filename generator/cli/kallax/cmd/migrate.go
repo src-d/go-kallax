@@ -61,7 +61,10 @@ var Up = cli.Command{
 	Name:   "up",
 	Usage:  "Executes the migrations from the current version until the specified version.",
 	Action: runMigrationAction(upAction),
-	Flags:  migrationFlags,
+	Flags: append(migrationFlags, cli.BoolFlag{
+		Name:  "all",
+		Usage: "If this flag is used, the database will be migrated all the way up.",
+	}),
 }
 
 var Down = cli.Command{
@@ -71,8 +74,12 @@ var Down = cli.Command{
 	Flags:  migrationFlags,
 }
 
-func upAction(m *migrate.Migrate, steps, version uint) error {
-	if version > 0 {
+func upAction(m *migrate.Migrate, steps, version uint, all bool) error {
+	if all {
+		if err := m.Up(); err != nil {
+			return fmt.Errorf("kallax: unable to upgrade the database all the way up: %s", err)
+		}
+	} else if version > 0 {
 		if err := m.Migrate(version); err != nil {
 			return fmt.Errorf("kallax: unable to upgrade up to version %d: %s", version, err)
 		}
@@ -81,16 +88,13 @@ func upAction(m *migrate.Migrate, steps, version uint) error {
 			return fmt.Errorf("kallax: unable to execute %d migration(s) up: %s", steps, err)
 		}
 	} else {
-		fmt.Println("WARN: No `version` or `steps` provided, upgrading all the way up.")
-		if err := m.Up(); err != nil {
-			return fmt.Errorf("kallax: unable to upgrade the database all the way up: %s", err)
-		}
+		return fmt.Errorf("WARN: No `version` or `steps` provided")
 	}
 	reportMigrationSuccess(m)
 	return nil
 }
 
-func downAction(m *migrate.Migrate, steps, version uint) error {
+func downAction(m *migrate.Migrate, steps, version uint, all bool) error {
 	if version > 0 {
 		if err := m.Migrate(version); err != nil {
 			return fmt.Errorf("kallax: unable to upgrade up to version %d: %s", version, err)
@@ -116,7 +120,7 @@ func reportMigrationSuccess(m *migrate.Migrate) {
 	}
 }
 
-type runMigrationFunc func(m *migrate.Migrate, steps, version uint) error
+type runMigrationFunc func(m *migrate.Migrate, steps, version uint, all bool) error
 
 func runMigrationAction(fn runMigrationFunc) cli.ActionFunc {
 	return func(c *cli.Context) error {
@@ -125,6 +129,7 @@ func runMigrationAction(fn runMigrationFunc) cli.ActionFunc {
 			dsn     = c.String("dsn")
 			steps   = c.Uint("steps")
 			version = c.Uint("version")
+			all     = c.Bool("all")
 		)
 
 		ok, err := isDirectory(dir)
@@ -146,7 +151,7 @@ func runMigrationAction(fn runMigrationFunc) cli.ActionFunc {
 			return fmt.Errorf("kallax: unable to open a connection with the database: %s", err)
 		}
 
-		return fn(m, steps, version)
+		return fn(m, steps, version, all)
 	}
 }
 
