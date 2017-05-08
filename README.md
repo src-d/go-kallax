@@ -34,8 +34,10 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Query with relationships](#query-with-relationships)
   * [Querying JSON](#querying-json)
 * [Transactions](#transactions)
-* [Debug SQL queries](#debug-sql-queries)
+* [Caveats](#caveats)
 * [Migrations](#migrations)
+* [Custom operators](#custom-operators)
+* [Debug SQL queries](#debug-sql-queries)
 * [Benchmarks](#benchmarks)
 * [Acknowledgements](#acknowledgements)
 * [Contributing](#contributing)
@@ -700,6 +702,67 @@ kallax migrate up --dir ./my-migrations --dns 'user:pass@localhost:5432/dbname?s
 | `*struct` | `jsonb` |
 
 Any other type must be explicitly specified.
+
+## Custom operators
+
+You can create custom operators with kallax using the `NewOperator` and `NewMultiOperator` functions.
+
+`NewOperator` creates an operator with the specified format. It returns a function that given a schema field and a value returns a condition.
+
+The format is a string in which `:col:` will get replaced with the schema field and `:arg:` will be replaced with the value.
+
+```go
+var Gt = kallax.NewOperator(":col: > :arg:")
+
+// can be used like this:
+query.Where(Gt(SomeSchemaField, 9000))
+```
+
+`NewMultiOperator` does exactly the same as the previous one, but it accepts a variable number of values.
+
+```go
+var In = kallax.NewMultiOperator(":col: IN :arg:")
+
+// can be used like this:
+query.Where(In(SomeSchemaField, 4, 5, 6))
+```
+
+This function already takes care of wrapping `:arg:` with parenthesis.
+
+### Further customization
+
+If you need further customization, you can create your own custom operator. 
+
+You need these things:
+
+* A condition constructor (the operator itself) that takes the field and the values to create the proper SQL expression.
+* A `ToSqler` that yields your SQL expression.
+
+Imagine we want a greater than operator that only works with integers.
+
+```go
+func GtInt(col kallax.SchemaField, n int) kallax.Condition {
+        return func(schema kallax.Schema) kallax.ToSqler {
+                // it is VERY important that all SchemaFields
+                // are qualified using the schema
+                return &gtInt{col.QualifiedName(schema), n}
+        }
+}
+
+type gtInt struct {
+        col string
+        val int
+}
+
+func (g *gtInt) ToSql() (sql string, params []interface{}, err error) {
+        return fmt.Sprintf("%s > ?", g.col), []interface{}{g.val}, nil
+}
+
+// can be used like this:
+query.Where(GtInt(SomeSchemaField, 9000))
+```
+
+For most of the operators, `NewOperator` and `NewMultiOperator` are enough, so the usage of these functions is preferred over the completely custom approach. Use it only if there is no other way to build your custom operator.
 
 ## Debug SQL queries
 
