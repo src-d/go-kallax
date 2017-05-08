@@ -35,6 +35,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Querying JSON](#querying-json)
 * [Transactions](#transactions)
 * [Caveats](#caveats)
+* [Migrations](#migrations)
 * [Custom operators](#custom-operators)
 * [Debug SQL queries](#debug-sql-queries)
 * [Benchmarks](#benchmarks)
@@ -606,6 +607,102 @@ store.Transaction(func(s *UserStore) error {
 * `time.Time` fields will be truncated to remove its nanoseconds on `Save`, `Insert` or `Update`, since PostgreSQL will not be able to store them. PostgreSQL stores times with timezones as UTC internally. So, times will come back as UTC (you can use `Local` method to convert them back to the local timezone). You can change the timezone that will be used to bring times back from the database in [the PostgreSQL configuration](https://www.postgresql.org/docs/9.6/static/datatype-datetime.html).
 * Multidimensional arrays or slices are **not supported** except inside a JSON field.
 
+## Migrations
+
+Kallax can generate migrations for your schema automatically, if you want to. It is a process completely separated from the model generation, so it does not force you to generate your migrations using kallax.
+
+Sometimes, kallax won't be able to infer a type or you will want a specific column type for a field. You can specify so with the `sqltype` struct tag on a field.
+
+```go
+type Model struct {
+        kallax.Model `table:"foo"`
+        Stuff SuperCustomType `sqltype:"bytea"`
+}
+```
+
+You can see the [**full list of default type mappings**](#type-mappings) between Go and SQL.
+
+### Generate migrations
+
+To generate a migration, you have to run the command `kallax migrate`.
+
+```
+kallax migrate --input ./users/ --input ./posts/ --output ./migrations --name initial_schema
+```
+
+The `migrate` command accepts the following flags:
+
+| Name | Repeated | Description | Default |
+| --- | --- | --- | --- |
+| `--name` or `-n` | no | name of the migration file (will be converted to `a_snakecase_name`) | `migration` |
+| `--input` or `-i` | yes | every occurrence of this flag will specify a directory in which kallax models can be found. You can specify multiple times this flag if you have your models scattered across several packages | required |
+| `--output` or `-o` | no | destination folder where the migrations will be generated | `./migrations` |
+
+Every single migration consists of 2 files:
+
+- `TIMESTAMP_NAME.up.sql`: script that will upgrade your database to this version.
+- `TIMESTAMP_NAME.down.sql`: script that will downgrade your database to this version.
+
+Additionally, there is a `lock.json` file where schema of the last migration is store to diff against the current models.
+
+### Run migrations
+
+To run a migration you can either use `kallax migrate up` or `kallax migrate down`. `up` will upgrade your database and `down` will downgrade it.
+
+These are the flags available for `up` and `down`:
+
+| Name | Description | Default |
+| --- | --- | --- |
+| `--dir` or `-d` | directory where your migrations are stored | `./migrations` |
+| `--dsn` | database connection string | required |
+| `--steps` or `-s` | maximum number of migrations to run | `0` |
+| `--all` | migrate all the way up (only available for `up` | 
+| `--version` or `-v` | final version of the database we want after running the migration. The version is the timestamp value at the beginning of migration files | `0` |
+
+* If no `--steps` or `--version` are provided to `down`, they will do nothing. If `--all` is provided to `up`, it will upgrade the database all the way up.
+* If `--steps` and `--version` are provided to either `up` or `down` it will use only `--version`, as it is more specific.
+
+**Example:**
+
+```
+kallax migrate up --dir ./my-migrations --dns 'user:pass@localhost:5432/dbname?sslmode=disable' --version 1493991142
+```
+
+### Type mappings
+
+| Go type | SQL type |
+| --- | --- |
+| `kallax.ULID` | `uuid` |
+| `kallax.UUID` | `uuid` |
+| `kallax.NumericID` | `serial` on primary keys, `bigint` on foreign keys |
+| `int64` on primary keys | `serial` |
+| `int64` on foreign keys and other fields| `bigint` |
+| `string` | `text` |
+| `rune` | `char(1)` |
+| `uint8` | `smallint` |
+| `int8` | `smallint` |
+| `byte` | `smallint` |
+| `uint16` | `integer` |
+| `int16` | `smallint` |
+| `uint32` | `bigint` |
+| `int32` | `integer` |
+| `uint` | `numeric(20)` |
+| `int` | `bigint` |
+| `int64` | `bigint` |
+| `uint64` | `numeric(20)` |
+| `float32` | `real` |
+| `float64` | `double` |
+| `bool` | `boolean` |
+| `url.URL` | `text` |
+| `time.Time` | `timestamptz` |
+| `time.Duration` | `bigint` |
+| `[]T` | `T'[]` * where `T'` is the SQL type of type `T` |
+| `map[K]V` | `jsonb` |
+| `struct` | `jsonb` |
+| `*struct` | `jsonb` |
+
+Any other type must be explicitly specified.
+
 ## Custom operators
 
 You can create custom operators with kallax using the `NewOperator` and `NewMultiOperator` functions.
@@ -665,7 +762,7 @@ func (g *gtInt) ToSql() (sql string, params []interface{}, err error) {
 query.Where(GtInt(SomeSchemaField, 9000))
 ```
 
-With most of the operators, `NewOperator` and `NewMultiOperator` are enough, so the usage of these functions is preferred over the completely custom approach. Use it only if there is no other way to build your custom operator.
+For most of the operators, `NewOperator` and `NewMultiOperator` are enough, so the usage of these functions is preferred over the completely custom approach. Use it only if there is no other way to build your custom operator.
 
 ## Debug SQL queries
 
@@ -725,6 +822,7 @@ Source code of the benchmarks can be found on the [benchmarks](https://github.co
 
 * Big thank you to the [Masterminds/squirrel](https://github.com/Masterminds/squirrel) library, which is an awesome query builder used internally in this ORM.
 * [lib/pq](https://github.com/lib/pq), the Golang PostgreSQL driver that ships with a ton of support for builtin Go types.
+* [mattes/migrate](https://github.com/mattes/migrate), a Golang library to manage database migrations.
 
 ## Contributing 
 
