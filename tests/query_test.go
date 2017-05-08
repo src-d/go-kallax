@@ -3,6 +3,7 @@ package tests
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/src-d/go-kallax.v1"
@@ -44,7 +45,7 @@ func TestQuerySuite(t *testing.T) {
 			slice_idpptr_param uuid[],
 			interface_prop_param text,
 			urlparam varchar(256),
-			time_param timestamp with time zone,
+			time_param timestamptz,
 			alias_arr_alias_string_param text[],
 			alias_here_array_param text[],
 			array_alias_here_string_param text[],
@@ -67,6 +68,53 @@ func (s *QuerySuite) SetupTest() {
 	for _, fixture := range queryFixtures {
 		s.Nil(store.Insert(fixture))
 	}
+}
+
+func (s *QuerySuite) TestInsertTruncateTime() {
+	s.BaseTestSuite.SetupTest()
+	f := NewQueryFixture("fixture")
+	for f.TimeParam.Nanosecond() == 0 {
+		f.TimeParam = time.Now()
+	}
+
+	store := NewQueryFixtureStore(s.db)
+	s.NoError(store.Insert(f))
+
+	f2, err := store.FindOne(NewQueryFixtureQuery().FindByID(f.ID))
+	s.NoError(err)
+	s.Equal(f.TimeParam, f2.TimeParam.Local())
+}
+
+func (s *QuerySuite) TestUpdateTruncateTime() {
+	s.BaseTestSuite.SetupTest()
+	f := NewQueryFixture("fixture")
+	store := NewQueryFixtureStore(s.db)
+	s.NoError(store.Insert(f))
+	for f.TimeParam.Nanosecond() == 0 {
+		f.TimeParam = time.Now()
+	}
+
+	_, err := store.Update(f)
+	s.NoError(err)
+	f2, err := store.FindOne(NewQueryFixtureQuery().FindByID(f.ID))
+	s.NoError(err)
+	s.Equal(f.TimeParam, f2.TimeParam.Local())
+}
+
+func (s *QuerySuite) TestSaveTruncateTime() {
+	s.BaseTestSuite.SetupTest()
+	f := NewQueryFixture("fixture")
+	for f.TimeParam.Nanosecond() == 0 {
+		f.TimeParam = time.Now()
+	}
+
+	store := NewQueryFixtureStore(s.db)
+	_, err := store.Save(f)
+	s.NoError(err)
+
+	f2, err := store.FindOne(NewQueryFixtureQuery().FindByID(f.ID))
+	s.NoError(err)
+	s.Equal(f.TimeParam, f2.TimeParam.Local())
 }
 
 func (s *QuerySuite) TestQuery() {

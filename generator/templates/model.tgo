@@ -166,6 +166,7 @@ func (s *{{.StoreName}}) inverseRecords(record *{{.Name}}) []kallax.RecordWithSc
 // Insert inserts a {{.Name}} in the database. A non-persisted object is
 // required for this operation.
 func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
+        {{$.GenTimeTruncations .}}
         {{if .Events.Has "BeforeSave"}}
         if err := record.BeforeSave(); err != nil {
                 return err
@@ -265,6 +266,7 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (updated int64, err error) {
+        {{$.GenTimeTruncations .}}
         {{if .Events.Has "BeforeSave"}}
         if err := record.BeforeSave(); err != nil {
                 return 0, err

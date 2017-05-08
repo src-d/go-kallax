@@ -2430,6 +2430,8 @@ func (s *MultiKeySortFixtureStore) DebugWith(logger kallax.LoggerFunc) *MultiKey
 // Insert inserts a MultiKeySortFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *MultiKeySortFixtureStore) Insert(record *MultiKeySortFixture) error {
+	record.Start = record.Start.Truncate(time.Microsecond)
+	record.End = record.End.Truncate(time.Microsecond)
 
 	return s.Store.Insert(Schema.MultiKeySortFixture.BaseSchema, record)
 
@@ -2442,6 +2444,8 @@ func (s *MultiKeySortFixtureStore) Insert(record *MultiKeySortFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *MultiKeySortFixtureStore) Update(record *MultiKeySortFixture, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.Start = record.Start.Truncate(time.Microsecond)
+	record.End = record.End.Truncate(time.Microsecond)
 
 	return s.Store.Update(Schema.MultiKeySortFixture.BaseSchema, record, cols...)
 
@@ -2868,6 +2872,9 @@ func (s *NullableStore) DebugWith(logger kallax.LoggerFunc) *NullableStore {
 // Insert inserts a Nullable in the database. A non-persisted object is
 // required for this operation.
 func (s *NullableStore) Insert(record *Nullable) error {
+	if record.T != nil {
+		record.T = func(t time.Time) *time.Time { return &t }(record.T.Truncate(time.Microsecond))
+	}
 
 	return s.Store.Insert(Schema.Nullable.BaseSchema, record)
 
@@ -2880,6 +2887,9 @@ func (s *NullableStore) Insert(record *Nullable) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *NullableStore) Update(record *Nullable, cols ...kallax.SchemaField) (updated int64, err error) {
+	if record.T != nil {
+		record.T = func(t time.Time) *time.Time { return &t }(record.T.Truncate(time.Microsecond))
+	}
 
 	return s.Store.Update(Schema.Nullable.BaseSchema, record, cols...)
 
@@ -4758,6 +4768,7 @@ func (s *QueryFixtureStore) inverseRecords(record *QueryFixture) []kallax.Record
 // Insert inserts a QueryFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
+	record.TimeParam = record.TimeParam.Truncate(time.Microsecond)
 
 	records := s.relationshipRecords(record)
 
@@ -4815,6 +4826,7 @@ func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaField) (updated int64, err error) {
+	record.TimeParam = record.TimeParam.Truncate(time.Microsecond)
 
 	records := s.relationshipRecords(record)
 

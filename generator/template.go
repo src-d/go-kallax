@@ -46,6 +46,35 @@ func (t *Template) Execute(wr io.Writer, data *Package) error {
 	return prettyfy(buf.Bytes(), wr)
 }
 
+func (td *TemplateData) GenTimeTruncations(model *Model) string {
+	var buf bytes.Buffer
+	td.genFieldsTimeTruncations(&buf, model.Fields)
+	return buf.String()
+}
+
+const truncateTimePtrTpl = `if record.%s != nil {
+record.%s = func(t time.Time) *time.Time { return &t }(record.%s.Truncate(time.Microsecond))
+}
+`
+
+func (td *TemplateData) genFieldsTimeTruncations(buf *bytes.Buffer, fields []*Field) {
+	for _, f := range fields {
+		if f.Inline() {
+			td.genFieldsTimeTruncations(buf, f.Fields)
+			continue
+		}
+
+		typ := removeTypePrefix(typeName(f.Node.Type()))
+		if typ == "time.Time" {
+			if !f.IsPtr {
+				buf.WriteString(fmt.Sprintf("record.%s = record.%s.Truncate(time.Microsecond)\n", f.Name, f.Name))
+			} else {
+				buf.WriteString(fmt.Sprintf(truncateTimePtrTpl, f.Name, f.Name, f.Name))
+			}
+		}
+	}
+}
+
 // GenColumnAddresses generates the body of the switch that returns the column
 // address given a column name for the given model.
 func (td *TemplateData) GenColumnAddresses(model *Model) string {

@@ -601,6 +601,7 @@ store.Transaction(func(s *UserStore) error {
   For example, consider the following type `type Foo string`, using `[]Foo` would not be supported. Know that this will fail during the scanning of rows and not in code-generation time for now. In the future, might be moved to a warning or an error during code generation.
   Aliases of slice types are supported, though. If we have `type Strings []string`, using `Strings` would be supported, as a cast like this `([]string)(&slice)` it's supported and `[]string` is supported.
 * `time.Time` and `url.URL` need to be used as is. That is, you can not use a type `Foo` being `type Foo time.Time`. `time.Time` and `url.URL` are types that are treated in a special way, if you do that, it would be the same as saying `type Foo struct { ... }` and kallax would no longer be able to identify the correct type.
+* `time.Time` fields will be truncated to remove its nanoseconds on `Save`, `Insert` or `Update`, since PostgreSQL will not be able to store them.
 * Multidimensional arrays or slices are **not supported** except inside a JSON field.
 
 ## Debug SQL queries
