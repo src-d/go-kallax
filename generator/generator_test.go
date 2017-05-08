@@ -70,11 +70,11 @@ func TestMigrationGeneratorGenerate(t *testing.T) {
 
 	content, err := ioutil.ReadFile(g.migrationFile(migrationUp, g.now()))
 	require.NoError(t, err)
-	require.Equal(t, expectedTable2+"\n\n", string(content))
+	require.Equal(t, "BEGIN;\n\n"+expectedTable2+"\n\nCOMMIT;\n", string(content))
 
 	content, err = ioutil.ReadFile(g.migrationFile(migrationDown, g.now()))
 	require.NoError(t, err)
-	require.Equal(t, "DROP TABLE table2;\n\n", string(content))
+	require.Equal(t, "BEGIN;\n\nDROP TABLE table2;\n\nCOMMIT;\n", string(content))
 
 	expected, err := migration.Lock.MarshalText()
 	require.NoError(t, err)

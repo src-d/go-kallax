@@ -62,7 +62,7 @@ func TestChangeSet(t *testing.T) {
 			&DropTable{"foo"},
 			&DropColumn{"col", "table"},
 		},
-		"DROP TABLE foo;\n\nALTER TABLE table DROP COLUMN col;\n\n",
+		"BEGIN;\n\nDROP TABLE foo;\n\nALTER TABLE table DROP COLUMN col;\n\nCOMMIT;\n",
 	)
 }
 

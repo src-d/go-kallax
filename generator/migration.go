@@ -323,6 +323,7 @@ func (cs ChangeSet) sorted(dropIndex, createIndex map[string]*TableSchema) (Chan
 
 func (cs ChangeSet) MarshalText() ([]byte, error) {
 	var buf bytes.Buffer
+	buf.WriteString("BEGIN;\n\n")
 	for _, c := range cs {
 		bytes, err := c.MarshalText()
 		if err != nil {
@@ -331,6 +332,7 @@ func (cs ChangeSet) MarshalText() ([]byte, error) {
 		buf.Write(bytes)
 		buf.WriteRune('\n')
 	}
+	buf.WriteString("COMMIT;\n")
 	return buf.Bytes(), nil
 }
 
