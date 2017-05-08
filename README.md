@@ -34,6 +34,8 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Query with relationships](#query-with-relationships)
   * [Querying JSON](#querying-json)
 * [Transactions](#transactions)
+* [Caveats](#caveats)
+* [Custom operators](#custom-operators)
 * [Debug SQL queries](#debug-sql-queries)
 * [Benchmarks](#benchmarks)
 * [Acknowledgements](#acknowledgements)
@@ -603,6 +605,67 @@ store.Transaction(func(s *UserStore) error {
 * `time.Time` and `url.URL` need to be used as is. That is, you can not use a type `Foo` being `type Foo time.Time`. `time.Time` and `url.URL` are types that are treated in a special way, if you do that, it would be the same as saying `type Foo struct { ... }` and kallax would no longer be able to identify the correct type.
 * `time.Time` fields will be truncated to remove its nanoseconds on `Save`, `Insert` or `Update`, since PostgreSQL will not be able to store them. PostgreSQL stores times with timezones as UTC internally. So, times will come back as UTC (you can use `Local` method to convert them back to the local timezone). You can change the timezone that will be used to bring times back from the database in [the PostgreSQL configuration](https://www.postgresql.org/docs/9.6/static/datatype-datetime.html).
 * Multidimensional arrays or slices are **not supported** except inside a JSON field.
+
+## Custom operators
+
+You can create custom operators with kallax using the `NewOperator` and `NewMultiOperator` functions.
+
+`NewOperator` creates an operator with the specified format. It returns a function that given a schema field and a value returns a condition.
+
+The format is a string in which `:col:` will get replaced with the schema field and `:arg:` will be replaced with the value.
+
+```go
+var Gt = kallax.NewOperator(":col: > :arg:")
+
+// can be used like this:
+query.Where(Gt(SomeSchemaField, 9000))
+```
+
+`NewMultiOperator` does exactly the same as the previous one, but it accepts a variable number of values.
+
+```go
+var In = kallax.NewMultiOperator(":col: IN :arg:")
+
+// can be used like this:
+query.Where(In(SomeSchemaField, 4, 5, 6))
+```
+
+This function already takes care of wrapping `:arg:` with parenthesis.
+
+### Further customization
+
+If you need further customization, you can create your own custom operator. 
+
+You need these things:
+
+* A condition constructor (the operator itself) that takes the field and the values to create the proper SQL expression.
+* A `ToSqler` that yields your SQL expression.
+
+Imagine we want a greater than operator that only works with integers.
+
+```go
+func GtInt(col kallax.SchemaField, n int) kallax.Condition {
+        return func(schema kallax.Schema) kallax.ToSqler {
+                // it is VERY important that all SchemaFields
+                // are qualified using the schema
+                return &gtInt{col.QualifiedName(schema), n}
+        }
+}
+
+type gtInt struct {
+        col string
+        val int
+}
+
+func (g *gtInt) ToSql() (sql string, params []interface{}, err error) {
+        return fmt.Sprintf("%s > ?", g.col), []interface{}{g.val}, nil
+}
+
+// can be used like this:
+query.Where(GtInt(SomeSchemaField, 9000))
+```
+
+With most of the operators, `NewOperator` and `NewMultiOperator` are enough, so the usage of these functions is preferred over the completely custom approach. Use it only if there is no other way to build your custom operator.
 
 ## Debug SQL queries
 

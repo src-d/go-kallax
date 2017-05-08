@@ -40,6 +40,9 @@ func (s *OpsSuite) TestOperators() {
 	)`)
 	defer s.remove("model")
 
+	customGt := NewOperator(":col: > :arg:")
+	customIn := NewMultiOperator(":col: IN :arg:")
+
 	cases := []struct {
 		name  string
 		cond  Condition
@@ -47,6 +50,7 @@ func (s *OpsSuite) TestOperators() {
 	}{
 		{"Eq", Eq(f("name"), "Joe"), 1},
 		{"Gt", Gt(f("age"), 1), 2},
+		{"customGt", customGt(f("age"), 1), 2},
 		{"Lt", Lt(f("age"), 2), 1},
 		{"Neq", Neq(f("name"), "Joe"), 2},
 		{"Like upper", Like(f("name"), "J%"), 2},
@@ -61,6 +65,7 @@ func (s *OpsSuite) TestOperators() {
 		{"And", And(Neq(f("name"), "Joe"), Gt(f("age"), 1)), 2},
 		{"Or", Or(Neq(f("name"), "Joe"), Eq(f("age"), 1)), 3},
 		{"In", In(f("name"), "Joe", "Jane"), 2},
+		{"customIn", customIn(f("name"), "Joe", "Jane"), 2},
 		{"NotIn", NotIn(f("name"), "Joe", "Jane"), 1},
 		{"MatchRegexCase upper", MatchRegexCase(f("name"), "J.*"), 2},
 		{"MatchRegexCase lower", MatchRegexCase(f("name"), "j.*"), 0},
@@ -80,7 +85,7 @@ func (s *OpsSuite) TestOperators() {
 		q := NewBaseQuery(ModelSchema)
 		q.Where(c.cond)
 
-		s.Equal(c.count, s.store.MustCount(q), c.name)
+		s.Equal(c.count, s.store.Debug().MustCount(q), c.name)
 	}
 }
 
