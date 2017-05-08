@@ -97,11 +97,11 @@ func upAction(m *migrate.Migrate, steps, version uint, all bool) error {
 func downAction(m *migrate.Migrate, steps, version uint, all bool) error {
 	if version > 0 {
 		if err := m.Migrate(version); err != nil {
-			return fmt.Errorf("kallax: unable to upgrade up to version %d: %s", version, err)
+			return fmt.Errorf("kallax: unable to rollback to version %d: %s", version, err)
 		}
 	} else if steps > 0 {
 		if err := m.Steps(-int(steps)); err != nil {
-			return fmt.Errorf("kallax: unable to execute %d migration(s) up: %s", steps, err)
+			return fmt.Errorf("kallax: unable to execute %d migration(s) down: %s", steps, err)
 		}
 	} else {
 		return fmt.Errorf("kallax: no `version` or `steps` provided. You need to specify one of them.")
