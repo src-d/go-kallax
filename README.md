@@ -438,6 +438,21 @@ q := NewUserQuery().
 user, err := store.FindOne(q)
 ```
 
+You can also get all of the rows in a result without having to manually iterate the result set with `FindAll`.
+
+```go
+q := NewUserQuery().
+        Where(kallax.Like(Schema.User.Username, "joe%")).
+        Order(kallax.Asc(Schema.User.Username)).
+        Limit(20).
+        Offset(2)
+
+users, err := store.FindAll(q)
+if err != nil {
+        // handle error
+}
+```
+
 By default, all columns in a row are retrieved. To not retrieve all of them, you can specify the columns to include/exclude. Take into account that partial records retrieved from the database will not be writable. To make them writable you will need to [`Reload`](#reloading-a-model) the object.
 
 ```go

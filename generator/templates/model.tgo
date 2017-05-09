@@ -463,6 +463,16 @@ func (s *{{.StoreName}}) FindOne(q *{{.QueryName}}) (*{{.Name}}, error) {
         return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *{{.StoreName}}) FindAll(q *{{.QueryName}}) ([]*{{.Name}}, error) {
+        rs, err := s.Find(q)
+        if err != nil {
+                return nil, err
+        }
+
+        return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *{{.StoreName}}) MustFindOne(q *{{.QueryName}}) *{{.Name}} {

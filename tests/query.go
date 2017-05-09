@@ -4,8 +4,6 @@ import (
 	"net/url"
 	"time"
 
-	"fmt"
-
 	"gopkg.in/src-d/go-kallax.v1"
 	"gopkg.in/src-d/go-kallax.v1/tests/fixtures"
 )
@@ -59,7 +57,6 @@ type ScannerValuer struct {
 type AliasID kallax.ULID
 
 func newQueryFixture(f string) *QueryFixture {
-	fmt.Println(kallax.NewULID())
 	return &QueryFixture{ID: kallax.NewULID(), Foo: f}
 }
 

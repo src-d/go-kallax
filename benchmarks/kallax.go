@@ -97,16 +97,37 @@ func NewPersonStore(db *sql.DB) *PersonStore {
 	return &PersonStore{kallax.NewStore(db)}
 }
 
+// GenericStore returns the generic store of this store.
+func (s *PersonStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *PersonStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *PersonStore) Debug() *PersonStore {
+	return &PersonStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *PersonStore) DebugWith(logger kallax.LoggerFunc) *PersonStore {
+	return &PersonStore{s.Store.DebugWith(logger)}
+}
+
 func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSchema {
-	record.ClearVirtualColumns()
 	var records []kallax.RecordWithSchema
 
 	for _, rec := range record.Pets {
 		rec.ClearVirtualColumns()
 		rec.AddVirtualColumn("person_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
-			Schema.Pet.BaseSchema,
-			rec,
+			Schema: Schema.Pet.BaseSchema,
+			Record: rec,
 		})
 	}
 
@@ -118,8 +139,10 @@ func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSch
 func (s *PersonStore) Insert(record *Person) error {
 
 	records := s.relationshipRecords(record)
+
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
+
 			if err := s.Insert(Schema.Person.BaseSchema, record); err != nil {
 				return err
 			}
@@ -156,8 +179,10 @@ func (s *PersonStore) Insert(record *Person) error {
 func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (updated int64, err error) {
 
 	records := s.relationshipRecords(record)
+
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
+
 			updated, err = s.Update(Schema.Person.BaseSchema, record, cols...)
 			if err != nil {
 				return err
@@ -265,6 +290,16 @@ func (s *PersonStore) FindOne(q *PersonQuery) (*Person, error) {
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *PersonStore) FindAll(q *PersonQuery) ([]*Person, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -460,7 +495,8 @@ func (q *PersonQuery) WithPets(cond kallax.Condition) *PersonQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *PersonQuery) FindByID(v ...int64) *PersonQuery {
 	if len(v) == 0 {
 		return q
@@ -473,7 +509,7 @@ func (q *PersonQuery) FindByID(v ...int64) *PersonQuery {
 }
 
 // FindByName adds a new filter to the query that will require that
-// the Name property is equal to the passed value
+// the Name property is equal to the passed value.
 func (q *PersonQuery) FindByName(v string) *PersonQuery {
 	return q.Where(kallax.Eq(Schema.Person.Name, v))
 }
@@ -604,7 +640,7 @@ func (r *Pet) ColumnAddress(col string) (interface{}, error) {
 	case "name":
 		return &r.Name, nil
 	case "kind":
-		return &r.Kind, nil
+		return (*string)(&r.Kind), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Pet: %s", col)
@@ -647,6 +683,28 @@ type PetStore struct {
 // using a SQL database.
 func NewPetStore(db *sql.DB) *PetStore {
 	return &PetStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *PetStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *PetStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *PetStore) Debug() *PetStore {
+	return &PetStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *PetStore) DebugWith(logger kallax.LoggerFunc) *PetStore {
+	return &PetStore{s.Store.DebugWith(logger)}
 }
 
 // Insert inserts a Pet in the database. A non-persisted object is
@@ -743,6 +801,16 @@ func (s *PetStore) FindOne(q *PetQuery) (*Pet, error) {
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *PetStore) FindAll(q *PetQuery) ([]*Pet, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -844,7 +912,8 @@ func (q *PetQuery) Where(cond kallax.Condition) *PetQuery {
 }
 
 // FindByID adds a new filter to the query that will require that
-// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
 func (q *PetQuery) FindByID(v ...int64) *PetQuery {
 	if len(v) == 0 {
 		return q
@@ -857,13 +926,13 @@ func (q *PetQuery) FindByID(v ...int64) *PetQuery {
 }
 
 // FindByName adds a new filter to the query that will require that
-// the Name property is equal to the passed value
+// the Name property is equal to the passed value.
 func (q *PetQuery) FindByName(v string) *PetQuery {
 	return q.Where(kallax.Eq(Schema.Pet.Name, v))
 }
 
 // FindByKind adds a new filter to the query that will require that
-// the Kind property is equal to the passed value
+// the Kind property is equal to the passed value.
 func (q *PetQuery) FindByKind(v PetKind) *PetQuery {
 	return q.Where(kallax.Eq(Schema.Pet.Kind, v))
 }
