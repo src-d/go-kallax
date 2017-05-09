@@ -210,12 +210,7 @@ func BenchmarkKallaxQueryRelationships(b *testing.B) {
 
 	b.Run("query", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			rs, err := store.Find(NewPersonQuery().WithPets(nil).Limit(100))
-			if err != nil {
-				b.Fatalf("error retrieving persons: %s", err)
-			}
-
-			_, err = rs.All()
+			_, err := store.FindAll(NewPersonQuery().WithPets(nil).Limit(100))
 			if err != nil {
 				b.Fatalf("error retrieving persons: %s", err)
 			}
@@ -308,12 +303,7 @@ func BenchmarkKallaxQuery(b *testing.B) {
 
 	b.Run("query", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			rs, err := store.Find(NewPersonQuery())
-			if err != nil {
-				b.Fatalf("error retrieving persons: %s", err)
-			}
-
-			_, err = rs.All()
+			_, err := store.FindAll(NewPersonQuery())
 			if err != nil {
 				b.Fatalf("error retrieving persons: %s", err)
 			}

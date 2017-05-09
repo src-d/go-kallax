@@ -347,6 +347,16 @@ func (s *CarStore) FindOne(q *CarQuery) (*Car, error) {
 	return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *CarStore) FindAll(q *CarQuery) ([]*Car, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *CarStore) MustFindOne(q *CarQuery) *Car {
@@ -819,6 +829,16 @@ func (s *EventsAllFixtureStore) FindOne(q *EventsAllFixtureQuery) (*EventsAllFix
 	return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *EventsAllFixtureStore) FindAll(q *EventsAllFixtureQuery) ([]*EventsAllFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *EventsAllFixtureStore) MustFindOne(q *EventsAllFixtureQuery) *EventsAllFixture {
@@ -1256,6 +1276,16 @@ func (s *EventsFixtureStore) FindOne(q *EventsFixtureQuery) (*EventsFixture, err
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *EventsFixtureStore) FindAll(q *EventsFixtureQuery) ([]*EventsFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -1697,6 +1727,16 @@ func (s *EventsSaveFixtureStore) FindOne(q *EventsSaveFixtureQuery) (*EventsSave
 	return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *EventsSaveFixtureStore) FindAll(q *EventsSaveFixtureQuery) ([]*EventsSaveFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *EventsSaveFixtureStore) MustFindOne(q *EventsSaveFixtureQuery) *EventsSaveFixture {
@@ -2112,6 +2152,16 @@ func (s *JSONModelStore) FindOne(q *JSONModelQuery) (*JSONModel, error) {
 	return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *JSONModelStore) FindAll(q *JSONModelQuery) ([]*JSONModel, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *JSONModelStore) MustFindOne(q *JSONModelQuery) *JSONModel {
@@ -2525,6 +2575,16 @@ func (s *MultiKeySortFixtureStore) FindOne(q *MultiKeySortFixtureQuery) (*MultiK
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *MultiKeySortFixtureStore) FindAll(q *MultiKeySortFixtureQuery) ([]*MultiKeySortFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -2969,6 +3029,16 @@ func (s *NullableStore) FindOne(q *NullableQuery) (*Nullable, error) {
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *NullableStore) FindAll(q *NullableQuery) ([]*Nullable, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -3552,6 +3622,16 @@ func (s *PersonStore) FindOne(q *PersonQuery) (*Person, error) {
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *PersonStore) FindAll(q *PersonQuery) ([]*Person, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -4241,6 +4321,16 @@ func (s *PetStore) FindOne(q *PetQuery) (*Pet, error) {
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *PetStore) FindAll(q *PetQuery) ([]*Pet, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -4957,6 +5047,16 @@ func (s *QueryFixtureStore) FindOne(q *QueryFixtureQuery) (*QueryFixture, error)
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *QueryFixtureStore) FindAll(q *QueryFixtureQuery) ([]*QueryFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -5778,6 +5878,16 @@ func (s *QueryRelationFixtureStore) FindOne(q *QueryRelationFixtureQuery) (*Quer
 	return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *QueryRelationFixtureStore) FindAll(q *QueryRelationFixtureQuery) ([]*QueryRelationFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *QueryRelationFixtureStore) MustFindOne(q *QueryRelationFixtureQuery) *QueryRelationFixture {
@@ -6190,6 +6300,16 @@ func (s *ResultSetFixtureStore) FindOne(q *ResultSetFixtureQuery) (*ResultSetFix
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *ResultSetFixtureStore) FindAll(q *ResultSetFixtureQuery) ([]*ResultSetFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -6775,6 +6895,16 @@ func (s *SchemaFixtureStore) FindOne(q *SchemaFixtureQuery) (*SchemaFixture, err
 	return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *SchemaFixtureStore) FindAll(q *SchemaFixtureQuery) ([]*SchemaFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *SchemaFixtureStore) MustFindOne(q *SchemaFixtureQuery) *SchemaFixture {
@@ -7233,6 +7363,16 @@ func (s *SchemaRelationshipFixtureStore) FindOne(q *SchemaRelationshipFixtureQue
 	return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *SchemaRelationshipFixtureStore) FindAll(q *SchemaRelationshipFixtureQuery) ([]*SchemaRelationshipFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *SchemaRelationshipFixtureStore) MustFindOne(q *SchemaRelationshipFixtureQuery) *SchemaRelationshipFixture {
@@ -7636,6 +7776,16 @@ func (s *StoreFixtureStore) FindOne(q *StoreFixtureQuery) (*StoreFixture, error)
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *StoreFixtureStore) FindAll(q *StoreFixtureQuery) ([]*StoreFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
@@ -8069,6 +8219,16 @@ func (s *StoreWithConstructFixtureStore) FindOne(q *StoreWithConstructFixtureQue
 	return record, nil
 }
 
+// FindAll returns a list of all the rows returned by the given query.
+func (s *StoreWithConstructFixtureStore) FindAll(q *StoreWithConstructFixtureQuery) ([]*StoreWithConstructFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
 // MustFindOne returns the first row retrieved by the given query. It panics
 // if there is an error or if there are no rows.
 func (s *StoreWithConstructFixtureStore) MustFindOne(q *StoreWithConstructFixtureQuery) *StoreWithConstructFixture {
@@ -8474,6 +8634,16 @@ func (s *StoreWithNewFixtureStore) FindOne(q *StoreWithNewFixtureQuery) (*StoreW
 	}
 
 	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *StoreWithNewFixtureStore) FindAll(q *StoreWithNewFixtureQuery) ([]*StoreWithNewFixture, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
 }
 
 // MustFindOne returns the first row retrieved by the given query. It panics
