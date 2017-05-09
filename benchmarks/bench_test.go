@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/jinzhu/gorm"
+	"github.com/vattle/sqlboiler/queries/qm"
+	null "gopkg.in/nullbio/null.v6"
+	"gopkg.in/src-d/go-kallax.v1/benchmarks/models"
 )
 
 func envOrDefault(key string, def string) string {
@@ -115,6 +118,27 @@ func BenchmarkKallaxInsertWithRelationships(b *testing.B) {
 	}
 }
 
+func BenchmarkSQLBoilerInsertWithRelationships(b *testing.B) {
+	db := setupDB(b, openTestDB(b))
+	defer teardownDB(b, db)
+
+	for i := 0; i < b.N; i++ {
+		person := &models.Person{Name: null.StringFrom("Dolan")}
+		if err := person.Insert(db); err != nil {
+			b.Fatalf("error inserting: %s", err)
+		}
+
+		err := person.SetPets(db, true, []*models.Pet{
+			{Name: null.StringFrom("Garfield"), Kind: null.StringFrom("cat")},
+			{Name: null.StringFrom("Oddie"), Kind: null.StringFrom("dog")},
+			{Name: null.StringFrom("Reptar"), Kind: null.StringFrom("fish")},
+		}...)
+		if err != nil {
+			b.Fatalf("error inserting relationships: %s", err)
+		}
+	}
+}
+
 func BenchmarkRawSQLInsertWithRelationships(b *testing.B) {
 	db := setupDB(b, openTestDB(b))
 	defer teardownDB(b, db)
@@ -169,6 +193,17 @@ func BenchmarkKallaxInsert(b *testing.B) {
 	}
 }
 
+func BenchmarkSQLBoilerInsert(b *testing.B) {
+	db := setupDB(b, openTestDB(b))
+	defer teardownDB(b, db)
+
+	for i := 0; i < b.N; i++ {
+		if err := (&models.Person{Name: null.StringFrom("foo")}).Insert(db); err != nil {
+			b.Fatalf("error inserting: %s", err)
+		}
+	}
+}
+
 func BenchmarkRawSQLInsert(b *testing.B) {
 	db := setupDB(b, openTestDB(b))
 	defer teardownDB(b, db)
@@ -216,6 +251,37 @@ func BenchmarkKallaxQueryRelationships(b *testing.B) {
 			}
 
 			_, err = rs.All()
+			if err != nil {
+				b.Fatalf("error retrieving persons: %s", err)
+			}
+		}
+	})
+}
+
+func BenchmarkSQLBoilerQueryRelationships(b *testing.B) {
+	db := openTestDB(b)
+	setupDB(b, db)
+	defer teardownDB(b, db)
+
+	for i := 0; i < 200; i++ {
+		person := &models.Person{Name: null.StringFrom("Dolan")}
+		if err := person.Insert(db); err != nil {
+			b.Fatalf("error inserting: %s", err)
+		}
+
+		err := person.SetPets(db, true, []*models.Pet{
+			{Name: null.StringFrom("Garfield"), Kind: null.StringFrom("cat")},
+			{Name: null.StringFrom("Oddie"), Kind: null.StringFrom("dog")},
+			{Name: null.StringFrom("Reptar"), Kind: null.StringFrom("fish")},
+		}...)
+		if err != nil {
+			b.Fatalf("error inserting relationships: %s", err)
+		}
+	}
+
+	b.Run("query", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := models.People(db, qm.Load("Pets"), qm.Limit(100)).All()
 			if err != nil {
 				b.Fatalf("error retrieving persons: %s", err)
 			}
@@ -314,6 +380,27 @@ func BenchmarkKallaxQuery(b *testing.B) {
 			}
 
 			_, err = rs.All()
+			if err != nil {
+				b.Fatalf("error retrieving persons: %s", err)
+			}
+		}
+	})
+}
+
+func BenchmarkSQLBoilerQuery(b *testing.B) {
+	db := openTestDB(b)
+	setupDB(b, db)
+	defer teardownDB(b, db)
+
+	for i := 0; i < 300; i++ {
+		if err := (&models.Person{Name: null.StringFrom("foo")}).Insert(db); err != nil {
+			b.Fatalf("error inserting: %s", err)
+		}
+	}
+
+	b.Run("query", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := models.People(db).All()
 			if err != nil {
 				b.Fatalf("error retrieving persons: %s", err)
 			}

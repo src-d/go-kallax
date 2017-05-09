@@ -689,27 +689,31 @@ store.DebugWith(myLogger).Find(myQuery)
 
 ## Benchmarks
 
-Here are some benchmarks against [GORM](https://github.com/jinzhu/gorm) and `database/sql`, which is one of the most popular ORMs for Go. In the future we might add benchmarks for some more complex cases and other available ORMs.
+Here are some benchmarks against [GORM](https://github.com/jinzhu/gorm), [SQLBoiler](https://github.com/vattle/sqlboiler) and `database/sql`. In the future we might add benchmarks for some more complex cases and other available ORMs.
 
 ```
-BenchmarkKallaxInsertWithRelationships-4   	     300	   4767574 ns/op	   19130 B/op	     441 allocs/op
-BenchmarkRawSQLInsertWithRelationships-4   	     300	   4467652 ns/op	    3997 B/op	     114 allocs/op
-BenchmarkGORMInsertWithRelationships-4     	     300	   4813566 ns/op	   34550 B/op	     597 allocs/op
+BenchmarkKallaxInsertWithRelationships-4      	     200	   5530403 ns/op	   19680 B/op	     454 allocs/op
+BenchmarkSQLBoilerInsertWithRelationships-4   	     100	  18822064 ns/op	    5896 B/op	     185 allocs/op
+BenchmarkRawSQLInsertWithRelationships-4      	     200	   5124398 ns/op	    4516 B/op	     127 allocs/op
+BenchmarkGORMInsertWithRelationships-4        	     200	   5627979 ns/op	   35070 B/op	     610 allocs/op
 
-BenchmarkKallaxInsert-4                    	     500	   3650913 ns/op	    3569 B/op	      85 allocs/op
-BenchmarkRawSQLInsert-4                    	     500	   3530908 ns/op	     901 B/op	      24 allocs/op
-BenchmarkGORMInsert-4                      	     300	   3716373 ns/op	    4558 B/op	     104 allocs/op
+BenchmarkKallaxInsert-4                       	     300	   4084723 ns/op	    3722 B/op	      88 allocs/op
+BenchmarkSQLBoilerInsert-4                    	     300	   4355927 ns/op	    1152 B/op	      35 allocs/op
+BenchmarkRawSQLInsert-4                       	     300	   4153576 ns/op	    1053 B/op	      27 allocs/op
+BenchmarkGORMInsert-4                         	     300	   4538285 ns/op	    4681 B/op	     107 allocs/op
 
-BenchmarkKallaxQueryRelationships/query-4  	    1000	   1535928 ns/op	   59335 B/op	    1557 allocs/op
-BenchmarkRawSQLQueryRelationships/query-4  	      30	  44225743 ns/op	  201288 B/op	    6021 allocs/op
-BenchmarkGORMQueryRelationships/query-4    	     300	   4012112 ns/op	 1068887 B/op	   20827 allocs/op
+BenchmarkKallaxQueryRelationships/query-4     	    1000	   1632464 ns/op	   59672 B/op	    1569 allocs/op
+BenchmarkSQLBoilerQueryRelationships/query-4  	     500	   2185274 ns/op	  125577 B/op	    5098 allocs/op
+BenchmarkRawSQLQueryRelationships/query-4     	      20	  54735535 ns/op	  217376 B/op	    6624 allocs/op
+BenchmarkGORMQueryRelationships/query-4       	     300	   4750212 ns/op	 1069088 B/op	   20833 allocs/op
 
-BenchmarkKallaxQuery/query-4               	    3000	    433453 ns/op	   50697 B/op	    1893 allocs/op
-BenchmarkRawSQLQuery/query-4               	    5000	    368947 ns/op	   37392 B/op	    1522 allocs/op
-BenchmarkGORMQuery/query-4                 	    2000	   1311137 ns/op	  427308 B/op	    7065 allocs/op
+BenchmarkKallaxQuery/query-4                  	    3000	    512827 ns/op	   50672 B/op	    1590 allocs/op
+BenchmarkSQLBoilerQuery/query-4               	    2000	    701642 ns/op	   54079 B/op	    2436 allocs/op
+BenchmarkRawSQLQuery/query-4                  	    3000	    488037 ns/op	   37480 B/op	    1525 allocs/op
+BenchmarkGORMQuery/query-4                    	    1000	   1413357 ns/op	  427403 B/op	    7068 allocs/op
 
 PASS
-ok  	gopkg.in/src-d/go-kallax.v1/benchmarks	31.313s
+ok  	gopkg.in/src-d/go-kallax.v1/benchmarks	40.485s
 ```
 
 As we can see on the benchmark, the performance loss is not very much compared to raw `database/sql`, while GORMs performance loss is very big and the memory consumption is way higher.
