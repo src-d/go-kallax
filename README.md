@@ -828,7 +828,7 @@ PASS
 ok  	gopkg.in/src-d/go-kallax.v1/benchmarks	40.485s
 ```
 
-As we can see on the benchmark, the performance loss is not very much compared to raw `database/sql`, while GORMs performance loss is very big and the memory consumption is way higher.
+As we can see on the benchmark, the performance loss is not very much compared to raw `database/sql`, while GORMs performance loss is very big and the memory consumption is way higher. SQLBoiler, on the other hand, has a lower memory footprint than kallax, but a bigger performance loss (though not very significant in most cases).
 
 Source code of the benchmarks can be found on the [benchmarks](https://github.com/src-d/go-kallax/tree/master/benchmarks) folder.
 
