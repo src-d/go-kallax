@@ -32,6 +32,9 @@ var (
 	// neither an autoincrement primary key nor implements the IDSetter
 	// interface.
 	ErrCantSetID = errors.New("kallax: model does not have an auto incrementable primary key, it needs to implement IDSetter interface")
+	// ErrNoColumns is an error returned when the user tries to insert a model
+	// with no other columns than the autoincrementable primary key.
+	ErrNoColumns = errors.New("kallax: your model does not have any column besides its autoincrementable primary key and cannot be inserted")
 )
 
 // GenericStorer is a type that contains a generic store and has methods to
@@ -123,10 +126,11 @@ func (s *Store) Debug() *Store {
 // DebugWith returns a new store that will print all SQL statements using the
 // given logger function.
 func (s *Store) DebugWith(logger LoggerFunc) *Store {
+	proxy := &debugProxy{logger, s.proxy}
 	return &Store{
-		builder: s.builder,
+		builder: s.builder.RunWith(proxy),
 		db:      s.db,
-		proxy:   &debugProxy{logger, s.proxy},
+		proxy:   proxy,
 	}
 }
 
@@ -143,6 +147,10 @@ func (s *Store) Insert(schema Schema, record Record) error {
 		// pk is auto incremented if it's 0
 		// ID is always the first field, so it's safe to slice here
 		cols = cols[1:]
+	}
+
+	if len(cols) == 0 {
+		return ErrNoColumns
 	}
 
 	values, err := RecordValues(record, cols...)

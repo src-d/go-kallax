@@ -182,6 +182,44 @@ func (m *rel) SetRelationship(field string, record interface{}) error {
 	return fmt.Errorf("kallax: no relationship found for field %s", field)
 }
 
+type onlyPkModel struct {
+	Model
+	ID int64 `pk:"autoincr"`
+}
+
+func newOnlyPkModel() *onlyPkModel {
+	m := new(onlyPkModel)
+	return m
+}
+
+func (m *onlyPkModel) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return m.ID, nil
+	}
+	return nil, fmt.Errorf("kallax: column does not exist: %s", col)
+}
+
+func (m *onlyPkModel) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return &m.ID, nil
+	}
+	return nil, fmt.Errorf("kallax: column does not exist: %s", col)
+}
+
+func (m *onlyPkModel) NewRelationshipRecord(field string) (Record, error) {
+	return nil, fmt.Errorf("kallax: no relationship found for field %s", field)
+}
+
+func (m *onlyPkModel) SetRelationship(field string, record interface{}) error {
+	return fmt.Errorf("kallax: no relationship found for field %s", field)
+}
+
+func (m *onlyPkModel) GetID() Identifier {
+	return (*NumericID)(&m.ID)
+}
+
 var ModelSchema = NewBaseSchema(
 	"model",
 	"__model",
@@ -213,6 +251,18 @@ var RelSchema = NewBaseSchema(
 	f("id"),
 	f("model_id"),
 	f("foo"),
+)
+
+var onlyPkModelSchema = NewBaseSchema(
+	"model",
+	"__model",
+	f("id"),
+	nil,
+	func() Record {
+		return new(onlyPkModel)
+	},
+	true,
+	f("id"),
 )
 
 func f(name string) SchemaField {

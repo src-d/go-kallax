@@ -61,6 +61,11 @@ func (s *StoreSuite) TestInsert_IDEmpty() {
 	s.False(m.GetID().IsEmpty())
 }
 
+func (s *StoreSuite) TestInsert_NoColumns() {
+	var m = new(onlyPkModel)
+	s.Equal(ErrNoColumns, s.store.Insert(onlyPkModelSchema, m))
+}
+
 func (s *StoreSuite) TestUpdate() {
 	var m = newModel("a", "a@a.a", 1)
 	s.NoError(s.store.Insert(ModelSchema, m))
