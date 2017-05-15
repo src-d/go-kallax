@@ -7,7 +7,7 @@ import (
 	"go/types"
 	"reflect"
 
-	parseutil "srcd.works/go-parse-utils.v1"
+	parseutil "gopkg.in/src-d/go-parse-utils.v1"
 )
 
 func mkField(name, typ string, fields ...*Field) *Field {
