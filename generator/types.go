@@ -591,11 +591,11 @@ func (f *Field) SetFields(sf []*Field) {
 }
 
 // ColumnName returns the SQL valid column name of the field.
-// The struct tag `column` of the field can be use to set the name, otherwise
+// The struct tag `kallax` of the field can be use to set the name, otherwise
 // is the field name converted to lower snake case.
 // If the resultant name is a reserved keyword a _ will be prepended to the name.
 func (f *Field) ColumnName() string {
-	name := f.Tag.Get("column")
+	name := strings.TrimSpace(strings.Split(f.Tag.Get("kallax"), ",")[0])
 	if name == "" {
 		name = toLowerSnakeCase(f.Name)
 	}
