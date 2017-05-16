@@ -892,7 +892,7 @@ func castSlice(f *Field) (cast string, ok bool) {
 
 func typeString(ty types.Type, pkg *types.Package) string {
 	ret := types.TypeString(ty, types.RelativeTo(pkg))
-	parts := strings.Split(ret, "/")
+	parts := strings.Split(ret, string(separator))
 	prefix := ""
 	if len(parts) > 1 {
 		for _, r := range parts[0] {
