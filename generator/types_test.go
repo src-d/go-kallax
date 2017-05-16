@@ -85,9 +85,9 @@ func (s *FieldSuite) TestColumnName() {
 		{"", "FooBar", "foo_bar"},
 		{"", "ID", "id"},
 		{"", "References", "_references"},
-		{`column:"foo"`, "Bar", "foo"},
-		{`column:"References"`, "Bar", "_References"},
-		{`column:"references"`, "Bar", "_references"},
+		{`kallax:"foo"`, "Bar", "foo"},
+		{`kallax:"References"`, "Bar", "_References"},
+		{`kallax:"references"`, "Bar", "_references"},
 	}
 
 	for _, c := range cases {
