@@ -2,6 +2,7 @@ package kallax
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,8 @@ func TestTimestampsBeforeSave(t *testing.T) {
 	s.False(ts.UpdatedAt.IsZero())
 
 	createdAt := ts.CreatedAt
-	updatedAt := ts.CreatedAt
+	updatedAt := ts.UpdatedAt
+	time.Sleep(50 * time.Millisecond)
 	s.NoError(ts.BeforeSave())
 	s.Equal(createdAt, ts.CreatedAt)
 	s.NotEqual(updatedAt, ts.UpdatedAt)

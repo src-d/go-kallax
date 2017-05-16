@@ -2,6 +2,7 @@ version: build-{build}.{branch}
 platform: x64
 
 clone_folder: c:\gopath\src\gopkg.in\src-d\go-kallax.v1
+
 shallow_clone: true
 
 environment:
