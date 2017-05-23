@@ -458,6 +458,14 @@ func TestRemoveGoPath(t *testing.T) {
 			'/',
 		},
 		{
+			"/go/src/foo/go/src/fixtures.AliasString",
+			"foo/go/src/fixtures.AliasString",
+			[]string{
+				"/go",
+			},
+			'/',
+		},
+		{
 			"/home/workspace/gopath/src/foo/bar/vendor/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
 			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
 			[]string{

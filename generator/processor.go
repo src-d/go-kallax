@@ -511,7 +511,7 @@ func removeGoPath(path string) string {
 			if idx := strings.LastIndex(path, "/vendor/"); idx >= len(p)-1 {
 				return prefix + path[idx+8:]
 			}
-			return prefix + strings.Replace(path, p, "", -1)
+			return prefix + path[len(p):]
 		}
 	}
 	return prefix + path
