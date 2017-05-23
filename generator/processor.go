@@ -506,6 +506,11 @@ func removeGoPath(path string) string {
 	for _, p := range parseutil.DefaultGoPath {
 		p = toSlash(p + "/src/")
 		if strings.HasPrefix(path, p) {
+			// Directories named "vendor" are only vendor directories
+			// if they're under $GOPATH/src.
+			if idx := strings.LastIndex(path, "/vendor/"); idx >= len(p)-1 {
+				return prefix + path[idx+8:]
+			}
 			return prefix + strings.Replace(path, p, "", -1)
 		}
 	}
