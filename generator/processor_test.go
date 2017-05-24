@@ -356,7 +356,7 @@ func (s *ProcessorSuite) TestIsModel() {
 		Ptr *Bar
 		NoPtr Bar
 		Struct Struct
-	}	
+	}
 	`
 	pkg := s.processFixture(src)
 	m := findModel(pkg, "Foo")
@@ -401,7 +401,7 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 		C struct {
 			D int
 		}
-	}	
+	}
 	`
 	pkg := s.processFixture(src)
 	m := findModel(pkg, "Foo")
@@ -454,6 +454,41 @@ func TestRemoveGoPath(t *testing.T) {
 			[]string{
 				"/home/foo/go",
 				"/home/workspace/gopath",
+			},
+			'/',
+		},
+		{
+			"/go/src/foo/go/src/fixtures.AliasString",
+			"foo/go/src/fixtures.AliasString",
+			[]string{
+				"/go",
+			},
+			'/',
+		},
+		{
+			"/home/workspace/gopath/src/foo/bar/vendor/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			[]string{
+				"/home/foo/go",
+				"/home/workspace/gopath",
+			},
+			'/',
+		},
+		{
+			"/home/vendor/workspace/gopath/src/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			[]string{
+				"/home/foo/go",
+				"/home/vendor/workspace/gopath",
+			},
+			'/',
+		},
+		{
+			"/home/vendor/workspace/gopath/src/vendor/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			[]string{
+				"/home/foo/go",
+				"/home/vendor/workspace/gopath",
 			},
 			'/',
 		},
