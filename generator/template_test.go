@@ -544,7 +544,7 @@ func (s *ProcessorSuite) assertFindableTypeName(f *Field) {
 		return
 	}
 
-	findableTypeName, ok := findableTypeName(f)
+	findableTypeName, ok := findableTypeName(f.Node.Type(), f.Node.Pkg())
 	if expected := f.Tag.Get("findable"); expected != "" {
 		relativeFindableTypeName := getRelativeTypeName(findableTypeName, "foo")
 		s.True(ok, fmt.Sprintf("Could not be found the findable type name of '%s' %s", f.Name, f.Node.Type()))

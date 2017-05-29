@@ -309,11 +309,16 @@ func (m *Model) CtorArgs() string {
 	paramsLen := sig.Params().Len()
 	for i := 0; i < paramsLen; i++ {
 		param := sig.Params().At(i)
-		typeName := typeString(param.Type(), m.Package)
+
+		// TODO: refactor findableTypeName so this is not needed
+		// or split into two functions
+		typeName, ok := findableTypeName(param.Type(), m.Package)
+		if !ok {
+			typeName = typeString(param.Type(), m.Package)
+		}
+
 		if paramsLen == i+1 && sig.Variadic() {
-			// since it's variadic, type name is []T instead of T
-			// so we gotta get rid of the []
-			typeName = "..." + typeName[2:]
+			typeName = "..." + typeName
 		}
 		paramName := param.Name()
 		if paramName == "s" {
@@ -360,7 +365,12 @@ func (m *Model) CtorReturns() string {
 
 	for i := 0; i < sig.Results().Len(); i++ {
 		res := sig.Results().At(i)
-		typeName := typeString(res.Type(), m.Package)
+		// TODO: refactor findableTypeName so this is not needed
+		// or split into two functions
+		typeName, ok := findableTypeName(res.Type(), m.Package)
+		if !ok {
+			typeName = typeString(res.Type(), m.Package)
+		}
 		if isTypeOrPtrTo(res.Type(), m.Node) {
 			ret = append(ret, "record "+typeName)
 		} else if isBuiltinError(res.Type()) && !hasError {
@@ -725,6 +735,10 @@ func (f *Field) Address() string {
 	}
 
 	return f.wrapAddress(name, casted)
+}
+
+func (f *Field) typeName() (string, bool) {
+	return findableTypeName(f.Node.Type(), f.Node.Pkg())
 }
 
 func (f *Field) wrapAddress(ptr string, casted bool) string {
