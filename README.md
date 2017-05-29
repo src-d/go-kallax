@@ -642,7 +642,7 @@ You can see the [**full list of default type mappings**](#type-mappings) between
 To generate a migration, you have to run the command `kallax migrate`.
 
 ```
-kallax migrate --input ./users/ --input ./posts/ --output ./migrations --name initial_schema
+kallax migrate --input ./users/ --input ./posts/ --out ./migrations --name initial_schema
 ```
 
 The `migrate` command accepts the following flags:
@@ -651,7 +651,7 @@ The `migrate` command accepts the following flags:
 | --- | --- | --- | --- |
 | `--name` or `-n` | no | name of the migration file (will be converted to `a_snakecase_name`) | `migration` |
 | `--input` or `-i` | yes | every occurrence of this flag will specify a directory in which kallax models can be found. You can specify multiple times this flag if you have your models scattered across several packages | required |
-| `--output` or `-o` | no | destination folder where the migrations will be generated | `./migrations` |
+| `--out` or `-o` | no | destination folder where the migrations will be generated | `./migrations` |
 
 Every single migration consists of 2 files:
 
