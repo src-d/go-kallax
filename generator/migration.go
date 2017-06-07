@@ -196,7 +196,7 @@ const (
 	IntegerColumn     ColumnType = "integer"
 	BigIntColumn      ColumnType = "bigint"
 	RealColumn        ColumnType = "real"
-	DoubleColumn      ColumnType = "double"
+	DoubleColumn      ColumnType = "double precision"
 	SmallSerialColumn ColumnType = "smallserial"
 	SerialColumn      ColumnType = "serial"
 	BigSerialColumn   ColumnType = "bigserial"
