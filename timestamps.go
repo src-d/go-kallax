@@ -14,9 +14,9 @@ import "time"
 //	}
 type Timestamps struct {
 	// CreatedAt is the time where the object was created.
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"created_at"`
 	// UpdatedAt is the time where the object was updated.
-	UpdatedAt time.Time
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // BeforeSave updates the last time the model was updated every single time the
