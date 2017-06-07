@@ -114,7 +114,7 @@ Let's see an example of models with all these cases:
 type User struct {
         kallax.Model       `table:"users"`
         kallax.Timestamps
-        kallax.ID int64    `pk:"autoincr"`
+        ID        int64    `pk:"autoincr"`
         Username  string
         Password  string
         Emails    []string
