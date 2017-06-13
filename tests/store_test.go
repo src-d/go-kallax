@@ -278,10 +278,12 @@ func (s *StoreSuite) TestInsert_RelWithNoInverse() {
 	s.NoError(store.Insert(p))
 	s.NotEqual(0, p.ID)
 
-	var count int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM children WHERE parent_id = $1", p.ID).Scan(&count)
+	p, err := store.FindOne(NewParentQuery().WithChildren(nil))
 	s.NoError(err)
-	s.Equal(3, count)
+	s.Len(p.Children, 3)
+	for _, c := range p.Children {
+		s.NotEqual(int64(0), c.ID)
+	}
 }
 
 func (s *StoreSuite) TestInsert_RelWithNoInverseNoPtr() {
@@ -298,8 +300,10 @@ func (s *StoreSuite) TestInsert_RelWithNoInverseNoPtr() {
 	s.NoError(store.Insert(p))
 	s.NotEqual(0, p.ID)
 
-	var count int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM children WHERE parent_id = $1", p.ID).Scan(&count)
+	p, err := store.FindOne(NewParentNoPtrQuery().WithChildren(nil))
 	s.NoError(err)
-	s.Equal(3, count)
+	s.Len(p.Children, 3)
+	for _, c := range p.Children {
+		s.NotEqual(int64(0), c.ID)
+	}
 }
