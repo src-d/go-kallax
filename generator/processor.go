@@ -158,6 +158,10 @@ func (p *Processor) processPackage() (*Package, error) {
 	}
 
 	pkg.SetModels(models)
+	if err := pkg.addMissingRelationships(); err != nil {
+		return nil, err
+	}
+
 	for _, ctor := range ctors {
 		p.tryMatchConstructor(pkg, ctor)
 	}

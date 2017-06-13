@@ -611,6 +611,8 @@ func (r *Child) ColumnAddress(col string) (interface{}, error) {
 		return (*kallax.NumericID)(&r.ID), nil
 	case "name":
 		return &r.Name, nil
+	case "parent_id":
+		return types.Nullable(kallax.VirtualColumn("parent_id", r, new(kallax.NumericID))), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Child: %s", col)
@@ -624,6 +626,8 @@ func (r *Child) Value(col string) (interface{}, error) {
 		return r.ID, nil
 	case "name":
 		return r.Name, nil
+	case "parent_id":
+		return r.Model.VirtualColumn(col), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Child: %s", col)
@@ -4290,6 +4294,613 @@ func (rs *ParentResultSet) Err() error {
 
 // Close closes the result set.
 func (rs *ParentResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
+// NewParentNoPtr returns a new instance of ParentNoPtr.
+func NewParentNoPtr() (record *ParentNoPtr) {
+	return new(ParentNoPtr)
+}
+
+// GetID returns the primary key of the model.
+func (r *ParentNoPtr) GetID() kallax.Identifier {
+	return (*kallax.NumericID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *ParentNoPtr) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.NumericID)(&r.ID), nil
+	case "name":
+		return &r.Name, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in ParentNoPtr: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *ParentNoPtr) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+	case "name":
+		return r.Name, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in ParentNoPtr: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *ParentNoPtr) NewRelationshipRecord(field string) (kallax.Record, error) {
+	switch field {
+	case "Children":
+		return new(Child), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model ParentNoPtr has no relationship %s", field)
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *ParentNoPtr) SetRelationship(field string, rel interface{}) error {
+	switch field {
+	case "Children":
+		records, ok := rel.([]kallax.Record)
+		if !ok {
+			return fmt.Errorf("kallax: relationship field %s needs a collection of records, not %T", field, rel)
+		}
+
+		r.Children = make([]Child, len(records))
+		for i, record := range records {
+			rel, ok := record.(*Child)
+			if !ok {
+				return fmt.Errorf("kallax: element of type %T cannot be added to relationship %s", record, field)
+			}
+			r.Children[i] = *rel
+		}
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model ParentNoPtr has no relationship %s", field)
+}
+
+// ParentNoPtrStore is the entity to access the records of the type ParentNoPtr
+// in the database.
+type ParentNoPtrStore struct {
+	*kallax.Store
+}
+
+// NewParentNoPtrStore creates a new instance of ParentNoPtrStore
+// using a SQL database.
+func NewParentNoPtrStore(db *sql.DB) *ParentNoPtrStore {
+	return &ParentNoPtrStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *ParentNoPtrStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *ParentNoPtrStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *ParentNoPtrStore) Debug() *ParentNoPtrStore {
+	return &ParentNoPtrStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *ParentNoPtrStore) DebugWith(logger kallax.LoggerFunc) *ParentNoPtrStore {
+	return &ParentNoPtrStore{s.Store.DebugWith(logger)}
+}
+
+func (s *ParentNoPtrStore) relationshipRecords(record *ParentNoPtr) []kallax.RecordWithSchema {
+	var records []kallax.RecordWithSchema
+
+	for i := range record.Children {
+		record.Children[i].ClearVirtualColumns()
+		record.Children[i].AddVirtualColumn("parent_id", record.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema: Schema.Child.BaseSchema,
+			Record: &record.Children[i],
+		})
+	}
+
+	return records
+}
+
+// Insert inserts a ParentNoPtr in the database. A non-persisted object is
+// required for this operation.
+func (s *ParentNoPtrStore) Insert(record *ParentNoPtr) error {
+
+	records := s.relationshipRecords(record)
+
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+
+			if err := s.Insert(Schema.ParentNoPtr.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.ParentNoPtr.BaseSchema, record)
+
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *ParentNoPtrStore) Update(record *ParentNoPtr, cols ...kallax.SchemaField) (updated int64, err error) {
+
+	records := s.relationshipRecords(record)
+
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+
+			updated, err = s.Update(Schema.ParentNoPtr.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
+	}
+
+	return s.Store.Update(Schema.ParentNoPtr.BaseSchema, record, cols...)
+
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *ParentNoPtrStore) Save(record *ParentNoPtr) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *ParentNoPtrStore) Delete(record *ParentNoPtr) error {
+
+	return s.Store.Delete(Schema.ParentNoPtr.BaseSchema, record)
+
+}
+
+// Find returns the set of results for the given query.
+func (s *ParentNoPtrStore) Find(q *ParentNoPtrQuery) (*ParentNoPtrResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewParentNoPtrResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *ParentNoPtrStore) MustFind(q *ParentNoPtrQuery) *ParentNoPtrResultSet {
+	return NewParentNoPtrResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *ParentNoPtrStore) Count(q *ParentNoPtrQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *ParentNoPtrStore) MustCount(q *ParentNoPtrQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *ParentNoPtrStore) FindOne(q *ParentNoPtrQuery) (*ParentNoPtr, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *ParentNoPtrStore) FindAll(q *ParentNoPtrQuery) ([]*ParentNoPtr, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *ParentNoPtrStore) MustFindOne(q *ParentNoPtrQuery) *ParentNoPtr {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the ParentNoPtr with the data in the database and
+// makes it writable.
+func (s *ParentNoPtrStore) Reload(record *ParentNoPtr) error {
+	return s.Store.Reload(Schema.ParentNoPtr.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *ParentNoPtrStore) Transaction(callback func(*ParentNoPtrStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&ParentNoPtrStore{store})
+	})
+}
+
+// RemoveChildren removes the given items of the Children field of the
+// model. If no items are given, it removes all of them.
+// The items will also be removed from the passed record inside this method.
+func (s *ParentNoPtrStore) RemoveChildren(record *ParentNoPtr, deleted ...Child) error {
+	var updated []Child
+	var clear bool
+	if len(deleted) == 0 {
+		clear = true
+		deleted = record.Children
+		if len(deleted) == 0 {
+			return nil
+		}
+	}
+
+	if len(deleted) > 1 {
+		err := s.Store.Transaction(func(s *kallax.Store) error {
+			for _, d := range deleted {
+				var r kallax.Record = &d
+
+				if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+					if err := beforeDeleter.BeforeDelete(); err != nil {
+						return err
+					}
+				}
+
+				if err := s.Delete(Schema.Child.BaseSchema, &d); err != nil {
+					return err
+				}
+
+				if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+					if err := afterDeleter.AfterDelete(); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if clear {
+			record.Children = nil
+			return nil
+		}
+	} else {
+		var r kallax.Record = &deleted[0]
+		if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+			if err := beforeDeleter.BeforeDelete(); err != nil {
+				return err
+			}
+		}
+
+		var err error
+		if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+			err = s.Store.Transaction(func(s *kallax.Store) error {
+				err := s.Delete(Schema.Child.BaseSchema, r)
+				if err != nil {
+					return err
+				}
+
+				return afterDeleter.AfterDelete()
+			})
+		} else {
+			err = s.Store.Delete(Schema.Child.BaseSchema, &deleted[0])
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, r := range record.Children {
+		var found bool
+		for _, d := range deleted {
+			if d.GetID().Equals(r.GetID()) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			updated = append(updated, r)
+		}
+	}
+	record.Children = updated
+	return nil
+}
+
+// ParentNoPtrQuery is the object used to create queries for the ParentNoPtr
+// entity.
+type ParentNoPtrQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewParentNoPtrQuery returns a new instance of ParentNoPtrQuery.
+func NewParentNoPtrQuery() *ParentNoPtrQuery {
+	return &ParentNoPtrQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.ParentNoPtr.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *ParentNoPtrQuery) Select(columns ...kallax.SchemaField) *ParentNoPtrQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *ParentNoPtrQuery) SelectNot(columns ...kallax.SchemaField) *ParentNoPtrQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *ParentNoPtrQuery) Copy() *ParentNoPtrQuery {
+	return &ParentNoPtrQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *ParentNoPtrQuery) Order(cols ...kallax.ColumnOrder) *ParentNoPtrQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *ParentNoPtrQuery) BatchSize(size uint64) *ParentNoPtrQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *ParentNoPtrQuery) Limit(n uint64) *ParentNoPtrQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *ParentNoPtrQuery) Offset(n uint64) *ParentNoPtrQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *ParentNoPtrQuery) Where(cond kallax.Condition) *ParentNoPtrQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+func (q *ParentNoPtrQuery) WithChildren(cond kallax.Condition) *ParentNoPtrQuery {
+	q.AddRelation(Schema.Child.BaseSchema, "Children", kallax.OneToMany, cond)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
+func (q *ParentNoPtrQuery) FindByID(v ...int64) *ParentNoPtrQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.ParentNoPtr.ID, values...))
+}
+
+// FindByName adds a new filter to the query that will require that
+// the Name property is equal to the passed value.
+func (q *ParentNoPtrQuery) FindByName(v string) *ParentNoPtrQuery {
+	return q.Where(kallax.Eq(Schema.ParentNoPtr.Name, v))
+}
+
+// ParentNoPtrResultSet is the set of results returned by a query to the
+// database.
+type ParentNoPtrResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *ParentNoPtr
+	lastErr   error
+}
+
+// NewParentNoPtrResultSet creates a new result set for rows of the type
+// ParentNoPtr.
+func NewParentNoPtrResultSet(rs kallax.ResultSet) *ParentNoPtrResultSet {
+	return &ParentNoPtrResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *ParentNoPtrResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.ParentNoPtr.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*ParentNoPtr)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *ParentNoPtr")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *ParentNoPtrResultSet) Get() (*ParentNoPtr, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *ParentNoPtrResultSet) ForEach(fn func(*ParentNoPtr) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *ParentNoPtrResultSet) All() ([]*ParentNoPtr, error) {
+	var result []*ParentNoPtr
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *ParentNoPtrResultSet) One() (*ParentNoPtr, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *ParentNoPtrResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *ParentNoPtrResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
@@ -10773,6 +11384,7 @@ var Schema = &schema{
 			true,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("name"),
+			kallax.NewSchemaField("parent_id"),
 		),
 		ID:   kallax.NewSchemaField("id"),
 		Name: kallax.NewSchemaField("name"),

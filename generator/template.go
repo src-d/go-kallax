@@ -80,6 +80,10 @@ func (td *TemplateData) genFieldsTimeTruncations(buf *bytes.Buffer, fields []*Fi
 func (td *TemplateData) GenColumnAddresses(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsColumnAddresses(&buf, model.Fields)
+	for _, fk := range model.ImplicitFKs {
+		buf.WriteString(fmt.Sprintf("case \"%s\":\n", fk.Name))
+		buf.WriteString(fmt.Sprintf("return types.Nullable(kallax.VirtualColumn(\"%s\", r, new(%s))), nil\n", fk.Name, fk.Type))
+	}
 	return buf.String()
 }
 
@@ -129,6 +133,10 @@ func (td *TemplateData) IdentifierType(f *Field) string {
 func (td *TemplateData) GenColumnValues(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsValues(&buf, model.Fields)
+	for _, fk := range model.ImplicitFKs {
+		buf.WriteString(fmt.Sprintf("case \"%s\":\n", fk.Name))
+		buf.WriteString(fmt.Sprintf("return r.Model.VirtualColumn(col), nil\n"))
+	}
 	return buf.String()
 }
 
@@ -159,6 +167,9 @@ func (td *TemplateData) genFieldsValues(buf *bytes.Buffer, fields []*Field) {
 func (td *TemplateData) GenModelColumns(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsColumns(&buf, model.Fields)
+	for _, fk := range model.ImplicitFKs {
+		buf.WriteString(fmt.Sprintf("kallax.NewSchemaField(\"%s\"),\n", fk.Name))
+	}
 	return buf.String()
 }
 
