@@ -80,3 +80,10 @@ type Child struct {
 	ID           int64 `pk:"autoincr"`
 	Name         string
 }
+
+type ParentNoPtr struct {
+	kallax.Model `table:"parents"`
+	ID           int64 `pk:"autoincr"`
+	Name         string
+	Children     []Child `fk:"parent_id"`
+}

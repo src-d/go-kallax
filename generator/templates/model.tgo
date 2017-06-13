@@ -123,12 +123,12 @@ func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordW
         var records []kallax.RecordWithSchema
         {{range .NonInverses}}
         {{if .IsOneToManyRelationship}}
-        for _, rec := range record.{{.Name}} {
-                rec.ClearVirtualColumns()
-                rec.AddVirtualColumn("{{.ForeignKey}}", record.GetID())
+        for i := range record.{{.Name}} {
+                record.{{.Name}}[i].ClearVirtualColumns()
+                record.{{.Name}}[i].AddVirtualColumn("{{.ForeignKey}}", record.GetID())
                 records = append(records, kallax.RecordWithSchema{
                         Schema: Schema.{{.TypeSchemaName}}.BaseSchema,
-                        Record: {{if not ($.IsPtrSlice .)}}&{{end}}rec,
+                        Record: {{if not ($.IsPtrSlice .)}}&{{end}}record.{{.Name}}[i],
                 })
         }
         {{else}}
