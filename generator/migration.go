@@ -89,13 +89,18 @@ type TableSchema struct {
 	Columns []*ColumnSchema
 }
 
-func (s *TableSchema) relationships() []string {
+type relationship struct {
+	name    string
+	inverse bool
+}
+
+func (s *TableSchema) relationships() []relationship {
 	var rels = make(map[string]struct{})
-	var result []string
+	var result []relationship
 	for _, c := range s.Columns {
 		if c.Reference != nil {
 			if _, ok := rels[c.Reference.Table]; !ok {
-				result = append(result, c.Reference.Table)
+				result = append(result, relationship{c.Reference.Table, c.Reference.inverse})
 				rels[c.Reference.Table] = struct{}{}
 			}
 		}
@@ -228,7 +233,8 @@ type Reference struct {
 	// Table is the referenced table.
 	Table string
 	// Column is the referenced column.
-	Column string
+	Column  string
+	inverse bool
 }
 
 func (r *Reference) Equals(r2 *Reference) bool {
@@ -275,7 +281,15 @@ func (cs ChangeSet) sorted(dropIndex, createIndex map[string]*TableSchema) (Chan
 			createTables[c.Name] = c
 			if rels := createIndex[c.Name].relationships(); len(rels) > 0 {
 				for _, r := range rels {
-					createGraph.dependsOn(r, c.Name)
+					if r.name == c.Name {
+						continue
+					}
+
+					if r.inverse {
+						createGraph.dependsOn(c.Name, r.name)
+					} else {
+						createGraph.dependsOn(r.name, c.Name)
+					}
 				}
 			} else {
 				createGraph.add(c.Name)
@@ -284,7 +298,15 @@ func (cs ChangeSet) sorted(dropIndex, createIndex map[string]*TableSchema) (Chan
 			dropTables[c.Name] = c
 			if rels := dropIndex[c.Name].relationships(); len(rels) > 0 {
 				for _, r := range rels {
-					dropGraph.dependsOn(r, c.Name)
+					if r.name == c.Name {
+						continue
+					}
+
+					if r.inverse {
+						dropGraph.dependsOn(c.Name, r.name)
+					} else {
+						dropGraph.dependsOn(r.name, c.Name)
+					}
 				}
 			} else {
 				dropGraph.add(c.Name)
@@ -870,9 +892,9 @@ func (t *packageTransformer) transformRef(f *Field) (*Reference, error) {
 			return nil, fmt.Errorf("kallax: unable to find table for type %s in field %s of model %s. Is the model type part of the generation input?", typ, f.Name, f.Model.Name)
 		}
 
-		return &Reference{Table: table, Column: t.pkIndex[table].ColumnName()}, nil
+		return &Reference{Table: table, Column: t.pkIndex[table].ColumnName(), inverse: true}, nil
 	} else if f.Kind == Relationship {
-		return &Reference{Table: f.Model.Table, Column: f.Model.ID.ColumnName()}, nil
+		return &Reference{Table: f.Model.Table, Column: f.Model.ID.ColumnName(), inverse: false}, nil
 	}
 
 	return nil, nil

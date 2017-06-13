@@ -21,6 +21,19 @@ func TestNewMigration(t *testing.T) {
 	require.Equal(t, migration.Lock, new)
 }
 
+func TestNewMigration_SelfRef(t *testing.T) {
+	old := mkSchema()
+	new := mkSchema(mkTable(
+		"selfref",
+		mkCol("id", SerialColumn, true, false, nil),
+		mkCol("parent_id", BigIntColumn, false, false, mkRef("selfref", "id", true)),
+		mkCol("child_id", BigIntColumn, false, false, mkRef("selfref", "id", false)),
+	))
+
+	_, err := NewMigration(old, new)
+	require.NoError(t, err)
+}
+
 var table1 = mkTable(
 	"table",
 	mkCol("id", SerialColumn, true, true, nil),
@@ -29,7 +42,7 @@ var table1 = mkTable(
 
 var table2 = mkTable(
 	"table2",
-	mkCol("table_id", SerialColumn, false, true, mkRef("table", "id")),
+	mkCol("table_id", SerialColumn, false, true, mkRef("table", "id", false)),
 	mkCol("num", NumericColumn(20), false, false, nil),
 )
 
@@ -198,31 +211,31 @@ func TestColumnSchemaDiff(t *testing.T) {
 		{
 			"ref added",
 			mkCol("foo", TextColumn, false, false, nil),
-			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar")),
+			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar", false)),
 			true,
 		},
 		{
 			"ref removed",
-			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar")),
+			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar", false)),
 			mkCol("foo", TextColumn, false, false, nil),
 			true,
 		},
 		{
 			"ref table changed",
-			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar")),
-			mkCol("foo", TextColumn, false, false, mkRef("bar", "bar")),
+			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar", false)),
+			mkCol("foo", TextColumn, false, false, mkRef("bar", "bar", false)),
 			true,
 		},
 		{
 			"ref col changed",
-			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar")),
-			mkCol("foo", TextColumn, false, false, mkRef("foo", "foo")),
+			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar", false)),
+			mkCol("foo", TextColumn, false, false, mkRef("foo", "foo", false)),
 			true,
 		},
 		{
 			"ref col unchanged",
-			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar")),
-			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar")),
+			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar", false)),
+			mkCol("foo", TextColumn, false, false, mkRef("foo", "bar", false)),
 			false,
 		},
 		{
@@ -368,25 +381,25 @@ func TestColumnSchemaEquals(t *testing.T) {
 		{
 			"one of the references is nil",
 			mkCol("foo", TextColumn, false, false, nil),
-			mkCol("foo", TextColumn, false, false, mkRef("a", "b")),
+			mkCol("foo", TextColumn, false, false, mkRef("a", "b", false)),
 			false,
 		},
 		{
 			"reference table does not match",
-			mkCol("foo", TextColumn, false, false, mkRef("a", "b")),
-			mkCol("foo", TextColumn, false, false, mkRef("b", "b")),
+			mkCol("foo", TextColumn, false, false, mkRef("a", "b", false)),
+			mkCol("foo", TextColumn, false, false, mkRef("b", "b", false)),
 			false,
 		},
 		{
 			"reference column does not match",
-			mkCol("foo", TextColumn, false, false, mkRef("a", "b")),
-			mkCol("foo", TextColumn, false, false, mkRef("a", "a")),
+			mkCol("foo", TextColumn, false, false, mkRef("a", "b", false)),
+			mkCol("foo", TextColumn, false, false, mkRef("a", "a", false)),
 			false,
 		},
 		{
 			"equal with reference",
-			mkCol("foo", TextColumn, false, false, mkRef("a", "b")),
-			mkCol("foo", TextColumn, false, false, mkRef("a", "b")),
+			mkCol("foo", TextColumn, false, false, mkRef("a", "b", false)),
+			mkCol("foo", TextColumn, false, false, mkRef("a", "b", false)),
 			true,
 		},
 		{
@@ -407,7 +420,7 @@ func TestChangeSetSorted(t *testing.T) {
 		mkTable("table2"),
 		mkTable(
 			"table1",
-			mkCol("foo", SerialColumn, false, false, mkRef("table2", "bar")),
+			mkCol("foo", SerialColumn, false, false, mkRef("table2", "bar", false)),
 		),
 		mkTable("table3"),
 	)
@@ -416,7 +429,7 @@ func TestChangeSetSorted(t *testing.T) {
 		mkTable("table4"),
 		mkTable(
 			"table5",
-			mkCol("foo", SerialColumn, false, false, mkRef("table4", "bar")),
+			mkCol("foo", SerialColumn, false, false, mkRef("table4", "bar", false)),
 		),
 	)
 	cs := SchemaDiff(old, new)
@@ -486,6 +499,16 @@ func (s *PackageTransformerSuite) SetupTest() {
 	s.Require().NoError(err)
 }
 
+func (s *PackageTransformerSuite) TestMigrationCircularDep() {
+	require := s.Require()
+	schema, err := s.t.transform(s.pkg)
+	require.NoError(err)
+	require.NotNil(schema)
+
+	_, err = NewMigration(mkSchema(), schema)
+	require.NoError(err)
+}
+
 func (s *PackageTransformerSuite) TestTransform() {
 	require := s.Require()
 	schema, err := s.t.transform(s.pkg)
@@ -498,14 +521,14 @@ func (s *PackageTransformerSuite) TestTransform() {
 			mkCol("id", SerialColumn, true, false, nil),
 			mkCol("color", ColumnType("char(6)"), false, false, nil),
 			mkCol("background", TextColumn, false, false, nil),
-			mkCol("user_id", UUIDColumn, false, false, mkRef("users", "id")),
+			mkCol("user_id", UUIDColumn, false, false, mkRef("users", "id", true)),
 			mkCol("spouse", UUIDColumn, false, false, nil),
 		),
 		mkTable(
 			"metadata",
 			mkCol("id", SerialColumn, true, false, nil),
 			mkCol("metadata", JSONBColumn, false, false, nil),
-			mkCol("profile_id", BigIntColumn, false, false, mkRef("profiles", "id")),
+			mkCol("profile_id", BigIntColumn, false, false, mkRef("profiles", "id", false)),
 		),
 		mkTable(
 			"users",
@@ -589,6 +612,6 @@ func mkCol(name string, typ ColumnType, pk, notNull bool, ref *Reference) *Colum
 	return &ColumnSchema{name, typ, pk, ref, notNull}
 }
 
-func mkRef(table, col string) *Reference {
-	return &Reference{table, col}
+func mkRef(table, col string, inverse bool) *Reference {
+	return &Reference{table, col, inverse}
 }
