@@ -309,3 +309,23 @@ func (s *StoreSuite) TestInsert_RelWithNoInverseNoPtr() {
 		s.NotEqual(int64(0), c.ID)
 	}
 }
+
+func (s *StoreSuite) TestInsert_RelWithNoInverseNoPtr() {
+	store := NewParentNoPtrStore(s.db).Debug()
+	p := NewParentNoPtr()
+	p.Name = "foo"
+
+	for i := 0; i < 3; i++ {
+		c := NewChild()
+		c.Name = fmt.Sprint(i + 1)
+		p.Children = append(p.Children, *c)
+	}
+
+	s.NoError(store.Insert(p))
+	s.NotEqual(0, p.ID)
+
+	var count int
+	err := s.db.QueryRow("SELECT COUNT(*) FROM children WHERE parent_id = $1", p.ID).Scan(&count)
+	s.NoError(err)
+	s.Equal(3, count)
+}
