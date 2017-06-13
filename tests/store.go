@@ -67,3 +67,16 @@ type Nullable struct {
 	SomeJSON     *SomeJSON
 	Scanner      *kallax.ULID
 }
+
+type Parent struct {
+	kallax.Model `table:"parents"`
+	ID           int64 `pk:"autoincr"`
+	Name         string
+	Children     []*Child
+}
+
+type Child struct {
+	kallax.Model `table:"children"`
+	ID           int64 `pk:"autoincr"`
+	Name         string
+}

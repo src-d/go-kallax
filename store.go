@@ -158,6 +158,10 @@ func (s *Store) Insert(schema Schema, record Record) error {
 		return err
 	}
 
+	virtualCols, virtualColValues := virtualColumns(record, cols)
+	cols = append(cols, virtualCols...)
+	values = append(values, virtualColValues...)
+
 	builder := s.builder.
 		Insert(schema.Table()).
 		Columns(cols...).
@@ -212,6 +216,10 @@ func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64
 	if err != nil {
 		return 0, err
 	}
+
+	virtualCols, virtualColValues := virtualColumns(record, columnNames)
+	columnNames = append(columnNames, virtualCols...)
+	values = append(values, virtualColValues...)
 
 	var clauses = make(map[string]interface{}, len(cols))
 	for i, col := range columnNames {
@@ -417,4 +425,30 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 type RecordWithSchema struct {
 	Schema Schema
 	Record Record
+}
+
+func virtualColumns(r Record, columns []string) (cols []string, vals []interface{}) {
+	c, ok := r.(VirtualColumnContainer)
+	if !ok {
+		return
+	}
+
+	vcols := c.getVirtualColumns()
+	for col, val := range vcols {
+		if !containsString(columns, col) {
+			cols = append(cols, col)
+			vals = append(vals, val)
+		}
+	}
+
+	return
+}
+
+func containsString(strs []string, str string) bool {
+	for _, s := range strs {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }

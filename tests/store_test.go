@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -37,8 +38,17 @@ func TestStoreSuite(t *testing.T) {
 			some_json jsonb,
 			scanner uuid
 		)`,
+		`CREATE TABLE IF NOT EXISTS parents (
+			id serial primary key,
+			name text
+		)`,
+		`CREATE TABLE IF NOT EXISTS children (
+			id serial primary key,
+			name text,
+			parent_id bigint references parents(id)
+		)`,
 	}
-	suite.Run(t, &StoreSuite{NewBaseSuite(schema, "store_construct", "store", "store_new", "query", "nullable")})
+	suite.Run(t, &StoreSuite{NewBaseSuite(schema, "store_construct", "store", "store_new", "query", "nullable", "children", "parents")})
 }
 
 type StoreSuite struct {
@@ -252,4 +262,24 @@ func (s *StoreSuite) TestNullablePtrScan() {
 
 	s.Nil(records[0].T)
 	s.NotNil(records[1].T)
+}
+
+func (s *StoreSuite) TestInsert_RelWithNoInverse() {
+	store := NewParentStore(s.db).Debug()
+	p := NewParent()
+	p.Name = "foo"
+
+	for i := 0; i < 3; i++ {
+		c := NewChild()
+		c.Name = fmt.Sprint(i + 1)
+		p.Children = append(p.Children, c)
+	}
+
+	s.NoError(store.Insert(p))
+	s.NotEqual(0, p.ID)
+
+	var count int
+	err := s.db.QueryRow("SELECT COUNT(*) FROM children WHERE parent_id = $1", p.ID).Scan(&count)
+	s.NoError(err)
+	s.Equal(3, count)
 }
