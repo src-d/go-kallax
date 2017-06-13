@@ -1,13 +1,13 @@
 language: go
 
 go:
-  - 1.7
   - 1.8
   - tip
 
 matrix:
     allow_failures:
         - go: tip
+    fast_finish: true
 
 addons:
   postgresql: "9.4"
