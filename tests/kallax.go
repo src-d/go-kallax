@@ -611,6 +611,8 @@ func (r *Child) ColumnAddress(col string) (interface{}, error) {
 		return (*kallax.NumericID)(&r.ID), nil
 	case "name":
 		return &r.Name, nil
+	case "parent_id":
+		return types.Nullable(kallax.VirtualColumn("parent_id", r, new(kallax.NumericID))), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Child: %s", col)
@@ -624,6 +626,8 @@ func (r *Child) Value(col string) (interface{}, error) {
 		return r.ID, nil
 	case "name":
 		return r.Name, nil
+	case "parent_id":
+		return r.Model.VirtualColumn(col), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Child: %s", col)
@@ -10773,6 +10777,7 @@ var Schema = &schema{
 			true,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("name"),
+			kallax.NewSchemaField("parent_id"),
 		),
 		ID:   kallax.NewSchemaField("id"),
 		Name: kallax.NewSchemaField("name"),

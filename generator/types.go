@@ -153,6 +153,59 @@ func (p *Package) FindModel(name string) *Model {
 	return p.indexedModels[name]
 }
 
+func (p *Package) addMissingRelationships() error {
+	for _, m := range p.Models {
+		for _, f := range m.Fields {
+			if f.Kind == Relationship && !f.IsInverse() {
+				if err := p.trySetFK(f.TypeSchemaName(), f); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (p *Package) trySetFK(model string, fk *Field) error {
+	m := p.FindModel(model)
+	if m == nil {
+		return fmt.Errorf("kallax: cannot assign implicit foreign key to non-existent model %s", model)
+	}
+
+	var found bool
+	for _, f := range m.Fields {
+		if f.Kind == Relationship {
+			if f.ForeignKey() == fk.ForeignKey() {
+				found = true
+				break
+			}
+		} else {
+			if f.ColumnName() == fk.ForeignKey() {
+				found = true
+				break
+			}
+		}
+	}
+
+	if !found {
+		for _, ifk := range m.ImplicitFKs {
+			if ifk.Name == fk.ForeignKey() {
+				found = true
+				break
+			}
+		}
+	}
+
+	if !found {
+		m.ImplicitFKs = append(m.ImplicitFKs, ImplicitFK{
+			Name: fk.ForeignKey(),
+			Type: identifierType(fk.Model.ID),
+		})
+	}
+	return nil
+}
+
 const (
 	// StoreNamePattern is the pattern used to name stores.
 	StoreNamePattern = "%sStore"
@@ -182,6 +235,10 @@ type Model struct {
 	Type string
 	// Fields contains the list of fields in the model.
 	Fields []*Field
+	// ImplicitFKs contains the list of fks that are implicit based on
+	// other models' definitions, such as foreign keys with no explicit inverse
+	// on the related model.
+	ImplicitFKs []ImplicitFK
 	// ID contains the identifier field of the model.
 	ID *Field
 	// Events contains the list of events implemented by the model.
@@ -497,6 +554,11 @@ func relationshipsOnFields(fields []*Field) []*Field {
 		}
 	}
 	return result
+}
+
+type ImplicitFK struct {
+	Name string
+	Type string
 }
 
 // Field is the representation of a model field.
