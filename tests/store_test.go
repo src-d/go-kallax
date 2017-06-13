@@ -264,29 +264,6 @@ func (s *StoreSuite) TestNullablePtrScan() {
 	s.NotNil(records[1].T)
 }
 
-func (s *StoreSuite) TestInsert_RelWithNoInverse() {
-	store := NewParentStore(s.db).Debug()
-	p := NewParent()
-	p.Name = "foo"
-
-	for i := 0; i < 3; i++ {
-		c := NewChild()
-		c.Name = fmt.Sprint(i + 1)
-		p.Children = append(p.Children, c)
-	}
-
-	s.NoError(store.Insert(p))
-	s.NotEqual(0, p.ID)
-
-	p, err := store.FindOne(NewParentQuery().WithChildren(nil))
-	s.NoError(err)
-
-	s.Len(p.Children, 3)
-	for _, c := range p.Children {
-		s.NotEqual(int64(0), c.ID)
-	}
-}
-
 func (s *StoreSuite) TestInsert_RelWithNoInverseNoPtr() {
 	store := NewParentNoPtrStore(s.db).Debug()
 	p := NewParentNoPtr()
@@ -302,6 +279,29 @@ func (s *StoreSuite) TestInsert_RelWithNoInverseNoPtr() {
 	s.NotEqual(0, p.ID)
 
 	p, err := store.FindOne(NewParentNoPtrQuery().WithChildren(nil))
+	s.NoError(err)
+
+	s.Len(p.Children, 3)
+	for _, c := range p.Children {
+		s.NotEqual(int64(0), c.ID)
+	}
+}
+
+func (s *StoreSuite) TestInsert_RelWithNoInverse() {
+	store := NewParentStore(s.db).Debug()
+	p := NewParent()
+	p.Name = "foo"
+
+	for i := 0; i < 3; i++ {
+		c := NewChild()
+		c.Name = fmt.Sprint(i + 1)
+		p.Children = append(p.Children, c)
+	}
+
+	s.NoError(store.Insert(p))
+	s.NotEqual(0, p.ID)
+
+	p, err := store.FindOne(NewParentQuery().WithChildren(nil))
 	s.NoError(err)
 
 	s.Len(p.Children, 3)
