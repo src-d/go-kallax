@@ -79,6 +79,10 @@ func (m *Model) ClearVirtualColumns() {
 	m.virtualColumns = make(map[string]Identifier)
 }
 
+func (m *Model) getVirtualColumns() map[string]Identifier {
+	return m.virtualColumns
+}
+
 // AddVirtualColumn adds a new virtual column with the given name and value.
 // This method is only intended for internal use. It is only exposed for
 // technical reasons.
@@ -164,6 +168,7 @@ type VirtualColumnContainer interface {
 	AddVirtualColumn(string, Identifier)
 	// VirtualColumn returns the virtual column with the given column name.
 	VirtualColumn(string) Identifier
+	getVirtualColumns() map[string]Identifier
 }
 
 // RecordValues returns the values of a record at the given columns in the same
