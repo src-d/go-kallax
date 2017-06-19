@@ -139,7 +139,6 @@ func (s *CarStore) inverseRecords(record *Car) []kallax.RecordWithSchema {
 // Insert inserts a Car in the database. A non-persisted object is
 // required for this operation.
 func (s *CarStore) Insert(record *Car) error {
-
 	if err := record.BeforeSave(); err != nil {
 		return err
 	}
@@ -148,7 +147,6 @@ func (s *CarStore) Insert(record *Car) error {
 
 	if len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -187,7 +185,6 @@ func (s *CarStore) Insert(record *Car) error {
 
 		return nil
 	})
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -197,7 +194,6 @@ func (s *CarStore) Insert(record *Car) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	if err := record.BeforeSave(); err != nil {
 		return 0, err
 	}
@@ -206,7 +202,6 @@ func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int6
 
 	if len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -257,7 +252,6 @@ func (s *CarStore) Update(record *Car, cols ...kallax.SchemaField) (updated int6
 		return 0, err
 	}
 	return updated, nil
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -277,7 +271,6 @@ func (s *CarStore) Save(record *Car) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *CarStore) Delete(record *Car) error {
-
 	if err := record.BeforeDelete(); err != nil {
 		return err
 	}
@@ -290,7 +283,6 @@ func (s *CarStore) Delete(record *Car) error {
 
 		return record.AfterDelete()
 	})
-
 }
 
 // Find returns the set of results for the given query.
@@ -682,9 +674,7 @@ func (s *ChildStore) DebugWith(logger kallax.LoggerFunc) *ChildStore {
 // Insert inserts a Child in the database. A non-persisted object is
 // required for this operation.
 func (s *ChildStore) Insert(record *Child) error {
-
 	return s.Store.Insert(Schema.Child.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -694,9 +684,7 @@ func (s *ChildStore) Insert(record *Child) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *ChildStore) Update(record *Child, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	return s.Store.Update(Schema.Child.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -716,9 +704,7 @@ func (s *ChildStore) Save(record *Child) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *ChildStore) Delete(record *Child) error {
-
 	return s.Store.Delete(Schema.Child.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -1103,7 +1089,6 @@ func (s *EventsAllFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsAllFi
 // Insert inserts a EventsAllFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *EventsAllFixtureStore) Insert(record *EventsAllFixture) error {
-
 	if err := record.BeforeSave(); err != nil {
 		return err
 	}
@@ -1127,7 +1112,6 @@ func (s *EventsAllFixtureStore) Insert(record *EventsAllFixture) error {
 
 		return nil
 	})
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -1137,7 +1121,6 @@ func (s *EventsAllFixtureStore) Insert(record *EventsAllFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *EventsAllFixtureStore) Update(record *EventsAllFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	if err := record.BeforeSave(); err != nil {
 		return 0, err
 	}
@@ -1167,7 +1150,6 @@ func (s *EventsAllFixtureStore) Update(record *EventsAllFixture, cols ...kallax.
 		return 0, err
 	}
 	return updated, nil
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -1187,9 +1169,7 @@ func (s *EventsAllFixtureStore) Save(record *EventsAllFixture) (updated bool, er
 
 // Delete removes the given record from the database.
 func (s *EventsAllFixtureStore) Delete(record *EventsAllFixture) error {
-
 	return s.Store.Delete(Schema.EventsAllFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -1568,7 +1548,6 @@ func (s *EventsFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsFixtureS
 // Insert inserts a EventsFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
-
 	if err := record.BeforeInsert(); err != nil {
 		return err
 	}
@@ -1584,7 +1563,6 @@ func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
 
 		return nil
 	})
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -1594,7 +1572,6 @@ func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *EventsFixtureStore) Update(record *EventsFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	if err := record.BeforeUpdate(); err != nil {
 		return 0, err
 	}
@@ -1616,7 +1593,6 @@ func (s *EventsFixtureStore) Update(record *EventsFixture, cols ...kallax.Schema
 		return 0, err
 	}
 	return updated, nil
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -1636,9 +1612,7 @@ func (s *EventsFixtureStore) Save(record *EventsFixture) (updated bool, err erro
 
 // Delete removes the given record from the database.
 func (s *EventsFixtureStore) Delete(record *EventsFixture) error {
-
 	return s.Store.Delete(Schema.EventsFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -2017,7 +1991,6 @@ func (s *EventsSaveFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsSave
 // Insert inserts a EventsSaveFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *EventsSaveFixtureStore) Insert(record *EventsSaveFixture) error {
-
 	if err := record.BeforeSave(); err != nil {
 		return err
 	}
@@ -2033,7 +2006,6 @@ func (s *EventsSaveFixtureStore) Insert(record *EventsSaveFixture) error {
 
 		return nil
 	})
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2043,7 +2015,6 @@ func (s *EventsSaveFixtureStore) Insert(record *EventsSaveFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *EventsSaveFixtureStore) Update(record *EventsSaveFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	if err := record.BeforeSave(); err != nil {
 		return 0, err
 	}
@@ -2065,7 +2036,6 @@ func (s *EventsSaveFixtureStore) Update(record *EventsSaveFixture, cols ...kalla
 		return 0, err
 	}
 	return updated, nil
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -2085,9 +2055,7 @@ func (s *EventsSaveFixtureStore) Save(record *EventsSaveFixture) (updated bool, 
 
 // Delete removes the given record from the database.
 func (s *EventsSaveFixtureStore) Delete(record *EventsSaveFixture) error {
-
 	return s.Store.Delete(Schema.EventsSaveFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -2476,9 +2444,7 @@ func (s *JSONModelStore) DebugWith(logger kallax.LoggerFunc) *JSONModelStore {
 // Insert inserts a JSONModel in the database. A non-persisted object is
 // required for this operation.
 func (s *JSONModelStore) Insert(record *JSONModel) error {
-
 	return s.Store.Insert(Schema.JSONModel.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2488,9 +2454,7 @@ func (s *JSONModelStore) Insert(record *JSONModel) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *JSONModelStore) Update(record *JSONModel, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	return s.Store.Update(Schema.JSONModel.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -2510,9 +2474,7 @@ func (s *JSONModelStore) Save(record *JSONModel) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *JSONModelStore) Delete(record *JSONModel) error {
-
 	return s.Store.Delete(Schema.JSONModel.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -2901,7 +2863,6 @@ func (s *MultiKeySortFixtureStore) Insert(record *MultiKeySortFixture) error {
 	record.End = record.End.Truncate(time.Microsecond)
 
 	return s.Store.Insert(Schema.MultiKeySortFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -2915,7 +2876,6 @@ func (s *MultiKeySortFixtureStore) Update(record *MultiKeySortFixture, cols ...k
 	record.End = record.End.Truncate(time.Microsecond)
 
 	return s.Store.Update(Schema.MultiKeySortFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -2935,9 +2895,7 @@ func (s *MultiKeySortFixtureStore) Save(record *MultiKeySortFixture) (updated bo
 
 // Delete removes the given record from the database.
 func (s *MultiKeySortFixtureStore) Delete(record *MultiKeySortFixture) error {
-
 	return s.Store.Delete(Schema.MultiKeySortFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -3354,7 +3312,6 @@ func (s *NullableStore) Insert(record *Nullable) error {
 	}
 
 	return s.Store.Insert(Schema.Nullable.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -3369,7 +3326,6 @@ func (s *NullableStore) Update(record *Nullable, cols ...kallax.SchemaField) (up
 	}
 
 	return s.Store.Update(Schema.Nullable.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -3389,9 +3345,7 @@ func (s *NullableStore) Save(record *Nullable) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *NullableStore) Delete(record *Nullable) error {
-
 	return s.Store.Delete(Schema.Nullable.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -3812,12 +3766,10 @@ func (s *ParentStore) relationshipRecords(record *Parent) []kallax.RecordWithSch
 // Insert inserts a Parent in the database. A non-persisted object is
 // required for this operation.
 func (s *ParentStore) Insert(record *Parent) error {
-
 	records := s.relationshipRecords(record)
 
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			if err := s.Insert(Schema.Parent.BaseSchema, record); err != nil {
 				return err
 			}
@@ -3842,7 +3794,6 @@ func (s *ParentStore) Insert(record *Parent) error {
 	}
 
 	return s.Store.Insert(Schema.Parent.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -3852,12 +3803,10 @@ func (s *ParentStore) Insert(record *Parent) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *ParentStore) Update(record *Parent, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	records := s.relationshipRecords(record)
 
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			updated, err = s.Update(Schema.Parent.BaseSchema, record, cols...)
 			if err != nil {
 				return err
@@ -3888,7 +3837,6 @@ func (s *ParentStore) Update(record *Parent, cols ...kallax.SchemaField) (update
 	}
 
 	return s.Store.Update(Schema.Parent.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -3908,9 +3856,7 @@ func (s *ParentStore) Save(record *Parent) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *ParentStore) Delete(record *Parent) error {
-
 	return s.Store.Delete(Schema.Parent.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -4419,12 +4365,10 @@ func (s *ParentNoPtrStore) relationshipRecords(record *ParentNoPtr) []kallax.Rec
 // Insert inserts a ParentNoPtr in the database. A non-persisted object is
 // required for this operation.
 func (s *ParentNoPtrStore) Insert(record *ParentNoPtr) error {
-
 	records := s.relationshipRecords(record)
 
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			if err := s.Insert(Schema.ParentNoPtr.BaseSchema, record); err != nil {
 				return err
 			}
@@ -4449,7 +4393,6 @@ func (s *ParentNoPtrStore) Insert(record *ParentNoPtr) error {
 	}
 
 	return s.Store.Insert(Schema.ParentNoPtr.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -4459,12 +4402,10 @@ func (s *ParentNoPtrStore) Insert(record *ParentNoPtr) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *ParentNoPtrStore) Update(record *ParentNoPtr, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	records := s.relationshipRecords(record)
 
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			updated, err = s.Update(Schema.ParentNoPtr.BaseSchema, record, cols...)
 			if err != nil {
 				return err
@@ -4495,7 +4436,6 @@ func (s *ParentNoPtrStore) Update(record *ParentNoPtr, cols ...kallax.SchemaFiel
 	}
 
 	return s.Store.Update(Schema.ParentNoPtr.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -4515,9 +4455,7 @@ func (s *ParentNoPtrStore) Save(record *ParentNoPtr) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *ParentNoPtrStore) Delete(record *ParentNoPtr) error {
-
 	return s.Store.Delete(Schema.ParentNoPtr.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -5047,7 +4985,6 @@ func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSch
 // Insert inserts a Person in the database. A non-persisted object is
 // required for this operation.
 func (s *PersonStore) Insert(record *Person) error {
-
 	if err := record.BeforeSave(); err != nil {
 		return err
 	}
@@ -5056,7 +4993,6 @@ func (s *PersonStore) Insert(record *Person) error {
 
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			if err := s.Insert(Schema.Person.BaseSchema, record); err != nil {
 				return err
 			}
@@ -5095,7 +5031,6 @@ func (s *PersonStore) Insert(record *Person) error {
 
 		return nil
 	})
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -5105,7 +5040,6 @@ func (s *PersonStore) Insert(record *Person) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	if err := record.BeforeSave(); err != nil {
 		return 0, err
 	}
@@ -5114,7 +5048,6 @@ func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (update
 
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			updated, err = s.Update(Schema.Person.BaseSchema, record, cols...)
 			if err != nil {
 				return err
@@ -5165,7 +5098,6 @@ func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (update
 		return 0, err
 	}
 	return updated, nil
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -5185,7 +5117,6 @@ func (s *PersonStore) Save(record *Person) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *PersonStore) Delete(record *Person) error {
-
 	if err := record.BeforeDelete(); err != nil {
 		return err
 	}
@@ -5198,7 +5129,6 @@ func (s *PersonStore) Delete(record *Person) error {
 
 		return record.AfterDelete()
 	})
-
 }
 
 // Find returns the set of results for the given query.
@@ -5746,7 +5676,6 @@ func (s *PetStore) inverseRecords(record *Pet) []kallax.RecordWithSchema {
 // Insert inserts a Pet in the database. A non-persisted object is
 // required for this operation.
 func (s *PetStore) Insert(record *Pet) error {
-
 	if err := record.BeforeSave(); err != nil {
 		return err
 	}
@@ -5755,7 +5684,6 @@ func (s *PetStore) Insert(record *Pet) error {
 
 	if len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -5794,7 +5722,6 @@ func (s *PetStore) Insert(record *Pet) error {
 
 		return nil
 	})
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -5804,7 +5731,6 @@ func (s *PetStore) Insert(record *Pet) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	if err := record.BeforeSave(); err != nil {
 		return 0, err
 	}
@@ -5813,7 +5739,6 @@ func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int6
 
 	if len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -5864,7 +5789,6 @@ func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int6
 		return 0, err
 	}
 	return updated, nil
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -5884,7 +5808,6 @@ func (s *PetStore) Save(record *Pet) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *PetStore) Delete(record *Pet) error {
-
 	if err := record.BeforeDelete(); err != nil {
 		return err
 	}
@@ -5897,7 +5820,6 @@ func (s *PetStore) Delete(record *Pet) error {
 
 		return record.AfterDelete()
 	})
-
 }
 
 // Find returns the set of results for the given query.
@@ -6497,7 +6419,6 @@ func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 
 	if len(records) > 0 && len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -6537,7 +6458,6 @@ func (s *QueryFixtureStore) Insert(record *QueryFixture) error {
 	}
 
 	return s.Store.Insert(Schema.QueryFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -6555,7 +6475,6 @@ func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaFi
 
 	if len(records) > 0 && len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -6601,7 +6520,6 @@ func (s *QueryFixtureStore) Update(record *QueryFixture, cols ...kallax.SchemaFi
 	}
 
 	return s.Store.Update(Schema.QueryFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -6621,9 +6539,7 @@ func (s *QueryFixtureStore) Save(record *QueryFixture) (updated bool, err error)
 
 // Delete removes the given record from the database.
 func (s *QueryFixtureStore) Delete(record *QueryFixture) error {
-
 	return s.Store.Delete(Schema.QueryFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -7354,12 +7270,10 @@ func (s *QueryRelationFixtureStore) inverseRecords(record *QueryRelationFixture)
 // Insert inserts a QueryRelationFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *QueryRelationFixtureStore) Insert(record *QueryRelationFixture) error {
-
 	inverseRecords := s.inverseRecords(record)
 
 	if len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -7384,7 +7298,6 @@ func (s *QueryRelationFixtureStore) Insert(record *QueryRelationFixture) error {
 	}
 
 	return s.Store.Insert(Schema.QueryRelationFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -7394,12 +7307,10 @@ func (s *QueryRelationFixtureStore) Insert(record *QueryRelationFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *QueryRelationFixtureStore) Update(record *QueryRelationFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	inverseRecords := s.inverseRecords(record)
 
 	if len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -7430,7 +7341,6 @@ func (s *QueryRelationFixtureStore) Update(record *QueryRelationFixture, cols ..
 	}
 
 	return s.Store.Update(Schema.QueryRelationFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -7450,9 +7360,7 @@ func (s *QueryRelationFixtureStore) Save(record *QueryRelationFixture) (updated 
 
 // Delete removes the given record from the database.
 func (s *QueryRelationFixtureStore) Delete(record *QueryRelationFixture) error {
-
 	return s.Store.Delete(Schema.QueryRelationFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -7840,9 +7748,7 @@ func (s *ResultSetFixtureStore) DebugWith(logger kallax.LoggerFunc) *ResultSetFi
 // Insert inserts a ResultSetFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
-
 	return s.Store.Insert(Schema.ResultSetFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -7852,9 +7758,7 @@ func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *ResultSetFixtureStore) Update(record *ResultSetFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	return s.Store.Update(Schema.ResultSetFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -7874,9 +7778,7 @@ func (s *ResultSetFixtureStore) Save(record *ResultSetFixture) (updated bool, er
 
 // Delete removes the given record from the database.
 func (s *ResultSetFixtureStore) Delete(record *ResultSetFixture) error {
-
 	return s.Store.Delete(Schema.ResultSetFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -8337,14 +8239,12 @@ func (s *SchemaFixtureStore) inverseRecords(record *SchemaFixture) []kallax.Reco
 // Insert inserts a SchemaFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
-
 	records := s.relationshipRecords(record)
 
 	inverseRecords := s.inverseRecords(record)
 
 	if len(records) > 0 && len(inverseRecords) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -8384,7 +8284,6 @@ func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 	}
 
 	return s.Store.Insert(Schema.SchemaFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -8394,14 +8293,12 @@ func (s *SchemaFixtureStore) Insert(record *SchemaFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *SchemaFixtureStore) Update(record *SchemaFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	records := s.relationshipRecords(record)
 
 	inverseRecords := s.inverseRecords(record)
 
 	if len(records) > 0 && len(inverseRecords) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			for _, r := range inverseRecords {
 				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
 					return err
@@ -8447,7 +8344,6 @@ func (s *SchemaFixtureStore) Update(record *SchemaFixture, cols ...kallax.Schema
 	}
 
 	return s.Store.Update(Schema.SchemaFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -8467,9 +8363,7 @@ func (s *SchemaFixtureStore) Save(record *SchemaFixture) (updated bool, err erro
 
 // Delete removes the given record from the database.
 func (s *SchemaFixtureStore) Delete(record *SchemaFixture) error {
-
 	return s.Store.Delete(Schema.SchemaFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -8901,9 +8795,7 @@ func (s *SchemaRelationshipFixtureStore) DebugWith(logger kallax.LoggerFunc) *Sc
 // Insert inserts a SchemaRelationshipFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *SchemaRelationshipFixtureStore) Insert(record *SchemaRelationshipFixture) error {
-
 	return s.Store.Insert(Schema.SchemaRelationshipFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -8913,9 +8805,7 @@ func (s *SchemaRelationshipFixtureStore) Insert(record *SchemaRelationshipFixtur
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *SchemaRelationshipFixtureStore) Update(record *SchemaRelationshipFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	return s.Store.Update(Schema.SchemaRelationshipFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -8935,9 +8825,7 @@ func (s *SchemaRelationshipFixtureStore) Save(record *SchemaRelationshipFixture)
 
 // Delete removes the given record from the database.
 func (s *SchemaRelationshipFixtureStore) Delete(record *SchemaRelationshipFixture) error {
-
 	return s.Store.Delete(Schema.SchemaRelationshipFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -9316,9 +9204,7 @@ func (s *StoreFixtureStore) DebugWith(logger kallax.LoggerFunc) *StoreFixtureSto
 // Insert inserts a StoreFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreFixtureStore) Insert(record *StoreFixture) error {
-
 	return s.Store.Insert(Schema.StoreFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -9328,9 +9214,7 @@ func (s *StoreFixtureStore) Insert(record *StoreFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *StoreFixtureStore) Update(record *StoreFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	return s.Store.Update(Schema.StoreFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -9350,9 +9234,7 @@ func (s *StoreFixtureStore) Save(record *StoreFixture) (updated bool, err error)
 
 // Delete removes the given record from the database.
 func (s *StoreFixtureStore) Delete(record *StoreFixture) error {
-
 	return s.Store.Delete(Schema.StoreFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -9757,9 +9639,7 @@ func (s *StoreWithConstructFixtureStore) DebugWith(logger kallax.LoggerFunc) *St
 // Insert inserts a StoreWithConstructFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixture) error {
-
 	return s.Store.Insert(Schema.StoreWithConstructFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -9769,9 +9649,7 @@ func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixtur
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *StoreWithConstructFixtureStore) Update(record *StoreWithConstructFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	return s.Store.Update(Schema.StoreWithConstructFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -9791,9 +9669,7 @@ func (s *StoreWithConstructFixtureStore) Save(record *StoreWithConstructFixture)
 
 // Delete removes the given record from the database.
 func (s *StoreWithConstructFixtureStore) Delete(record *StoreWithConstructFixture) error {
-
 	return s.Store.Delete(Schema.StoreWithConstructFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -10174,9 +10050,7 @@ func (s *StoreWithNewFixtureStore) DebugWith(logger kallax.LoggerFunc) *StoreWit
 // Insert inserts a StoreWithNewFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreWithNewFixtureStore) Insert(record *StoreWithNewFixture) error {
-
 	return s.Store.Insert(Schema.StoreWithNewFixture.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -10186,9 +10060,7 @@ func (s *StoreWithNewFixtureStore) Insert(record *StoreWithNewFixture) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *StoreWithNewFixtureStore) Update(record *StoreWithNewFixture, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	return s.Store.Update(Schema.StoreWithNewFixture.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -10208,9 +10080,7 @@ func (s *StoreWithNewFixtureStore) Save(record *StoreWithNewFixture) (updated bo
 
 // Delete removes the given record from the database.
 func (s *StoreWithNewFixtureStore) Delete(record *StoreWithNewFixture) error {
-
 	return s.Store.Delete(Schema.StoreWithNewFixture.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
