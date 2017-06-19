@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/mattes/migrate"
 	_ "github.com/mattes/migrate/database/postgres"
@@ -146,13 +147,21 @@ func runMigrationAction(fn runMigrationFunc) cli.ActionFunc {
 			return fmt.Errorf("kallax: cannot get absolute path of `dir`: %s", err)
 		}
 
-		m, err := migrate.New(fmt.Sprintf("file://%s", dir), fmt.Sprintf("postgres://%s", dsn))
+		m, err := migrate.New(pathToFileURL(dir), fmt.Sprintf("postgres://%s", dsn))
 		if err != nil {
 			return fmt.Errorf("kallax: unable to open a connection with the database: %s", err)
 		}
 
 		return fn(m, steps, version, all)
 	}
+}
+
+func pathToFileURL(path string) string {
+	path = strings.Replace(path, "\\", "/", -1)
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	return fmt.Sprintf("file://%s", path)
 }
 
 func migrateAction(c *cli.Context) error {
