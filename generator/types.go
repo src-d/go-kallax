@@ -611,6 +611,8 @@ type ImplicitFK struct {
 }
 
 // Field is the representation of a model field.
+// TODO(erizocosmico): please, refactor all this structure to use precomputed
+// data instead of calculating it upon each call.
 type Field struct {
 	// Name is the field name.
 	Name string
@@ -807,8 +809,12 @@ func (f *Field) IsInverse() bool {
 		return false
 	}
 
-	for _, part := range strings.Split(f.Tag.Get("fk"), ",") {
-		if part == "inverse" {
+	if f.IsManyToManyRelationship() {
+		return f.isInverseThrough()
+	}
+
+	for i, part := range strings.Split(f.Tag.Get("fk"), ",") {
+		if i > 0 && part == "inverse" {
 			return true
 		}
 	}
@@ -820,6 +826,58 @@ func (f *Field) IsInverse() bool {
 // relationship.
 func (f *Field) IsOneToManyRelationship() bool {
 	return f.Kind == Relationship && strings.HasPrefix(f.Type, "[]")
+}
+
+// IsManyToManyRelationship reports whether the field is a many to many
+// relationship.
+func (f *Field) IsManyToManyRelationship() bool {
+	return f.Kind == Relationship && f.Tag.Get("through") != ""
+}
+
+// ThroughTable returns the name of the intermediate table used to access the
+// current field.
+func (f *Field) ThroughTable() string {
+	return f.getThroughTablePart(0)
+}
+
+// LeftForeignKey is the name of the column used to join the current model with
+// the intermediate table.
+func (f *Field) LeftForeignKey() string {
+	fk := f.getThroughTablePart(1)
+	if fk == "" {
+		fk = foreignKeyForModel(f.Model.Name)
+	}
+	return fk
+}
+
+// RightForeignKey is the name of the column used to join the relationship
+// model with the intermediate table.
+func (f *Field) RightForeignKey() string {
+	fk := f.getThroughTablePart(2)
+	if fk == "" {
+		fk = foreignKeyForModel(f.TypeSchemaName())
+	}
+	return fk
+}
+
+func (f *Field) isInverseThrough() bool {
+	return f.getThroughPart(1) == "inverse"
+}
+
+func (f *Field) getThroughPart(idx int) string {
+	parts := strings.Split(f.Tag.Get("through"), ",")
+	if len(parts) > idx {
+		return strings.TrimSpace(parts[idx])
+	}
+	return ""
+}
+
+func (f *Field) getThroughTablePart(idx int) string {
+	parts := strings.Split(f.getThroughPart(0), ":")
+	if len(parts) > idx {
+		return strings.TrimSpace(parts[idx])
+	}
+	return ""
 }
 
 func foreignKeyForModel(model string) string {
