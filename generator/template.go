@@ -464,7 +464,10 @@ func prettyfy(input []byte, wr io.Writer) error {
 		return err
 	}
 
-	_, err = wr.Write(output)
+	out := strings.Replace(string(output), "{\n\n", "{\n", -1)
+	out = strings.Replace(out, "\n\n}", "\n}", -1)
+
+	_, err = wr.Write([]byte(out))
 	return err
 }
 
