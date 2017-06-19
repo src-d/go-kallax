@@ -113,6 +113,7 @@ type Identifier interface {
 	IsEmpty() bool
 	// Raw returns the internal value of the identifier.
 	Raw() interface{}
+	newPtr() interface{}
 }
 
 // Identifiable must be implemented by those values that can be identified by an ID.
@@ -223,6 +224,10 @@ func NewULIDFromText(text string) (ULID, error) {
 	var id ULID
 	err := id.UnmarshalText([]byte(text))
 	return id, err
+}
+
+func (id ULID) newPtr() interface{} {
+	return new(ULID)
 }
 
 // Scan implements the Scanner interface.
@@ -371,6 +376,10 @@ func (id NumericID) IsEmpty() bool {
 	return int64(id) == 0
 }
 
+func (id NumericID) newPtr() interface{} {
+	return new(NumericID)
+}
+
 // String returns the string representation of the ID.
 func (id NumericID) String() string {
 	return fmt.Sprint(int64(id))
@@ -405,6 +414,10 @@ func (id *UUID) Scan(src interface{}) error {
 // Value implements the Valuer interface.
 func (id UUID) Value() (driver.Value, error) {
 	return uuid.UUID(id).Value()
+}
+
+func (id UUID) newPtr() interface{} {
+	return new(UUID)
 }
 
 // IsEmpty returns whether the ID is empty or not. An empty ID means it has not
