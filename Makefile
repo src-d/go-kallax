@@ -19,6 +19,7 @@ test:
 		fi; \
 	done; \
 	go install ./generator/...; \
+	rm ./tests/kallax.go ; \
 	go generate ./tests/...; \
 	git diff --no-prefix -U1000; \
 	if [ `git status | grep 'Changes not staged for commit' | wc -l` != '0' ]; then \

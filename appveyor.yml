@@ -1,9 +1,12 @@
 version: build-{build}.{branch}
 platform: x64
 
+image:
+  - Visual Studio 2015
+
 clone_folder: c:\gopath\src\gopkg.in\src-d\go-kallax.v1
 
-shallow_clone: true
+shallow_clone: false
 
 environment:
   GOPATH: c:\gopath
@@ -16,7 +19,7 @@ services:
   - postgresql96
 
 install:
-  - set PATH=C:\Program Files\PostgreSQL\9.6\bin\;%GOPATH%\bin;c:\go\bin;%PATH%
+  - set PATH=C:\Program Files\PostgreSQL\9.6\bin\;C:\MinGW\bin;%GOPATH%\bin;c:\go\bin;%PATH%
   - go version
   - go get -v -t .\...
 
@@ -24,4 +27,4 @@ build: off
 
 test_script:
   - createdb testing
-  - go test -v .\...
+  - mingw32-make test
