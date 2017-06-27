@@ -37,7 +37,7 @@ func (s *FieldSuite) TestInline() {
 	}
 
 	for _, c := range cases {
-		s.Equal(c.inline, withTag(mkField("", c.typ), c.tag).Inline(), "field with tag: %s", c.tag)
+		s.Equal(c.inline, mkField("", c.typ, c.tag).Inline(), "field with tag: %s", c.tag)
 	}
 }
 
@@ -55,7 +55,7 @@ func (s *FieldSuite) TestIsPrimaryKey() {
 	}
 
 	for _, c := range cases {
-		s.Equal(c.ok, withTag(mkField("", ""), c.tag).IsPrimaryKey(), "field with tag: %s", c.tag)
+		s.Equal(c.ok, mkField("", "", c.tag).IsPrimaryKey(), "field with tag: %s", c.tag)
 	}
 }
 
@@ -71,7 +71,7 @@ func (s *FieldSuite) TestIsAutoIncrement() {
 	}
 
 	for _, c := range cases {
-		s.Equal(c.ok, withTag(mkField("", ""), c.tag).IsAutoIncrement(), "field with tag: %s", c.tag)
+		s.Equal(c.ok, mkField("", "", c.tag).IsAutoIncrement(), "field with tag: %s", c.tag)
 	}
 }
 
@@ -91,7 +91,7 @@ func (s *FieldSuite) TestColumnName() {
 	}
 
 	for _, c := range cases {
-		name := withTag(mkField(c.name, ""), c.tag).ColumnName()
+		name := mkField(c.name, "", c.tag).ColumnName()
 		s.Equal(c.expected, name, "field with name: %q and tag: %s", c.name, c.tag)
 	}
 }
@@ -135,13 +135,13 @@ func (s *FieldSuite) TestAddress() {
 			"types.Nullable(r.Foo)",
 		},
 		{
-			Basic, false, true, "Foo", "", withParent(mkField("Bar", ""), mkField("Baz", "")),
+			Basic, false, true, "Foo", "", withParent(mkField("Bar", "", ""), mkField("Baz", "", "")),
 			"types.Nullable(&r.Baz.Bar.Foo)",
 		},
 	}
 
 	for i, c := range cases {
-		f := withKind(withParent(mkField(c.name, c.typeStr), c.parent), c.kind)
+		f := withKind(withParent(mkField(c.name, c.typeStr, ""), c.parent), c.kind)
 		if c.isJSON {
 			f = withJSON(f)
 		}
@@ -160,31 +160,31 @@ func (s *FieldSuite) TestValue() {
 		expected string
 	}{
 		{
-			mkField("Foo", "string"),
+			mkField("Foo", "string", ""),
 			"r.Foo, nil",
 		},
 		{
-			withAlias(mkField("Foo", "string")),
+			withAlias(mkField("Foo", "string", "")),
 			"(string)(r.Foo), nil",
 		},
 		{
-			withPtr(withAlias(mkField("Foo", "string"))),
+			withPtr(withAlias(mkField("Foo", "string", ""))),
 			"(*string)(r.Foo), nil",
 		},
 		{
-			withKind(mkField("Foo", ""), Slice),
+			withKind(mkField("Foo", "", ""), Slice),
 			"types.Slice(r.Foo), nil",
 		},
 		{
-			withKind(mkField("Foo", "[5]string"), Array),
+			withKind(mkField("Foo", "[5]string", ""), Array),
 			`types.Array(&r.Foo, 5), nil`,
 		},
 		{
-			withJSON(withKind(mkField("Foo", ""), Map)),
+			withJSON(withKind(mkField("Foo", "", ""), Map)),
 			"types.JSON(r.Foo), nil",
 		},
 		{
-			withKind(mkField("Foo", ""), Struct),
+			withKind(mkField("Foo", "", ""), Struct),
 			"r.Foo, nil",
 		},
 	}
@@ -211,8 +211,8 @@ import (
 )
 
 type User struct {
-	kallax.Model ` + "`table:\"users\"`" + `
-	ID kallax.ULID ` + "`pk:\"\"`" + `
+	kallax.Model ` + "`table:\"users\" pk:\"id\"`" + `
+	ID kallax.ULID
 	Username     string
 	Email        string
 	Password     Password
@@ -321,16 +321,16 @@ func (s *ModelSuite) TestModelValidate() {
 	id := s.model.ID
 	m := &Model{Name: "Foo", Table: "foo", ID: id}
 	m.Fields = []*Field{
-		mkField("ID", ""),
-		inline(mkField("Nested", "", inline(
-			mkField("Deep", "", mkField("ID", "")),
+		mkField("ID", "", ""),
+		inline(mkField("Nested", "", "", inline(
+			mkField("Deep", "", "", mkField("ID", "", "")),
 		))),
 	}
 	require.Error(m.Validate(), "should return error")
 
 	m.Fields = []*Field{
-		mkField("ID", ""),
-		inline(mkField("Nested", "", mkField("Foo", ""))),
+		mkField("ID", "", ""),
+		inline(mkField("Nested", "", "", mkField("Foo", "", ""))),
 	}
 	require.NoError(m.Validate(), "should not return error")
 
@@ -379,22 +379,53 @@ func TestModelSetFields(t *testing.T) {
 		name   string
 		fields []*Field
 		err    bool
+		id     string
 	}{
 		{
 			"only one primary key",
 			[]*Field{
-				mkField("Foo", ""),
-				withTag(mkField("ID", ""), `pk:""`),
+				mkField("Foo", "", ""),
+				mkField("ID", "", `pk:""`),
 			},
 			false,
+			"ID",
 		},
 		{
 			"multiple primary keys",
 			[]*Field{
-				withTag(mkField("ID", ""), `pk:""`),
-				withTag(mkField("FooID", ""), `pk:""`),
+				mkField("ID", "", `pk:""`),
+				mkField("FooID", "", `pk:""`),
 			},
 			true,
+			"",
+		},
+		{
+			"primary key defined in model but empty",
+			[]*Field{
+				mkField("Model", BaseModel, `pk:""`),
+			},
+			true,
+			"",
+		},
+		{
+			"primary key defined in model and non existent",
+			[]*Field{
+				mkField("Model", BaseModel, `pk:"foo"`),
+				mkField("Bar", "", ""),
+			},
+			true,
+			"",
+		},
+		{
+			"primary key defined in model",
+			[]*Field{
+				mkField("Model", BaseModel, `pk:"foo"`),
+				mkField("Baz", "", ""),
+				mkField("Foo", "", ""),
+				mkField("Bar", "", ""),
+			},
+			false,
+			"Foo",
 		},
 	}
 
@@ -405,10 +436,35 @@ func TestModelSetFields(t *testing.T) {
 			r.Error(err, c.name)
 		} else {
 			r.NoError(err, c.name)
+			r.Equal(c.id, m.ID.Name)
 		}
 	}
 }
 
 func TestModel(t *testing.T) {
 	suite.Run(t, new(ModelSuite))
+}
+
+func TestPkProperties(t *testing.T) {
+	cases := []struct {
+		tag          string
+		name         string
+		autoincr     bool
+		isPrimaryKey bool
+	}{
+		{`pk:"bar"`, "bar", false, true},
+		{`pk:""`, "", false, true},
+		{`pk:"autoincr"`, "", true, true},
+		{`pk:",autoincr"`, "", true, true},
+		{`bar:"baz" pk:"foo"`, "foo", false, true},
+		{`pk:"foo,autoincr"`, "foo", true, true},
+	}
+
+	require := require.New(t)
+	for _, tt := range cases {
+		name, autoincr, isPrimaryKey := pkProperties(reflect.StructTag(tt.tag))
+		require.Equal(tt.name, name, tt.tag)
+		require.Equal(tt.autoincr, autoincr, tt.tag)
+		require.Equal(tt.isPrimaryKey, isPrimaryKey, tt.tag)
+	}
 }

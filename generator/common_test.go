@@ -10,8 +10,8 @@ import (
 	parseutil "gopkg.in/src-d/go-parse-utils.v1"
 )
 
-func mkField(name, typ string, fields ...*Field) *Field {
-	f := NewField(name, typ, reflect.StructTag(""))
+func mkField(name, typ, tag string, fields ...*Field) *Field {
+	f := NewField(name, typ, reflect.StructTag(tag))
 	f.SetFields(fields)
 	return f
 }
@@ -46,13 +46,9 @@ func withNode(f *Field, name string, typ types.Type) *Field {
 	return f
 }
 
-func withTag(f *Field, tag string) *Field {
-	f.Tag = reflect.StructTag(tag)
-	return f
-}
-
 func inline(f *Field) *Field {
-	return withTag(f, `kallax:",inline"`)
+	f.Tag = reflect.StructTag(`kallax:",inline"`)
+	return f
 }
 
 func processorFixture(source string) (*Processor, error) {

@@ -470,15 +470,20 @@ func (m *Model) CtorRetVars() string {
 	return strings.Join(ret, ", ")
 }
 
-// SetFields sets all the children fields and their model to the current model.
+// SetFields sets all the children fields and their model to the current
+// model.
 // It also finds the primary key and sets it in the model.
 // It will return an error if more than one primary key is found.
+// SetFields always sets the primary key as the first field of the model.
+// So, all models can expect to have the primary key in the position 0 of
+// their field slice. This is because the Store will expect the ID in that
+// position.
 func (m *Model) SetFields(fields []*Field) error {
 	var fs []*Field
 	var id *Field
-	for _, f := range fields {
+	for _, f := range flattenFields(fields) {
 		f.Model = m
-		if f.IsPrimaryKey() {
+		if f.IsPrimaryKey() && f.Type != BaseModel {
 			if id != nil {
 				return fmt.Errorf(
 					"kallax: found more than one primary key in model %s: %s and %s",
@@ -489,14 +494,56 @@ func (m *Model) SetFields(fields []*Field) error {
 			}
 
 			id = f
-			m.ID = f
+		} else if f.IsPrimaryKey() {
+			if f.primaryKey == "" {
+				return fmt.Errorf(
+					"kallax: primary key defined in %s has no field name, but it must be specified",
+					f.Name,
+				)
+			}
+
+			// the pk is defined in the model, we need to collect the model
+			// and we'll look for the field afterwards, when we have collected
+			// all fields. The model is appended to the field set, though,
+			// because it will not act as a primary key.
+			id = f
+			fs = append(fs, f)
 		} else {
 			fs = append(fs, f)
 		}
 	}
 
+	// if the id is a Model we need to look for the specified field
+	if id != nil && id.Type == BaseModel {
+		for i, f := range fs {
+			if f.columnName == id.primaryKey {
+				f.isPrimaryKey = true
+				f.isAutoincrement = id.isAutoincrement
+				id = f
+
+				if len(fs)-1 == i {
+					fs = append(fs[:i])
+				} else {
+					fs = append(fs[:i], fs[i+1:]...)
+				}
+				break
+			}
+		}
+
+		// If the ID is still a base model, means we did not find the pk
+		// field.
+		if id.Type == BaseModel {
+			return fmt.Errorf(
+				"kallax: the primary key was supposed to be %s according to the pk definition in %s, but the field could not be found",
+				id.primaryKey,
+				id.Name,
+			)
+		}
+	}
+
 	if id != nil {
 		m.Fields = []*Field{id}
+		m.ID = id
 	}
 	m.Fields = append(m.Fields, fs...)
 	return nil
@@ -556,6 +603,8 @@ func relationshipsOnFields(fields []*Field) []*Field {
 	return result
 }
 
+// ImplicitFK is a foreign key that is defined on just one side of the
+// relationship and needs to be added on the other side.
 type ImplicitFK struct {
 	Name string
 	Type string
@@ -590,6 +639,11 @@ type Field struct {
 	// A struct is considered embedded if and only if the struct was embedded
 	// as defined in Go.
 	IsEmbedded bool
+
+	primaryKey      string
+	isPrimaryKey    bool
+	isAutoincrement bool
+	columnName      string
 }
 
 // FieldKind is the kind of a field.
@@ -645,11 +699,47 @@ func (t FieldKind) String() string {
 
 // NewField creates a new field with its name, type and struct tag.
 func NewField(n, t string, tag reflect.StructTag) *Field {
+	pkName, autoincr, isPrimaryKey := pkProperties(tag)
+
 	return &Field{
 		Name: n,
 		Type: t,
 		Tag:  tag,
+
+		primaryKey:      pkName,
+		columnName:      columnName(n, tag),
+		isPrimaryKey:    isPrimaryKey,
+		isAutoincrement: autoincr,
 	}
+}
+
+// pkProperties returns the primary key properties from a struct tag.
+// Valid primary key definitions are the following:
+// - pk:"" -> non-autoincr primary key without a field name.
+// - pk:"autoincr" -> autoincr primary key without a field name.
+// - pk:"foobar" -> non-autoincr primary key with a field name.
+// - pk:"foobar,autoincr" -> autoincr primary key with a field name.
+func pkProperties(tag reflect.StructTag) (name string, autoincr, isPrimaryKey bool) {
+	val, ok := tag.Lookup("pk")
+	if !ok {
+		return
+	}
+
+	isPrimaryKey = true
+	if val == "autoincr" || val == "" {
+		if val == "autoincr" {
+			autoincr = true
+		}
+		return
+	}
+
+	parts := strings.Split(val, ",")
+	name = parts[0]
+	if len(parts) > 1 && parts[1] == "autoincr" {
+		autoincr = true
+	}
+
+	return
 }
 
 // SetFields sets all the children fields and the current field as a parent of
@@ -667,16 +757,20 @@ func (f *Field) SetFields(sf []*Field) {
 // is the field name converted to lower snake case.
 // If the resultant name is a reserved keyword a _ will be prepended to the name.
 func (f *Field) ColumnName() string {
-	name := strings.TrimSpace(strings.Split(f.Tag.Get("kallax"), ",")[0])
-	if name == "" {
-		name = toLowerSnakeCase(f.Name)
+	return f.columnName
+}
+
+func columnName(name string, tag reflect.StructTag) string {
+	n := strings.TrimSpace(strings.Split(tag.Get("kallax"), ",")[0])
+	if n == "" {
+		n = toLowerSnakeCase(name)
 	}
 
-	if _, ok := reservedKeywords[strings.ToLower(name)]; ok {
-		name = "_" + name
+	if _, ok := reservedKeywords[strings.ToLower(n)]; ok {
+		n = "_" + n
 	}
 
-	return name
+	return n
 }
 
 // ForeignKey returns the name of the foreign keys as specified in the struct
@@ -699,13 +793,12 @@ func (f *Field) ForeignKey() string {
 
 // IsPrimaryKey reports whether the field is the primary key.
 func (f *Field) IsPrimaryKey() bool {
-	_, ok := f.Tag.Lookup("pk")
-	return ok
+	return f.isPrimaryKey
 }
 
 // IsAutoIncrement reports whether the field is an autoincrementable primary key.
 func (f *Field) IsAutoIncrement() bool {
-	return f.Tag.Get("pk") == "autoincr"
+	return f.isAutoincrement
 }
 
 // IsInverse returns whether the field is an inverse relationship.
@@ -1001,6 +1094,22 @@ func toLowerSnakeCase(s string) string {
 		buf.WriteRune(unicode.ToLower(r))
 	}
 	return buf.String()
+}
+
+// flattenFields will recursively flatten all fields removing the embedded ones
+// from the field set.
+func flattenFields(fields []*Field) []*Field {
+	var result = make([]*Field, 0, len(fields))
+
+	for _, f := range fields {
+		if f.IsEmbedded && f.Type != BaseModel {
+			result = append(result, flattenFields(f.Fields)...)
+		} else {
+			result = append(result, f)
+		}
+	}
+
+	return result
 }
 
 // Event is the name of an event.
