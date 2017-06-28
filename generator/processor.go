@@ -201,11 +201,11 @@ func (p *Processor) processModel(name string, s *types.Struct, t *types.Named) (
 		return nil, nil
 	}
 
+	p.processBaseField(m, fields[base])
 	if err := m.SetFields(fields); err != nil {
 		return nil, err
 	}
 
-	p.processBaseField(m, fields[base])
 	return m, nil
 }
 

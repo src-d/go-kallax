@@ -9,8 +9,8 @@ import (
 type AliasSliceString []string
 
 type StoreFixture struct {
-	kallax.Model   `table:"store"`
-	ID             kallax.ULID `pk:""`
+	kallax.Model   `table:"store" pk:"id"`
+	ID             kallax.ULID
 	Foo            string
 	SliceProp      []string
 	AliasSliceProp AliasSliceString
@@ -69,8 +69,8 @@ type Nullable struct {
 }
 
 type Parent struct {
-	kallax.Model `table:"parents"`
-	ID           int64 `pk:"autoincr"`
+	kallax.Model `table:"parents" pk:"id,autoincr"`
+	ID           int64
 	Name         string
 	Children     []*Child
 }

@@ -384,11 +384,15 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 	type Bar struct {
 		kallax.Model
 		ID int64 ` + "`pk:\"autoincr\"`" + `
-		Bar string
+		Baz string
 	}
 
 	type Struct struct {
-		Bar Bar
+		Qux Bar
+	}
+
+	type Struct2 struct {
+		Mux string
 	}
 
 	type Foo struct {
@@ -396,7 +400,7 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 		ID int64 ` + "`pk:\"autoincr\"`" + `
 		A Bar
 		B *Bar
-		Bar
+		Struct2
 		*Struct
 		C struct {
 			D int
@@ -405,21 +409,16 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 	`
 	pkg := s.processFixture(src)
 	m := findModel(pkg, "Foo")
-	cases := []struct {
-		field    string
-		embedded bool
-	}{
-		{"Model", true},
-		{"A", false},
-		{"B", false},
-		{"Bar", true},
-		{"Struct", true},
-		{"C", false},
+	expected := []string{
+		"ID", "Model", "A", "B", "Mux", "Qux", "C",
 	}
 
-	for _, c := range cases {
-		s.Equal(c.embedded, findField(m, c.field).IsEmbedded, c.field)
+	var names []string
+	for _, f := range m.Fields {
+		names = append(names, f.Name)
 	}
+
+	s.Equal(expected, names)
 }
 
 func TestProcessor(t *testing.T) {
