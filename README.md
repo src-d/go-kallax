@@ -60,8 +60,8 @@ Imagine you have the following file in the package where your models are.
 package models
 
 type User struct {
-        kallax.Model         `table:"users"`
-        ID       kallax.ULID `pk:""`
+        kallax.Model         `table:"users" pk:"id"`
+        ID       kallax.ULID
         Username string
         Email    string
         Password string
@@ -90,7 +90,7 @@ Sometimes you might want to use the generated code in the same package it is def
 
 A model is just a Go struct that embeds the `kallax.Model` type. All the fields of this struct will be columns in the database table.
 
-A model also needs to have one (and just one) primary key. That is whatever field of the struct with the struct tag `pk`, which can be `pk:""` for a non auto-incrementable primary key or `pk:"autoincr"` for one that is auto-incrementable.
+A model also needs to have one (and just one) primary key. The primary key is defined using the `pk` struct tag on the `kallax.Model` embedding. You can also set the primary key in a field of the struct with the struct tag `pk`, which can be `pk:""` for a non auto-incrementable primary key or `pk:"autoincr"` for one that is auto-incrementable.
 More about primary keys is discussed at the [primary keys](#primary-keys) section.
 
 First, let's review the rules and conventions for model fields:
@@ -112,9 +112,9 @@ Let's see an example of models with all these cases:
 
 ```go
 type User struct {
-        kallax.Model       `table:"users"`
+        kallax.Model       `table:"users" pk:"id,autoincr"`
         kallax.Timestamps
-        ID        int64    `pk:"autoincr"`
+        ID        int64
         Username  string
         Password  string
         Emails    []string
@@ -146,6 +146,8 @@ type Metadata struct {
 | Tag | Description | Can be used in |
 | --- | --- | --- |
 | `table:"table_name"` | Specifies the name of the table for a model. If not provided, the name of the table will be the name of the struct in lower snake case (e.g. `UserPreference` => `user_preference`) | embedded `kallax.Model` |
+| `pk:"primary_key_column_name"` | Specifies the column name of the primary key. | embedded `kallax.Model` |
+| `pk:"primary_key_column_name,autoincr"` | Specifies the column name of the autoincrementable primary key. | embedded `kallax.Model` |
 | `pk:""` | Specifies the field is a primary key | any field with a valid identifier type |
 | `pk:"autoincr"` | Specifies the field is an auto-incrementable primary key | any field with a valid identifier type |
 | `kallax:"column_name"` | Specifies the name of the column | Any model field that is not a relationship |
