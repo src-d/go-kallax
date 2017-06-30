@@ -682,7 +682,7 @@ These are the flags available for `up` and `down`:
 **Example:**
 
 ```
-kallax migrate up --dir ./my-migrations --dns 'user:pass@localhost:5432/dbname?sslmode=disable' --version 1493991142
+kallax migrate up --dir ./my-migrations --dsn 'user:pass@localhost:5432/dbname?sslmode=disable' --version 1493991142
 ```
 
 ### Type mappings
