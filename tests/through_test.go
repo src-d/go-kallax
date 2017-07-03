@@ -80,6 +80,33 @@ func (s *ThroughSuite) TestFind() {
 	}
 }
 
+func (s *ThroughSuite) TestFind_Single() {
+	s.insertFixtures()
+	require := s.Require()
+
+	q := NewPostQuery().
+		WithUser(nil, nil)
+	posts, err := NewPostStore(s.db).Debug().FindAll(q)
+	require.NoError(err)
+
+	require.Len(posts, 6)
+	for i, p := range []string{"a", "b", "c", "d", "e", "f"} {
+		require.Equal(p, posts[i].Text)
+	}
+
+	userByPost := map[string]string{
+		"a": "a",
+		"b": "a",
+		"c": "a",
+		"d": "b",
+		"e": "b",
+		"f": "b",
+	}
+	for _, p := range posts {
+		require.Equal(userByPost[p.Text], p.User.Name)
+	}
+}
+
 func TestThrough(t *testing.T) {
 	schema := []string{
 		`CREATE TABLE IF NOT EXISTS posts (

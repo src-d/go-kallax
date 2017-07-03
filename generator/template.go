@@ -624,6 +624,10 @@ func (td *TemplateData) genFindBy(buf *bytes.Buffer, parent *Model, fields []*Fi
 	}
 }
 
+func (td *TemplateData) IsMany(f *Field) bool {
+	return isSliceOrArray(f)
+}
+
 func writeFindByTpl(buf *bytes.Buffer, parent *Model, name string, f *Field, tpl string) {
 	findableTypeName, ok := f.typeName()
 	if !ok {

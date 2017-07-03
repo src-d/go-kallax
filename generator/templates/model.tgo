@@ -51,32 +51,54 @@ func (r *{{.Name}}) NewRelationshipRecord(field string) (kallax.Record, error) {
 func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
         {{if .Relationships -}}
         switch field {
-        {{range .Relationships}}{{if not .IsOneToManyRelationship}}case "{{.Name}}":
-                val, ok := rel.(*{{$.GenTypeName .}})
-                if !ok {
-                        return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", rel)
-                }
-                {{if .IsPtr}}if !val.GetID().IsEmpty() {
-                        r.{{.Name}} = val
-                }
-                {{else}}r.{{.Name}} = *val{{end}}
-                return nil
-        {{else}}case "{{.Name}}":
-                records, ok := rel.([]kallax.Record) 
-                if !ok {
-                        return fmt.Errorf("kallax: relationship field %s needs a collection of records, not %T", field, rel)
-                }
-
-                r.{{.Name}} = make([]{{if $.IsPtrSlice .}}*{{end}}{{$.GenTypeName .}}, len(records))
-                for i, record := range records {
-                        rel, ok := record.(*{{$.GenTypeName . }})
+        {{range .Relationships}}
+                case "{{.Name}}":
+                {{if and (.IsManyToManyRelationship) (not ($.IsMany .)) -}}
+                        recs, ok := rel.([]kallax.Record)
                         if !ok {
-                                return fmt.Errorf("kallax: element of type %T cannot be added to relationship %s", record, field)
+                                return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", recs)
                         }
-                        r.{{.Name}}[i] = {{if not ($.IsPtrSlice .)}}*{{end}}rel
-                }
-                return nil
-        {{end}}{{end}}
+
+                        if len(recs) > 1 {
+                                return fmt.Errorf("kallax: can't assign %d records to the relationship {{.Name}}. Only one record was expected", len(recs))
+                        }
+
+                        if len(recs) > 0 {
+                                val, ok := recs[0].(*{{$.GenTypeName .}})
+                                if !ok {
+                                        return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", recs[0])
+                                }
+                                r.{{.Name}} = {{if not .IsPtr}}*{{end}}val
+                        }
+
+                        return nil
+                {{else if not .IsOneToManyRelationship -}}
+                        val, ok := rel.(*{{$.GenTypeName .}})
+                        if !ok {
+                                return fmt.Errorf("kallax: record of type %t can't be assigned to relationship {{.Name}}", rel)
+                        }
+                        {{if .IsPtr}}if !val.GetID().IsEmpty() {
+                                r.{{.Name}} = val
+                        }
+                        {{else}}r.{{.Name}} = *val{{end}}
+                        return nil
+                {{else -}}
+                        records, ok := rel.([]kallax.Record)
+                        if !ok {
+                                return fmt.Errorf("kallax: relationship field %s needs a collection of records, not %T", field, rel)
+                        }
+
+                        r.{{.Name}} = make([]{{if $.IsPtrSlice .}}*{{end}}{{$.GenTypeName .}}, len(records))
+                        for i, record := range records {
+                                rel, ok := record.(*{{$.GenTypeName . }})
+                                if !ok {
+                                        return fmt.Errorf("kallax: element of type %T cannot be added to relationship %s", record, field)
+                                }
+                                r.{{.Name}}[i] = {{if not ($.IsPtrSlice .)}}*{{end}}rel
+                        }
+                        return nil
+                {{end}}
+        {{end}}
         }
         return fmt.Errorf("kallax: model {{.Name}} has no relationship %s", field)
         {{- else -}}

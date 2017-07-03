@@ -4915,6 +4915,7 @@ func (r *Person) SetRelationship(field string, rel interface{}) error {
 			r.Pets[i] = rel
 		}
 		return nil
+
 	case "Car":
 		val, ok := rel.(*Car)
 		if !ok {
@@ -6192,11 +6193,20 @@ func (r *Post) NewRelationshipRecord(field string) (kallax.Record, error) {
 func (r *Post) SetRelationship(field string, rel interface{}) error {
 	switch field {
 	case "User":
-		val, ok := rel.(*User)
+		recs, ok := rel.([]kallax.Record)
 		if !ok {
-			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship User", rel)
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship User", recs)
 		}
-		if !val.GetID().IsEmpty() {
+
+		if len(recs) > 1 {
+			return fmt.Errorf("kallax: can't assign %d records to the relationship User. Only one record was expected", len(recs))
+		}
+
+		if len(recs) > 0 {
+			val, ok := recs[0].(*User)
+			if !ok {
+				return fmt.Errorf("kallax: record of type %t can't be assigned to relationship User", recs[0])
+			}
 			r.User = val
 		}
 
@@ -6866,6 +6876,7 @@ func (r *QueryFixture) SetRelationship(field string, rel interface{}) error {
 		}
 
 		return nil
+
 	case "Inverse":
 		val, ok := rel.(*QueryRelationFixture)
 		if !ok {
@@ -6876,6 +6887,7 @@ func (r *QueryFixture) SetRelationship(field string, rel interface{}) error {
 		}
 
 		return nil
+
 	case "NRelation":
 		records, ok := rel.([]kallax.Record)
 		if !ok {
@@ -8726,6 +8738,7 @@ func (r *SchemaFixture) SetRelationship(field string, rel interface{}) error {
 		}
 
 		return nil
+
 	case "Inverse":
 		val, ok := rel.(*SchemaRelationshipFixture)
 		if !ok {
@@ -11630,6 +11643,7 @@ func (r *UserPost) SetRelationship(field string, rel interface{}) error {
 		}
 
 		return nil
+
 	case "Post":
 		val, ok := rel.(*Post)
 		if !ok {
