@@ -437,6 +437,61 @@ func (s *TemplateSuite) TestGenTimeTruncations() {
 	s.Equal(expectedTimeTruncations, s.td.GenTimeTruncations(m))
 }
 
+func (s *TemplateSuite) TestGenForeignKeys() {
+	s.processSource(`
+	package foo
+
+	import "gopkg.in/src-d/go-kallax.v1"
+
+	type Foo struct {
+		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
+		Multiple *Bar ` + "`through:\"baz\"`" + `
+		Rel *Qux
+		RelInverse *Mux ` + "`fk:\",inverse\"`" + `
+	}
+
+	type Baz struct {
+		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
+		Foo *Foo ` + "`fk:\",inverse\"`" + `
+		Bar *Bar ` + "`fk:\",inverse\"`" + `
+	}
+
+	type Bar struct {
+		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
+	}
+
+	type Qux struct {
+		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
+	}
+
+	type Mux struct {
+		kallax.Model
+		ID int64 ` + "`pk:\"autoincr\"`" + `
+		Foo *Foo
+	}
+	`)
+
+	m := findModel(s.td.Package, "Foo")
+	f := findField(m, "Multiple")
+	s.Equal(expectedMultipleFKs, s.td.GenForeignKeys(f))
+
+	f = findField(m, "Rel")
+	s.Equal(expectedSingleFKNoInverse, s.td.GenForeignKeys(f))
+
+	f = findField(m, "RelInverse")
+	s.Equal(expectedSingleFKInverse, s.td.GenForeignKeys(f))
+}
+
+const (
+	expectedMultipleFKs       = `kallax.NewForeignKey("foo_id", true), kallax.NewForeignKey("bar_id", true)`
+	expectedSingleFKNoInverse = `kallax.NewForeignKey("foo_id", false)`
+	expectedSingleFKInverse   = `kallax.NewForeignKey("mux_id", true)`
+)
+
 func (s *TemplateSuite) TestExecute() {
 	s.processSource(baseTpl)
 	var buf bytes.Buffer

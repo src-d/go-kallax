@@ -210,7 +210,7 @@ func (s *FieldSuite) TestIsInverse() {
 	}
 
 	for _, tt := range cases {
-		f := withTag(mkField("", ""), tt.tag)
+		f := mkField("", "", tt.tag)
 		f.Kind = Relationship
 		s.Equal(tt.expected, f.IsInverse(), tt.tag)
 	}
@@ -227,7 +227,7 @@ func (s *FieldSuite) TestThroughTable() {
 	}
 
 	for _, tt := range cases {
-		s.Equal(tt.expected, withTag(mkField("", ""), tt.tag).ThroughTable(), tt.tag)
+		s.Equal(tt.expected, mkField("", "", tt.tag).ThroughTable(), tt.tag)
 	}
 }
 
@@ -243,7 +243,7 @@ func (s *FieldSuite) TestLeftForeignKey() {
 	}
 
 	for _, tt := range cases {
-		f := withTag(mkField("", ""), tt.tag)
+		f := mkField("", "", tt.tag)
 		f.Model = &Model{Name: "Bar"}
 		s.Equal(tt.expected, f.LeftForeignKey(), tt.tag)
 	}
@@ -261,7 +261,7 @@ func (s *FieldSuite) TestRightForeignKey() {
 	}
 
 	for _, tt := range cases {
-		f := withTag(mkField("", ""), tt.tag)
+		f := mkField("", "", tt.tag)
 		f.Type = "Foo"
 		s.Equal(tt.expected, f.RightForeignKey(), tt.tag)
 	}

@@ -10621,7 +10621,9 @@ var Schema = &schema{
 			"__car",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Owner": kallax.NewForeignKey("owner_id", true),
+				"Owner": []*kallax.ForeignKey{
+					kallax.NewForeignKey("owner_id", true),
+				},
 			},
 			func() kallax.Record {
 				return new(Car)
@@ -10795,7 +10797,9 @@ var Schema = &schema{
 			"__parent",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Children": kallax.NewForeignKey("parent_id", false),
+				"Children": []*kallax.ForeignKey{
+					kallax.NewForeignKey("parent_id", false),
+				},
 			},
 			func() kallax.Record {
 				return new(Parent)
@@ -10813,7 +10817,9 @@ var Schema = &schema{
 			"__parentnoptr",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Children": kallax.NewForeignKey("parent_id", false),
+				"Children": []*kallax.ForeignKey{
+					kallax.NewForeignKey("parent_id", false),
+				},
 			},
 			func() kallax.Record {
 				return new(ParentNoPtr)
@@ -10831,8 +10837,13 @@ var Schema = &schema{
 			"__person",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Pets": kallax.NewForeignKey("owner_id", false),
-				"Car":  kallax.NewForeignKey("owner_id", false),
+				"Pets": []*kallax.ForeignKey{
+					kallax.NewForeignKey("owner_id", false),
+				},
+
+				"Car": []*kallax.ForeignKey{
+					kallax.NewForeignKey("owner_id", false),
+				},
 			},
 			func() kallax.Record {
 				return new(Person)
@@ -10850,7 +10861,9 @@ var Schema = &schema{
 			"__pet",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Owner": kallax.NewForeignKey("owner_id", true),
+				"Owner": []*kallax.ForeignKey{
+					kallax.NewForeignKey("owner_id", true),
+				},
 			},
 			func() kallax.Record {
 				return new(Pet)
@@ -10872,9 +10885,17 @@ var Schema = &schema{
 			"__queryfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Relation":  kallax.NewForeignKey("owner_id", false),
-				"Inverse":   kallax.NewForeignKey("inverse_id", true),
-				"NRelation": kallax.NewForeignKey("owner_id", false),
+				"Relation": []*kallax.ForeignKey{
+					kallax.NewForeignKey("owner_id", false),
+				},
+
+				"Inverse": []*kallax.ForeignKey{
+					kallax.NewForeignKey("inverse_id", true),
+				},
+
+				"NRelation": []*kallax.ForeignKey{
+					kallax.NewForeignKey("owner_id", false),
+				},
 			},
 			func() kallax.Record {
 				return new(QueryFixture)
@@ -10948,7 +10969,9 @@ var Schema = &schema{
 			"__queryrelationfixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Owner": kallax.NewForeignKey("owner_id", true),
+				"Owner": []*kallax.ForeignKey{
+					kallax.NewForeignKey("owner_id", true),
+				},
 			},
 			func() kallax.Record {
 				return new(QueryRelationFixture)
@@ -10984,8 +11007,13 @@ var Schema = &schema{
 			"__schemafixture",
 			kallax.NewSchemaField("id"),
 			kallax.ForeignKeys{
-				"Nested":  kallax.NewForeignKey("schema_fixture_id", false),
-				"Inverse": kallax.NewForeignKey("rel_id", true),
+				"Nested": []*kallax.ForeignKey{
+					kallax.NewForeignKey("schema_fixture_id", false),
+				},
+
+				"Inverse": []*kallax.ForeignKey{
+					kallax.NewForeignKey("rel_id", true),
+				},
 			},
 			func() kallax.Record {
 				return new(SchemaFixture)
