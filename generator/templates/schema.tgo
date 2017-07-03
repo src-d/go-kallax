@@ -20,7 +20,10 @@ var Schema = &schema{
                 "{{.Alias}}",
                 kallax.NewSchemaField("{{.ID.ColumnName}}"),
                 kallax.ForeignKeys{
-                {{range .Relationships}}"{{.Name}}": kallax.NewForeignKey("{{.ForeignKey}}", {{if .IsInverse}}true{{else}}false{{end}}),
+                {{range .Relationships}}
+                        "{{.Name}}": []*kallax.ForeignKey{
+                                {{$.GenForeignKeys .}},
+                        },
                 {{end}}
                 },
                 func() kallax.Record {

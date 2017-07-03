@@ -2,6 +2,8 @@ package benchmark
 
 import kallax "gopkg.in/src-d/go-kallax.v1"
 
+//go:generate kallax gen
+
 type Person struct {
 	kallax.Model `table:"people"`
 	ID           int64 `pk:"autoincr"`
