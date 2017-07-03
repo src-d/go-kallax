@@ -129,6 +129,7 @@ type Package struct {
 	// Models are all the models found in the package.
 	Models        []*Model
 	indexedModels map[string]*Model
+	modelsByTable map[string]*Model
 }
 
 // NewPackage creates a new package.
@@ -137,6 +138,7 @@ func NewPackage(pkg *types.Package) *Package {
 		Name:          pkg.Name(),
 		pkg:           pkg,
 		indexedModels: make(map[string]*Model),
+		modelsByTable: make(map[string]*Model),
 	}
 }
 
@@ -144,6 +146,7 @@ func NewPackage(pkg *types.Package) *Package {
 func (p *Package) SetModels(models []*Model) {
 	for _, m := range models {
 		p.indexedModels[m.Name] = m
+		p.modelsByTable[m.Table] = m
 	}
 	p.Models = models
 }
@@ -153,18 +156,39 @@ func (p *Package) FindModel(name string) *Model {
 	return p.indexedModels[name]
 }
 
-func (p *Package) addMissingRelationships() error {
+func (p *Package) forEachModelField(fn func(m *Model, f *Field) error) error {
 	for _, m := range p.Models {
 		for _, f := range m.Fields {
-			if f.Kind == Relationship && !f.IsInverse() {
-				if err := p.trySetFK(f.TypeSchemaName(), f); err != nil {
-					return err
-				}
+			if err := fn(m, f); err != nil {
+				return err
 			}
 		}
 	}
-
 	return nil
+}
+
+func (p *Package) addThroughModels() error {
+	return p.forEachModelField(func(m *Model, f *Field) error {
+		if f.IsManyToManyRelationship() {
+			model, ok := p.modelsByTable[f.ThroughTable()]
+			if !ok {
+				return fmt.Errorf("kallax: cannot find a model with table name %s to access field %s of model %s", f.ThroughTable(), f.Name, m.Name)
+			}
+			f.ThroughModel = model
+		}
+		return nil
+	})
+}
+
+func (p *Package) addMissingRelationships() error {
+	return p.forEachModelField(func(m *Model, f *Field) error {
+		if f.Kind == Relationship && !f.IsInverse() && !f.IsManyToManyRelationship() {
+			if err := p.trySetFK(f.TypeSchemaName(), f); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (p *Package) trySetFK(model string, fk *Field) error {
@@ -631,6 +655,9 @@ type Field struct {
 	Parent *Field
 	// Model is the reference to the model containing this field.
 	Model *Model
+	// ThroughModel is the reference to the model through which the field is
+	// accessed in a relationship.
+	ThroughModel *Model
 	// IsPtr reports whether the field is a pointer type or not.
 	IsPtr bool
 	// IsJSON reports whether the field has to be converted to JSON.
@@ -1016,6 +1043,11 @@ func (f *Field) Value() string {
 func (f *Field) TypeSchemaName() string {
 	parts := strings.Split(f.Type, ".")
 	return parts[len(parts)-1]
+}
+
+// ThroughSchemaName returns the name of the Schema for the through model type.
+func (f *Field) ThroughSchemaName() string {
+	return f.ThroughModel.Name
 }
 
 func (f *Field) SQLType() string {

@@ -447,6 +447,8 @@ func (q *CarQuery) Where(cond kallax.Condition) *CarQuery {
 	return q
 }
 
+// WithOwner retrieves the Owner record associated with each
+// record.
 func (q *CarQuery) WithOwner() *CarQuery {
 	q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
 	return q
@@ -4110,6 +4112,8 @@ func (q *ParentQuery) Where(cond kallax.Condition) *ParentQuery {
 	return q
 }
 
+// WithChildren retrieves all the Children records associated with each
+// record. A condition can be passed to filter the associated records.
 func (q *ParentQuery) WithChildren(cond kallax.Condition) *ParentQuery {
 	q.AddRelation(Schema.Child.BaseSchema, "Children", kallax.OneToMany, cond)
 	return q
@@ -4709,6 +4713,8 @@ func (q *ParentNoPtrQuery) Where(cond kallax.Condition) *ParentNoPtrQuery {
 	return q
 }
 
+// WithChildren retrieves all the Children records associated with each
+// record. A condition can be passed to filter the associated records.
 func (q *ParentNoPtrQuery) WithChildren(cond kallax.Condition) *ParentNoPtrQuery {
 	q.AddRelation(Schema.Child.BaseSchema, "Children", kallax.OneToMany, cond)
 	return q
@@ -5413,11 +5419,15 @@ func (q *PersonQuery) Where(cond kallax.Condition) *PersonQuery {
 	return q
 }
 
+// WithPets retrieves all the Pets records associated with each
+// record. A condition can be passed to filter the associated records.
 func (q *PersonQuery) WithPets(cond kallax.Condition) *PersonQuery {
 	q.AddRelation(Schema.Pet.BaseSchema, "Pets", kallax.OneToMany, cond)
 	return q
 }
 
+// WithCar retrieves the Car record associated with each
+// record.
 func (q *PersonQuery) WithCar() *PersonQuery {
 	q.AddRelation(Schema.Car.BaseSchema, "Car", kallax.OneToOne, nil)
 	return q
@@ -5984,6 +5994,8 @@ func (q *PetQuery) Where(cond kallax.Condition) *PetQuery {
 	return q
 }
 
+// WithOwner retrieves the Owner record associated with each
+// record.
 func (q *PetQuery) WithOwner() *PetQuery {
 	q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
 	return q
@@ -6126,6 +6138,555 @@ func (rs *PetResultSet) Err() error {
 
 // Close closes the result set.
 func (rs *PetResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
+// NewPost returns a new instance of Post.
+func NewPost(text string) (record *Post) {
+	return newPost(text)
+}
+
+// GetID returns the primary key of the model.
+func (r *Post) GetID() kallax.Identifier {
+	return (*kallax.NumericID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *Post) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.NumericID)(&r.ID), nil
+	case "text":
+		return &r.Text, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in Post: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *Post) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+	case "text":
+		return r.Text, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in Post: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *Post) NewRelationshipRecord(field string) (kallax.Record, error) {
+	switch field {
+	case "User":
+		return new(User), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model Post has no relationship %s", field)
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *Post) SetRelationship(field string, rel interface{}) error {
+	switch field {
+	case "User":
+		val, ok := rel.(*User)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship User", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.User = val
+		}
+
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model Post has no relationship %s", field)
+}
+
+// PostStore is the entity to access the records of the type Post
+// in the database.
+type PostStore struct {
+	*kallax.Store
+}
+
+// NewPostStore creates a new instance of PostStore
+// using a SQL database.
+func NewPostStore(db *sql.DB) *PostStore {
+	return &PostStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *PostStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *PostStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *PostStore) Debug() *PostStore {
+	return &PostStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *PostStore) DebugWith(logger kallax.LoggerFunc) *PostStore {
+	return &PostStore{s.Store.DebugWith(logger)}
+}
+
+func (s *PostStore) relationshipRecords(record *Post) []kallax.RecordWithSchema {
+	var records []kallax.RecordWithSchema
+
+	if record.User != nil {
+		record.User.ClearVirtualColumns()
+		record.User.AddVirtualColumn("post_id", record.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema: Schema.User.BaseSchema,
+			Record: record.User,
+		})
+	}
+
+	return records
+}
+
+// Insert inserts a Post in the database. A non-persisted object is
+// required for this operation.
+func (s *PostStore) Insert(record *Post) error {
+	records := s.relationshipRecords(record)
+
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			if err := s.Insert(Schema.Post.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.Post.BaseSchema, record)
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *PostStore) Update(record *Post, cols ...kallax.SchemaField) (updated int64, err error) {
+	records := s.relationshipRecords(record)
+
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			updated, err = s.Update(Schema.Post.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
+	}
+
+	return s.Store.Update(Schema.Post.BaseSchema, record, cols...)
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *PostStore) Save(record *Post) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *PostStore) Delete(record *Post) error {
+	return s.Store.Delete(Schema.Post.BaseSchema, record)
+}
+
+// Find returns the set of results for the given query.
+func (s *PostStore) Find(q *PostQuery) (*PostResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewPostResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *PostStore) MustFind(q *PostQuery) *PostResultSet {
+	return NewPostResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *PostStore) Count(q *PostQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *PostStore) MustCount(q *PostQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *PostStore) FindOne(q *PostQuery) (*Post, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *PostStore) FindAll(q *PostQuery) ([]*Post, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *PostStore) MustFindOne(q *PostQuery) *Post {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the Post with the data in the database and
+// makes it writable.
+func (s *PostStore) Reload(record *Post) error {
+	return s.Store.Reload(Schema.Post.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *PostStore) Transaction(callback func(*PostStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&PostStore{store})
+	})
+}
+
+// RemoveUser removes from the database the given relationship of the
+// model. It also resets the field User of the model.
+func (s *PostStore) RemoveUser(record *Post) error {
+	var r kallax.Record = record.User
+	if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+		if err := beforeDeleter.BeforeDelete(); err != nil {
+			return err
+		}
+	}
+
+	var err error
+	if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			err := s.Delete(Schema.User.BaseSchema, r)
+			if err != nil {
+				return err
+			}
+
+			return afterDeleter.AfterDelete()
+		})
+	} else {
+		err = s.Store.Delete(Schema.User.BaseSchema, r)
+	}
+	if err != nil {
+		return err
+	}
+
+	record.User = nil
+	return nil
+}
+
+// PostQuery is the object used to create queries for the Post
+// entity.
+type PostQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewPostQuery returns a new instance of PostQuery.
+func NewPostQuery() *PostQuery {
+	return &PostQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.Post.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *PostQuery) Select(columns ...kallax.SchemaField) *PostQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *PostQuery) SelectNot(columns ...kallax.SchemaField) *PostQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *PostQuery) Copy() *PostQuery {
+	return &PostQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *PostQuery) Order(cols ...kallax.ColumnOrder) *PostQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *PostQuery) BatchSize(size uint64) *PostQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *PostQuery) Limit(n uint64) *PostQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *PostQuery) Offset(n uint64) *PostQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *PostQuery) Where(cond kallax.Condition) *PostQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// WithUser retrieves all the User records associated with each
+// record. Two conditions can be passed, the first to filter the table used
+// to join User and Post and the second one to filter
+// User directly.
+func (q *PostQuery) WithUser(
+	filterUserPost kallax.Condition,
+	filterUser kallax.Condition,
+) *PostQuery {
+	q.AddRelationThrough(
+		Schema.User.BaseSchema,
+		Schema.UserPost.BaseSchema,
+		"User",
+		filterUserPost,
+		filterUser,
+	)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
+func (q *PostQuery) FindByID(v ...int64) *PostQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.Post.ID, values...))
+}
+
+// FindByText adds a new filter to the query that will require that
+// the Text property is equal to the passed value.
+func (q *PostQuery) FindByText(v string) *PostQuery {
+	return q.Where(kallax.Eq(Schema.Post.Text, v))
+}
+
+// PostResultSet is the set of results returned by a query to the
+// database.
+type PostResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *Post
+	lastErr   error
+}
+
+// NewPostResultSet creates a new result set for rows of the type
+// Post.
+func NewPostResultSet(rs kallax.ResultSet) *PostResultSet {
+	return &PostResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *PostResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.Post.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*Post)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *Post")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *PostResultSet) Get() (*Post, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *PostResultSet) ForEach(fn func(*Post) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *PostResultSet) All() ([]*Post, error) {
+	var result []*Post
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *PostResultSet) One() (*Post, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *PostResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *PostResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
@@ -6824,16 +7385,22 @@ func (q *QueryFixtureQuery) Where(cond kallax.Condition) *QueryFixtureQuery {
 	return q
 }
 
+// WithRelation retrieves the Relation record associated with each
+// record.
 func (q *QueryFixtureQuery) WithRelation() *QueryFixtureQuery {
 	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "Relation", kallax.OneToOne, nil)
 	return q
 }
 
+// WithInverse retrieves the Inverse record associated with each
+// record.
 func (q *QueryFixtureQuery) WithInverse() *QueryFixtureQuery {
 	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "Inverse", kallax.OneToOne, nil)
 	return q
 }
 
+// WithNRelation retrieves all the NRelation records associated with each
+// record. A condition can be passed to filter the associated records.
 func (q *QueryFixtureQuery) WithNRelation(cond kallax.Condition) *QueryFixtureQuery {
 	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "NRelation", kallax.OneToMany, cond)
 	return q
@@ -7525,6 +8092,8 @@ func (q *QueryRelationFixtureQuery) Where(cond kallax.Condition) *QueryRelationF
 	return q
 }
 
+// WithOwner retrieves the Owner record associated with each
+// record.
 func (q *QueryRelationFixtureQuery) WithOwner() *QueryRelationFixtureQuery {
 	q.AddRelation(Schema.QueryFixture.BaseSchema, "Owner", kallax.OneToOne, nil)
 	return q
@@ -8559,11 +9128,15 @@ func (q *SchemaFixtureQuery) Where(cond kallax.Condition) *SchemaFixtureQuery {
 	return q
 }
 
+// WithNested retrieves the Nested record associated with each
+// record.
 func (q *SchemaFixtureQuery) WithNested() *SchemaFixtureQuery {
 	q.AddRelation(Schema.SchemaFixture.BaseSchema, "Nested", kallax.OneToOne, nil)
 	return q
 }
 
+// WithInverse retrieves the Inverse record associated with each
+// record.
 func (q *SchemaFixtureQuery) WithInverse() *SchemaFixtureQuery {
 	q.AddRelation(Schema.SchemaRelationshipFixture.BaseSchema, "Inverse", kallax.OneToOne, nil)
 	return q
@@ -10379,6 +10952,1162 @@ func (rs *StoreWithNewFixtureResultSet) Close() error {
 	return rs.ResultSet.Close()
 }
 
+// NewUser returns a new instance of User.
+func NewUser(name string) (record *User) {
+	return newUser(name)
+}
+
+// GetID returns the primary key of the model.
+func (r *User) GetID() kallax.Identifier {
+	return (*kallax.NumericID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *User) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.NumericID)(&r.ID), nil
+	case "name":
+		return &r.Name, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in User: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *User) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+	case "name":
+		return r.Name, nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in User: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *User) NewRelationshipRecord(field string) (kallax.Record, error) {
+	switch field {
+	case "Posts":
+		return new(Post), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model User has no relationship %s", field)
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *User) SetRelationship(field string, rel interface{}) error {
+	switch field {
+	case "Posts":
+		records, ok := rel.([]kallax.Record)
+		if !ok {
+			return fmt.Errorf("kallax: relationship field %s needs a collection of records, not %T", field, rel)
+		}
+
+		r.Posts = make([]*Post, len(records))
+		for i, record := range records {
+			rel, ok := record.(*Post)
+			if !ok {
+				return fmt.Errorf("kallax: element of type %T cannot be added to relationship %s", record, field)
+			}
+			r.Posts[i] = rel
+		}
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model User has no relationship %s", field)
+}
+
+// UserStore is the entity to access the records of the type User
+// in the database.
+type UserStore struct {
+	*kallax.Store
+}
+
+// NewUserStore creates a new instance of UserStore
+// using a SQL database.
+func NewUserStore(db *sql.DB) *UserStore {
+	return &UserStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *UserStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *UserStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *UserStore) Debug() *UserStore {
+	return &UserStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *UserStore) DebugWith(logger kallax.LoggerFunc) *UserStore {
+	return &UserStore{s.Store.DebugWith(logger)}
+}
+
+func (s *UserStore) relationshipRecords(record *User) []kallax.RecordWithSchema {
+	var records []kallax.RecordWithSchema
+
+	for i := range record.Posts {
+		record.Posts[i].ClearVirtualColumns()
+		record.Posts[i].AddVirtualColumn("user_id", record.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema: Schema.Post.BaseSchema,
+			Record: record.Posts[i],
+		})
+	}
+
+	return records
+}
+
+// Insert inserts a User in the database. A non-persisted object is
+// required for this operation.
+func (s *UserStore) Insert(record *User) error {
+	records := s.relationshipRecords(record)
+
+	if len(records) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			if err := s.Insert(Schema.User.BaseSchema, record); err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.User.BaseSchema, record)
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *UserStore) Update(record *User, cols ...kallax.SchemaField) (updated int64, err error) {
+	records := s.relationshipRecords(record)
+
+	if len(records) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			updated, err = s.Update(Schema.User.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			for _, r := range records {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
+	}
+
+	return s.Store.Update(Schema.User.BaseSchema, record, cols...)
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *UserStore) Save(record *User) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *UserStore) Delete(record *User) error {
+	return s.Store.Delete(Schema.User.BaseSchema, record)
+}
+
+// Find returns the set of results for the given query.
+func (s *UserStore) Find(q *UserQuery) (*UserResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewUserResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *UserStore) MustFind(q *UserQuery) *UserResultSet {
+	return NewUserResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *UserStore) Count(q *UserQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *UserStore) MustCount(q *UserQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *UserStore) FindOne(q *UserQuery) (*User, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *UserStore) FindAll(q *UserQuery) ([]*User, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *UserStore) MustFindOne(q *UserQuery) *User {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the User with the data in the database and
+// makes it writable.
+func (s *UserStore) Reload(record *User) error {
+	return s.Store.Reload(Schema.User.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *UserStore) Transaction(callback func(*UserStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&UserStore{store})
+	})
+}
+
+// RemovePosts removes the given items of the Posts field of the
+// model. If no items are given, it removes all of them.
+// The items will also be removed from the passed record inside this method.
+func (s *UserStore) RemovePosts(record *User, deleted ...*Post) error {
+	var updated []*Post
+	var clear bool
+	if len(deleted) == 0 {
+		clear = true
+		deleted = record.Posts
+		if len(deleted) == 0 {
+			return nil
+		}
+	}
+
+	if len(deleted) > 1 {
+		err := s.Store.Transaction(func(s *kallax.Store) error {
+			for _, d := range deleted {
+				var r kallax.Record = d
+
+				if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+					if err := beforeDeleter.BeforeDelete(); err != nil {
+						return err
+					}
+				}
+
+				if err := s.Delete(Schema.Post.BaseSchema, d); err != nil {
+					return err
+				}
+
+				if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+					if err := afterDeleter.AfterDelete(); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+
+		if clear {
+			record.Posts = nil
+			return nil
+		}
+	} else {
+		var r kallax.Record = deleted[0]
+		if beforeDeleter, ok := r.(kallax.BeforeDeleter); ok {
+			if err := beforeDeleter.BeforeDelete(); err != nil {
+				return err
+			}
+		}
+
+		var err error
+		if afterDeleter, ok := r.(kallax.AfterDeleter); ok {
+			err = s.Store.Transaction(func(s *kallax.Store) error {
+				err := s.Delete(Schema.Post.BaseSchema, r)
+				if err != nil {
+					return err
+				}
+
+				return afterDeleter.AfterDelete()
+			})
+		} else {
+			err = s.Store.Delete(Schema.Post.BaseSchema, deleted[0])
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, r := range record.Posts {
+		var found bool
+		for _, d := range deleted {
+			if d.GetID().Equals(r.GetID()) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			updated = append(updated, r)
+		}
+	}
+	record.Posts = updated
+	return nil
+}
+
+// UserQuery is the object used to create queries for the User
+// entity.
+type UserQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewUserQuery returns a new instance of UserQuery.
+func NewUserQuery() *UserQuery {
+	return &UserQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.User.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *UserQuery) Select(columns ...kallax.SchemaField) *UserQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *UserQuery) SelectNot(columns ...kallax.SchemaField) *UserQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *UserQuery) Copy() *UserQuery {
+	return &UserQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *UserQuery) Order(cols ...kallax.ColumnOrder) *UserQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *UserQuery) BatchSize(size uint64) *UserQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *UserQuery) Limit(n uint64) *UserQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *UserQuery) Offset(n uint64) *UserQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *UserQuery) Where(cond kallax.Condition) *UserQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// WithPosts retrieves all the Posts records associated with each
+// record. Two conditions can be passed, the first to filter the table used
+// to join Posts and User and the second one to filter
+// Posts directly.
+func (q *UserQuery) WithPosts(
+	filterUserPost kallax.Condition,
+	filterPost kallax.Condition,
+) *UserQuery {
+	q.AddRelationThrough(
+		Schema.Post.BaseSchema,
+		Schema.UserPost.BaseSchema,
+		"Posts",
+		filterUserPost,
+		filterPost,
+	)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
+func (q *UserQuery) FindByID(v ...int64) *UserQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.User.ID, values...))
+}
+
+// FindByName adds a new filter to the query that will require that
+// the Name property is equal to the passed value.
+func (q *UserQuery) FindByName(v string) *UserQuery {
+	return q.Where(kallax.Eq(Schema.User.Name, v))
+}
+
+// UserResultSet is the set of results returned by a query to the
+// database.
+type UserResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *User
+	lastErr   error
+}
+
+// NewUserResultSet creates a new result set for rows of the type
+// User.
+func NewUserResultSet(rs kallax.ResultSet) *UserResultSet {
+	return &UserResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *UserResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.User.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*User)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *User")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *UserResultSet) Get() (*User, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *UserResultSet) ForEach(fn func(*User) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *UserResultSet) All() ([]*User, error) {
+	var result []*User
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *UserResultSet) One() (*User, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *UserResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *UserResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
+// NewUserPost returns a new instance of UserPost.
+func NewUserPost(user *User, post *Post) (record *UserPost) {
+	return newUserPost(user, post)
+}
+
+// GetID returns the primary key of the model.
+func (r *UserPost) GetID() kallax.Identifier {
+	return (*kallax.NumericID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
+func (r *UserPost) ColumnAddress(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return (*kallax.NumericID)(&r.ID), nil
+	case "user_id":
+		return types.Nullable(kallax.VirtualColumn("user_id", r, new(kallax.NumericID))), nil
+	case "post_id":
+		return types.Nullable(kallax.VirtualColumn("post_id", r, new(kallax.NumericID))), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in UserPost: %s", col)
+	}
+}
+
+// Value returns the value of the given column.
+func (r *UserPost) Value(col string) (interface{}, error) {
+	switch col {
+	case "id":
+		return r.ID, nil
+	case "user_id":
+		return r.Model.VirtualColumn(col), nil
+	case "post_id":
+		return r.Model.VirtualColumn(col), nil
+
+	default:
+		return nil, fmt.Errorf("kallax: invalid column in UserPost: %s", col)
+	}
+}
+
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
+func (r *UserPost) NewRelationshipRecord(field string) (kallax.Record, error) {
+	switch field {
+	case "User":
+		return new(User), nil
+	case "Post":
+		return new(Post), nil
+
+	}
+	return nil, fmt.Errorf("kallax: model UserPost has no relationship %s", field)
+}
+
+// SetRelationship sets the given relationship in the given field.
+func (r *UserPost) SetRelationship(field string, rel interface{}) error {
+	switch field {
+	case "User":
+		val, ok := rel.(*User)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship User", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.User = val
+		}
+
+		return nil
+	case "Post":
+		val, ok := rel.(*Post)
+		if !ok {
+			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Post", rel)
+		}
+		if !val.GetID().IsEmpty() {
+			r.Post = val
+		}
+
+		return nil
+
+	}
+	return fmt.Errorf("kallax: model UserPost has no relationship %s", field)
+}
+
+// UserPostStore is the entity to access the records of the type UserPost
+// in the database.
+type UserPostStore struct {
+	*kallax.Store
+}
+
+// NewUserPostStore creates a new instance of UserPostStore
+// using a SQL database.
+func NewUserPostStore(db *sql.DB) *UserPostStore {
+	return &UserPostStore{kallax.NewStore(db)}
+}
+
+// GenericStore returns the generic store of this store.
+func (s *UserPostStore) GenericStore() *kallax.Store {
+	return s.Store
+}
+
+// SetGenericStore changes the generic store of this store.
+func (s *UserPostStore) SetGenericStore(store *kallax.Store) {
+	s.Store = store
+}
+
+// Debug returns a new store that will print all SQL statements to stdout using
+// the log.Printf function.
+func (s *UserPostStore) Debug() *UserPostStore {
+	return &UserPostStore{s.Store.Debug()}
+}
+
+// DebugWith returns a new store that will print all SQL statements using the
+// given logger function.
+func (s *UserPostStore) DebugWith(logger kallax.LoggerFunc) *UserPostStore {
+	return &UserPostStore{s.Store.DebugWith(logger)}
+}
+
+func (s *UserPostStore) inverseRecords(record *UserPost) []kallax.RecordWithSchema {
+	record.ClearVirtualColumns()
+	var records []kallax.RecordWithSchema
+
+	if record.User != nil {
+		record.AddVirtualColumn("user_id", record.User.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema: Schema.User.BaseSchema,
+			Record: record.User,
+		})
+	}
+
+	if record.Post != nil {
+		record.AddVirtualColumn("post_id", record.Post.GetID())
+		records = append(records, kallax.RecordWithSchema{
+			Schema: Schema.Post.BaseSchema,
+			Record: record.Post,
+		})
+	}
+
+	return records
+}
+
+// Insert inserts a UserPost in the database. A non-persisted object is
+// required for this operation.
+func (s *UserPostStore) Insert(record *UserPost) error {
+	inverseRecords := s.inverseRecords(record)
+
+	if len(inverseRecords) > 0 {
+		return s.Store.Transaction(func(s *kallax.Store) error {
+			for _, r := range inverseRecords {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			if err := s.Insert(Schema.UserPost.BaseSchema, record); err != nil {
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	return s.Store.Insert(Schema.UserPost.BaseSchema, record)
+}
+
+// Update updates the given record on the database. If the columns are given,
+// only these columns will be updated. Otherwise all of them will be.
+// Be very careful with this, as you will have a potentially different object
+// in memory but not on the database.
+// Only writable records can be updated. Writable objects are those that have
+// been just inserted or retrieved using a query with no custom select fields.
+func (s *UserPostStore) Update(record *UserPost, cols ...kallax.SchemaField) (updated int64, err error) {
+	inverseRecords := s.inverseRecords(record)
+
+	if len(inverseRecords) > 0 {
+		err = s.Store.Transaction(func(s *kallax.Store) error {
+			for _, r := range inverseRecords {
+				if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
+					return err
+				}
+				persisted := r.Record.IsPersisted()
+
+				if _, err := s.Save(r.Schema, r.Record); err != nil {
+					return err
+				}
+
+				if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+					return err
+				}
+			}
+
+			updated, err = s.Update(Schema.UserPost.BaseSchema, record, cols...)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+		if err != nil {
+			return 0, err
+		}
+
+		return updated, nil
+	}
+
+	return s.Store.Update(Schema.UserPost.BaseSchema, record, cols...)
+}
+
+// Save inserts the object if the record is not persisted, otherwise it updates
+// it. Same rules of Update and Insert apply depending on the case.
+func (s *UserPostStore) Save(record *UserPost) (updated bool, err error) {
+	if !record.IsPersisted() {
+		return false, s.Insert(record)
+	}
+
+	rowsUpdated, err := s.Update(record)
+	if err != nil {
+		return false, err
+	}
+
+	return rowsUpdated > 0, nil
+}
+
+// Delete removes the given record from the database.
+func (s *UserPostStore) Delete(record *UserPost) error {
+	return s.Store.Delete(Schema.UserPost.BaseSchema, record)
+}
+
+// Find returns the set of results for the given query.
+func (s *UserPostStore) Find(q *UserPostQuery) (*UserPostResultSet, error) {
+	rs, err := s.Store.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewUserPostResultSet(rs), nil
+}
+
+// MustFind returns the set of results for the given query, but panics if there
+// is any error.
+func (s *UserPostStore) MustFind(q *UserPostQuery) *UserPostResultSet {
+	return NewUserPostResultSet(s.Store.MustFind(q))
+}
+
+// Count returns the number of rows that would be retrieved with the given
+// query.
+func (s *UserPostStore) Count(q *UserPostQuery) (int64, error) {
+	return s.Store.Count(q)
+}
+
+// MustCount returns the number of rows that would be retrieved with the given
+// query, but panics if there is an error.
+func (s *UserPostStore) MustCount(q *UserPostQuery) int64 {
+	return s.Store.MustCount(q)
+}
+
+// FindOne returns the first row returned by the given query.
+// `ErrNotFound` is returned if there are no results.
+func (s *UserPostStore) FindOne(q *UserPostQuery) (*UserPost, error) {
+	q.Limit(1)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// FindAll returns a list of all the rows returned by the given query.
+func (s *UserPostStore) FindAll(q *UserPostQuery) ([]*UserPost, error) {
+	rs, err := s.Find(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.All()
+}
+
+// MustFindOne returns the first row retrieved by the given query. It panics
+// if there is an error or if there are no rows.
+func (s *UserPostStore) MustFindOne(q *UserPostQuery) *UserPost {
+	record, err := s.FindOne(q)
+	if err != nil {
+		panic(err)
+	}
+	return record
+}
+
+// Reload refreshes the UserPost with the data in the database and
+// makes it writable.
+func (s *UserPostStore) Reload(record *UserPost) error {
+	return s.Store.Reload(Schema.UserPost.BaseSchema, record)
+}
+
+// Transaction executes the given callback in a transaction and rollbacks if
+// an error is returned.
+// The transaction is only open in the store passed as a parameter to the
+// callback.
+func (s *UserPostStore) Transaction(callback func(*UserPostStore) error) error {
+	if callback == nil {
+		return kallax.ErrInvalidTxCallback
+	}
+
+	return s.Store.Transaction(func(store *kallax.Store) error {
+		return callback(&UserPostStore{store})
+	})
+}
+
+// UserPostQuery is the object used to create queries for the UserPost
+// entity.
+type UserPostQuery struct {
+	*kallax.BaseQuery
+}
+
+// NewUserPostQuery returns a new instance of UserPostQuery.
+func NewUserPostQuery() *UserPostQuery {
+	return &UserPostQuery{
+		BaseQuery: kallax.NewBaseQuery(Schema.UserPost.BaseSchema),
+	}
+}
+
+// Select adds columns to select in the query.
+func (q *UserPostQuery) Select(columns ...kallax.SchemaField) *UserPostQuery {
+	if len(columns) == 0 {
+		return q
+	}
+	q.BaseQuery.Select(columns...)
+	return q
+}
+
+// SelectNot excludes columns from being selected in the query.
+func (q *UserPostQuery) SelectNot(columns ...kallax.SchemaField) *UserPostQuery {
+	q.BaseQuery.SelectNot(columns...)
+	return q
+}
+
+// Copy returns a new identical copy of the query. Remember queries are mutable
+// so make a copy any time you need to reuse them.
+func (q *UserPostQuery) Copy() *UserPostQuery {
+	return &UserPostQuery{
+		BaseQuery: q.BaseQuery.Copy(),
+	}
+}
+
+// Order adds order clauses to the query for the given columns.
+func (q *UserPostQuery) Order(cols ...kallax.ColumnOrder) *UserPostQuery {
+	q.BaseQuery.Order(cols...)
+	return q
+}
+
+// BatchSize sets the number of items to fetch per batch when there are 1:N
+// relationships selected in the query.
+func (q *UserPostQuery) BatchSize(size uint64) *UserPostQuery {
+	q.BaseQuery.BatchSize(size)
+	return q
+}
+
+// Limit sets the max number of items to retrieve.
+func (q *UserPostQuery) Limit(n uint64) *UserPostQuery {
+	q.BaseQuery.Limit(n)
+	return q
+}
+
+// Offset sets the number of items to skip from the result set of items.
+func (q *UserPostQuery) Offset(n uint64) *UserPostQuery {
+	q.BaseQuery.Offset(n)
+	return q
+}
+
+// Where adds a condition to the query. All conditions added are concatenated
+// using a logical AND.
+func (q *UserPostQuery) Where(cond kallax.Condition) *UserPostQuery {
+	q.BaseQuery.Where(cond)
+	return q
+}
+
+// WithUser retrieves the User record associated with each
+// record.
+func (q *UserPostQuery) WithUser() *UserPostQuery {
+	q.AddRelation(Schema.User.BaseSchema, "User", kallax.OneToOne, nil)
+	return q
+}
+
+// WithPost retrieves the Post record associated with each
+// record.
+func (q *UserPostQuery) WithPost() *UserPostQuery {
+	q.AddRelation(Schema.Post.BaseSchema, "Post", kallax.OneToOne, nil)
+	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values,
+// it will do nothing.
+func (q *UserPostQuery) FindByID(v ...int64) *UserPostQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.UserPost.ID, values...))
+}
+
+// FindByUser adds a new filter to the query that will require that
+// the foreign key of User is equal to the passed value.
+func (q *UserPostQuery) FindByUser(v int64) *UserPostQuery {
+	return q.Where(kallax.Eq(Schema.UserPost.UserFK, v))
+}
+
+// FindByPost adds a new filter to the query that will require that
+// the foreign key of Post is equal to the passed value.
+func (q *UserPostQuery) FindByPost(v int64) *UserPostQuery {
+	return q.Where(kallax.Eq(Schema.UserPost.PostFK, v))
+}
+
+// UserPostResultSet is the set of results returned by a query to the
+// database.
+type UserPostResultSet struct {
+	ResultSet kallax.ResultSet
+	last      *UserPost
+	lastErr   error
+}
+
+// NewUserPostResultSet creates a new result set for rows of the type
+// UserPost.
+func NewUserPostResultSet(rs kallax.ResultSet) *UserPostResultSet {
+	return &UserPostResultSet{ResultSet: rs}
+}
+
+// Next fetches the next item in the result set and returns true if there is
+// a next item.
+// The result set is closed automatically when there are no more items.
+func (rs *UserPostResultSet) Next() bool {
+	if !rs.ResultSet.Next() {
+		rs.lastErr = rs.ResultSet.Close()
+		rs.last = nil
+		return false
+	}
+
+	var record kallax.Record
+	record, rs.lastErr = rs.ResultSet.Get(Schema.UserPost.BaseSchema)
+	if rs.lastErr != nil {
+		rs.last = nil
+	} else {
+		var ok bool
+		rs.last, ok = record.(*UserPost)
+		if !ok {
+			rs.lastErr = fmt.Errorf("kallax: unable to convert record to *UserPost")
+			rs.last = nil
+		}
+	}
+
+	return true
+}
+
+// Get retrieves the last fetched item from the result set and the last error.
+func (rs *UserPostResultSet) Get() (*UserPost, error) {
+	return rs.last, rs.lastErr
+}
+
+// ForEach iterates over the complete result set passing every record found to
+// the given callback. It is possible to stop the iteration by returning
+// `kallax.ErrStop` in the callback.
+// Result set is always closed at the end.
+func (rs *UserPostResultSet) ForEach(fn func(*UserPost) error) error {
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return err
+		}
+
+		if err := fn(record); err != nil {
+			if err == kallax.ErrStop {
+				return rs.Close()
+			}
+
+			return err
+		}
+	}
+	return nil
+}
+
+// All returns all records on the result set and closes the result set.
+func (rs *UserPostResultSet) All() ([]*UserPost, error) {
+	var result []*UserPost
+	for rs.Next() {
+		record, err := rs.Get()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, record)
+	}
+	return result, nil
+}
+
+// One returns the first record on the result set and closes the result set.
+func (rs *UserPostResultSet) One() (*UserPost, error) {
+	if !rs.Next() {
+		return nil, kallax.ErrNotFound
+	}
+
+	record, err := rs.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := rs.Close(); err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
+// Err returns the last error occurred.
+func (rs *UserPostResultSet) Err() error {
+	return rs.lastErr
+}
+
+// Close closes the result set.
+func (rs *UserPostResultSet) Close() error {
+	return rs.ResultSet.Close()
+}
+
 type schema struct {
 	Car                       *schemaCar
 	Child                     *schemaChild
@@ -10392,6 +12121,7 @@ type schema struct {
 	ParentNoPtr               *schemaParentNoPtr
 	Person                    *schemaPerson
 	Pet                       *schemaPet
+	Post                      *schemaPost
 	QueryFixture              *schemaQueryFixture
 	QueryRelationFixture      *schemaQueryRelationFixture
 	ResultSetFixture          *schemaResultSetFixture
@@ -10400,6 +12130,8 @@ type schema struct {
 	StoreFixture              *schemaStoreFixture
 	StoreWithConstructFixture *schemaStoreWithConstructFixture
 	StoreWithNewFixture       *schemaStoreWithNewFixture
+	User                      *schemaUser
+	UserPost                  *schemaUserPost
 }
 
 type schemaCar struct {
@@ -10490,6 +12222,12 @@ type schemaPet struct {
 	OwnerFK kallax.SchemaField
 }
 
+type schemaPost struct {
+	*kallax.BaseSchema
+	ID   kallax.SchemaField
+	Text kallax.SchemaField
+}
+
 type schemaQueryFixture struct {
 	*kallax.BaseSchema
 	ID                        kallax.SchemaField
@@ -10573,6 +12311,19 @@ type schemaStoreWithNewFixture struct {
 	ID  kallax.SchemaField
 	Foo kallax.SchemaField
 	Bar kallax.SchemaField
+}
+
+type schemaUser struct {
+	*kallax.BaseSchema
+	ID   kallax.SchemaField
+	Name kallax.SchemaField
+}
+
+type schemaUserPost struct {
+	*kallax.BaseSchema
+	ID     kallax.SchemaField
+	UserFK kallax.SchemaField
+	PostFK kallax.SchemaField
 }
 
 type schemaJSONModelBar struct {
@@ -10879,6 +12630,26 @@ var Schema = &schema{
 		Kind:    kallax.NewSchemaField("kind"),
 		OwnerFK: kallax.NewSchemaField("owner_id"),
 	},
+	Post: &schemaPost{
+		BaseSchema: kallax.NewBaseSchema(
+			"posts",
+			"__post",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{
+				"User": []*kallax.ForeignKey{
+					kallax.NewForeignKey("post_id", true), kallax.NewForeignKey("user_id", true),
+				},
+			},
+			func() kallax.Record {
+				return new(Post)
+			},
+			true,
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("text"),
+		),
+		ID:   kallax.NewSchemaField("id"),
+		Text: kallax.NewSchemaField("text"),
+	},
 	QueryFixture: &schemaQueryFixture{
 		BaseSchema: kallax.NewBaseSchema(
 			"query",
@@ -11104,5 +12875,51 @@ var Schema = &schema{
 		ID:  kallax.NewSchemaField("id"),
 		Foo: kallax.NewSchemaField("foo"),
 		Bar: kallax.NewSchemaField("bar"),
+	},
+	User: &schemaUser{
+		BaseSchema: kallax.NewBaseSchema(
+			"users",
+			"__user",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{
+				"Posts": []*kallax.ForeignKey{
+					kallax.NewForeignKey("user_id", true), kallax.NewForeignKey("post_id", true),
+				},
+			},
+			func() kallax.Record {
+				return new(User)
+			},
+			true,
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("name"),
+		),
+		ID:   kallax.NewSchemaField("id"),
+		Name: kallax.NewSchemaField("name"),
+	},
+	UserPost: &schemaUserPost{
+		BaseSchema: kallax.NewBaseSchema(
+			"user_posts",
+			"__userpost",
+			kallax.NewSchemaField("id"),
+			kallax.ForeignKeys{
+				"User": []*kallax.ForeignKey{
+					kallax.NewForeignKey("user_id", true),
+				},
+
+				"Post": []*kallax.ForeignKey{
+					kallax.NewForeignKey("post_id", true),
+				},
+			},
+			func() kallax.Record {
+				return new(UserPost)
+			},
+			true,
+			kallax.NewSchemaField("id"),
+			kallax.NewSchemaField("user_id"),
+			kallax.NewSchemaField("post_id"),
+		),
+		ID:     kallax.NewSchemaField("id"),
+		UserFK: kallax.NewSchemaField("user_id"),
+		PostFK: kallax.NewSchemaField("post_id"),
 	},
 }

@@ -1,5 +1,5 @@
 
-// {{.QueryName}} is the object used to create queries for the {{.Name}} 
+// {{.QueryName}} is the object used to create queries for the {{.Name}}
 // entity.
 type {{.QueryName}} struct {
 	*kallax.BaseQuery
@@ -68,14 +68,36 @@ func (q *{{.QueryName}}) Where(cond kallax.Condition) *{{.QueryName}} {
 }
 
 {{range .Relationships}}
-{{if not .IsOneToManyRelationship}}
-func (q *{{$.QueryName}}) With{{.Name}}() *{{$.QueryName}} {
-        q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}", kallax.OneToOne, nil)
+{{if .IsManyToManyRelationship}}
+// With{{.Name}} retrieves all the {{.Name}} records associated with each
+// record. Two conditions can be passed, the first to filter the table used
+// to join {{.Name}} and {{.Model.Name}} and the second one to filter
+// {{.Name}} directly.
+func (q *{{$.QueryName}}) With{{.Name}}(
+        filter{{.ThroughSchemaName}} kallax.Condition,
+        filter{{.TypeSchemaName}} kallax.Condition,
+) *{{$.QueryName}} {
+        q.AddRelationThrough(
+                Schema.{{.TypeSchemaName}}.BaseSchema,
+                Schema.{{.ThroughSchemaName}}.BaseSchema,
+                "{{.Name}}",
+                filter{{.ThroughSchemaName}},
+                filter{{.TypeSchemaName}},
+        )
+        return q
+}
+{{else if .IsOneToManyRelationship}}
+// With{{.Name}} retrieves all the {{.Name}} records associated with each
+// record. A condition can be passed to filter the associated records.
+func (q *{{$.QueryName}}) With{{.Name}}(cond kallax.Condition) *{{$.QueryName}} {
+        q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}", kallax.OneToMany, cond)
         return q
 }
 {{else}}
-func (q *{{$.QueryName}}) With{{.Name}}(cond kallax.Condition) *{{$.QueryName}} {
-        q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}", kallax.OneToMany, cond)
+// With{{.Name}} retrieves the {{.Name}} record associated with each
+// record.
+func (q *{{$.QueryName}}) With{{.Name}}() *{{$.QueryName}} {
+        q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}", kallax.OneToOne, nil)
         return q
 }
 {{end}}
