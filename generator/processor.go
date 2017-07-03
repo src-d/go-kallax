@@ -161,6 +161,11 @@ func (p *Processor) processPackage() (*Package, error) {
 	if err := pkg.addMissingRelationships(); err != nil {
 		return nil, err
 	}
+
+	if err := pkg.addThroughModels(); err != nil {
+		return nil, err
+	}
+
 	for _, ctor := range ctors {
 		p.tryMatchConstructor(pkg, ctor)
 	}

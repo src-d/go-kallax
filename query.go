@@ -282,7 +282,11 @@ func (q *BaseQuery) GetOffset() uint64 {
 //   q.Where(Gt(AgeColumn, 18))
 //   // ... WHERE name = "foo" AND age > 18
 func (q *BaseQuery) Where(cond Condition) {
-	q.builder = q.builder.Where(cond(q.schema))
+	q.where(cond, q.schema)
+}
+
+func (q *BaseQuery) where(cond Condition, schema Schema) {
+	q.builder = q.builder.Where(cond(schema))
 }
 
 // compile returns the selected column names and the select builder.

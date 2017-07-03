@@ -216,20 +216,18 @@ func (r *batchQueryRunner) getRecordThroughRelationships(ids []interface{}, rel 
 		return nil, fmt.Errorf("kallax: cannot find foreign keys for through relationship on field %s of table %s", rel.Field, r.schema.Table())
 	}
 
-	filter := In(r.schema.ID(), ids...)
-	if rel.Filter != nil {
-		filter = And(rel.Filter, filter)
-	}
-
-	if rel.IntermediateFilter != nil {
-		filter = And(rel.IntermediateFilter, filter)
-	}
-
 	q := NewBaseQuery(rel.Schema)
 	lschema := r.schema.WithAlias(rel.Schema.Alias())
 	intSchema := rel.IntermediateSchema.WithAlias(rel.Schema.Alias())
 	q.joinThrough(lschema, intSchema, rel.Schema, lfk, rfk)
-	q.Where(filter)
+	q.where(In(lschema.ID(), ids...), lschema)
+	if rel.Filter != nil {
+		q.Where(rel.Filter)
+	}
+
+	if rel.IntermediateFilter != nil {
+		q.where(rel.IntermediateFilter, intSchema)
+	}
 	cols, builder := q.compile()
 	// manually add the extra column to also select the parent id
 	builder = builder.Column(lschema.ID().QualifiedName(lschema))
