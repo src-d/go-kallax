@@ -544,6 +544,111 @@ func (s *StoreSuite) TestFind_1toNMultiple() {
 	s.Equal(100, i)
 }
 
+func (s *StoreSuite) Fixtures_NtoM() {
+	require := s.Require()
+
+	lefts := []*throughLeft{
+		newThroughLeft("a"),
+		newThroughLeft("b"),
+		newThroughLeft("c"),
+	}
+
+	for _, l := range lefts {
+		require.NoError(s.store.Insert(ThroughLeftSchema, l))
+	}
+
+	rights := []*throughRight{
+		newThroughRight("d"),
+		newThroughRight("e"),
+		newThroughRight("f"),
+	}
+
+	for _, r := range rights {
+		require.NoError(s.store.Insert(ThroughRightSchema, r))
+	}
+
+	middles := []*throughMiddle{
+		newThroughMiddle(lefts[0], rights[0]),
+		newThroughMiddle(lefts[0], rights[1]),
+		newThroughMiddle(lefts[1], rights[0]),
+		newThroughMiddle(lefts[1], rights[1]),
+		newThroughMiddle(lefts[2], rights[1]),
+		newThroughMiddle(lefts[2], rights[2]),
+	}
+
+	for _, m := range middles {
+		require.NoError(s.store.Insert(ThroughMiddleSchema, m))
+	}
+}
+
+func (s *StoreSuite) TestFind_NtoM() {
+	require := s.Require()
+	s.Fixtures_NtoM()
+
+	q := NewBaseQuery(ThroughLeftSchema)
+	q.AddRelationThrough(ThroughRightSchema, ThroughMiddleSchema, "Rights", nil, nil)
+	rs, err := s.store.Debug().Find(q)
+	require.NoError(err)
+
+	var results []*throughLeft
+	for rs.Next() {
+		r, err := rs.Get(ThroughLeftSchema)
+		require.NoError(err)
+		results = append(results, r.(*throughLeft))
+	}
+
+	require.Equal(3, len(results))
+
+	var result = make(map[string][]string)
+	for _, l := range results {
+		var rights []string
+		for _, r := range l.Rights {
+			rights = append(rights, r.Name)
+		}
+		result[l.Name] = rights
+	}
+
+	require.Equal(map[string][]string{
+		"a": {"d", "e"},
+		"b": {"d", "e"},
+		"c": {"e", "f"},
+	}, result)
+}
+
+func (s *StoreSuite) TestFind_NtoM_Inverse() {
+	require := s.Require()
+	s.Fixtures_NtoM()
+
+	q := NewBaseQuery(ThroughRightSchema)
+	q.AddRelationThrough(ThroughLeftSchema, ThroughMiddleSchema, "Lefts", nil, nil)
+	rs, err := s.store.Debug().Find(q)
+	require.NoError(err)
+
+	var results []*throughRight
+	for rs.Next() {
+		r, err := rs.Get(ThroughRightSchema)
+		require.NoError(err)
+		results = append(results, r.(*throughRight))
+	}
+
+	require.Equal(3, len(results))
+
+	var result = make(map[string][]string)
+	for _, r := range results {
+		var lefts []string
+		for _, r := range r.Lefts {
+			lefts = append(lefts, r.Name)
+		}
+		result[r.Name] = lefts
+	}
+
+	require.Equal(map[string][]string{
+		"d": {"a", "b"},
+		"e": {"a", "b", "c"},
+		"f": {"c"},
+	}, result)
+}
+
 func (s *StoreSuite) assertModel(m *model) {
 	var result model
 	err := s.db.QueryRow("SELECT id, name, email, age FROM model WHERE id = $1", m.GetID()).

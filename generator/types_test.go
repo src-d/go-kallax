@@ -194,6 +194,79 @@ func (s *FieldSuite) TestValue() {
 	}
 }
 
+func (s *FieldSuite) TestIsInverse() {
+	cases := []struct {
+		tag      string
+		expected bool
+	}{
+		{"", false},
+		{`inverse:"true"`, false},
+		{`fk:"inverse"`, false},
+		{`through:"inverse"`, false},
+		{`fk:"foo,inverse"`, true},
+		{`fk:",inverse"`, true},
+		{`through:"foo,inverse"`, true},
+		{`through:"foo:a:b,inverse"`, true},
+	}
+
+	for _, tt := range cases {
+		f := mkField("", "", tt.tag)
+		f.Kind = Relationship
+		s.Equal(tt.expected, f.IsInverse(), tt.tag)
+	}
+}
+
+func (s *FieldSuite) TestThroughTable() {
+	cases := []struct {
+		tag, expected string
+	}{
+		{``, ""},
+		{`through:"foo"`, "foo"},
+		{`through:"foo,inverse"`, "foo"},
+		{`through:"foo:a:b,inverse"`, "foo"},
+	}
+
+	for _, tt := range cases {
+		s.Equal(tt.expected, mkField("", "", tt.tag).ThroughTable(), tt.tag)
+	}
+}
+
+func (s *FieldSuite) TestLeftForeignKey() {
+	cases := []struct {
+		tag, expected string
+	}{
+		{``, "bar_id"},
+		{`through:"foo"`, "bar_id"},
+		{`through:"foo,inverse"`, "bar_id"},
+		{`through:"foo:a,inverse"`, "a"},
+		{`through:"foo:a:b,inverse"`, "a"},
+	}
+
+	for _, tt := range cases {
+		f := mkField("", "", tt.tag)
+		f.Model = &Model{Name: "Bar"}
+		s.Equal(tt.expected, f.LeftForeignKey(), tt.tag)
+	}
+}
+
+func (s *FieldSuite) TestRightForeignKey() {
+	cases := []struct {
+		tag, expected string
+	}{
+		{``, "foo_id"},
+		{`through:"foo"`, "foo_id"},
+		{`through:"foo,inverse"`, "foo_id"},
+		{`through:"foo:a,inverse"`, "foo_id"},
+		{`through:"foo:a:b,inverse"`, "b"},
+	}
+
+	for _, tt := range cases {
+		f := mkField("", "", tt.tag)
+		f.Type = "Foo"
+		s.Equal(tt.expected, f.RightForeignKey(), tt.tag)
+	}
+}
+
 type ModelSuite struct {
 	suite.Suite
 	model    *Model

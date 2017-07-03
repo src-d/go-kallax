@@ -92,9 +92,9 @@ func (s *QuerySuite) TestAddRelation_Inverse() {
 	s.Equal("SELECT __model.id, __model.name, __model.email, __model.age, __rel_rel_inv.id, __rel_rel_inv.model_id, __rel_rel_inv.foo FROM model __model LEFT JOIN rel __rel_rel_inv ON (__rel_rel_inv.id = __model.model_id)", s.q.String())
 }
 
-func (s *QuerySuite) TestAddRelation_ManyToMany() {
-	err := s.q.AddRelation(RelSchema, "rel", ManyToMany, nil)
-	s.Equal(ErrManyToManyNotSupported, err)
+func (s *QuerySuite) TestAddRelation_Through() {
+	err := s.q.AddRelation(RelSchema, "rel", Through, nil)
+	s.Equal(ErrThroughNotSupported, err)
 }
 
 func (s *QuerySuite) TestAddRelation_FKNotFound() {

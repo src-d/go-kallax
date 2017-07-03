@@ -233,6 +233,27 @@ func (td *TemplateData) findJSONSchemas(parent string, f *Field) {
 	}
 }
 
+const fkTpl = `kallax.NewForeignKey("%s", %s)`
+
+func (td *TemplateData) GenForeignKeys(f *Field) string {
+	var fks []string
+	if f.IsManyToManyRelationship() {
+		fks = append(
+			fks,
+			fmt.Sprintf(fkTpl, f.LeftForeignKey(), "true"),
+			fmt.Sprintf(fkTpl, f.RightForeignKey(), "true"),
+		)
+	} else {
+		fks = append(fks, fmt.Sprintf(
+			fkTpl,
+			f.ForeignKey(),
+			fmt.Sprint(f.IsInverse()),
+		))
+	}
+
+	return strings.Join(fks, ", ")
+}
+
 // GenTypeName generates the name of the type in the field.
 func (td *TemplateData) GenTypeName(f *Field) string {
 	if name, ok := findNamed(f.Node.Type(), td.pkg); ok {
@@ -529,7 +550,7 @@ const (
 	// The passed values to the FindBy will be used in an kallax.ArrayContains
 	tplFindByCollection = `
 		// FindBy%[1]s adds a new filter to the query that will require that
-		// the %[1]s property contains all the passed values; if no passed values, 
+		// the %[1]s property contains all the passed values; if no passed values,
 		// it will do nothing.
 		func (q *%[2]s) FindBy%[1]s(v ...%[3]s) *%[2]s {
 		    if len(v) == 0 {return q}
@@ -557,7 +578,7 @@ const (
 	// The passed values to the FindBy will be used in an kallax.In condition.
 	tplFindByID = `
 		// FindBy%[1]s adds a new filter to the query that will require that
-		// the %[1]s property is equal to one of the passed values; if no passed values, 
+		// the %[1]s property is equal to one of the passed values; if no passed values,
 		// it will do nothing.
 		func (q *%[2]s) FindBy%[1]s(v ...%[3]s) *%[2]s {
 			if len(v) == 0 {return q}
@@ -601,6 +622,10 @@ func (td *TemplateData) genFindBy(buf *bytes.Buffer, parent *Model, fields []*Fi
 			writeFindByTpl(buf, parent, f.Name, f, tplFindByCollection)
 		}
 	}
+}
+
+func (td *TemplateData) IsMany(f *Field) bool {
+	return isSliceOrArray(f)
 }
 
 func writeFindByTpl(buf *bytes.Buffer, parent *Model, name string, f *Field, tpl string) {

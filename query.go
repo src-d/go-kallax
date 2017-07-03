@@ -7,11 +7,7 @@ import (
 	"github.com/Masterminds/squirrel"
 )
 
-var (
-	// ErrManyToManyNotSupported is returned when a many to many relationship
-	// is added to a query.
-	ErrManyToManyNotSupported = errors.New("kallax: many to many relationships are not supported")
-)
+var ErrThroughNotSupported = errors.New("kallax: a relationship of type Through cannot be added using AddRelation, you need to use AddRelationThrough")
 
 // Query is the common interface all queries must satisfy. The basic abilities
 // of a query are compiling themselves to something executable and return
@@ -164,8 +160,8 @@ func (q *BaseQuery) selectedColumns() []SchemaField {
 // in the given field of the query base schema. A condition to filter can also
 // be passed in the case of one to many relationships.
 func (q *BaseQuery) AddRelation(schema Schema, field string, typ RelationshipType, filter Condition) error {
-	if typ == ManyToMany {
-		return ErrManyToManyNotSupported
+	if typ == Through {
+		return ErrThroughNotSupported
 	}
 
 	fk, ok := q.schema.ForeignKey(field)
@@ -181,8 +177,17 @@ func (q *BaseQuery) AddRelation(schema Schema, field string, typ RelationshipTyp
 		q.join(schema, fk)
 	}
 
-	q.relationships = append(q.relationships, Relationship{typ, field, schema, filter})
+	q.relationships = append(q.relationships, Relationship{typ, field, schema, nil, filter, nil})
 	return nil
+}
+
+// AddRelationThrough adds a relationship through an intermediate table
+// if given to the query, which is present in the given field of the query
+// base schema. Conditions to filter in the intermediate table and the end
+// table can also be passed.
+func (q *BaseQuery) AddRelationThrough(schema, intermediateSchema Schema, field string, intermediateFilter, endFilter Condition) {
+	schema = schema.WithAlias(field)
+	q.relationships = append(q.relationships, Relationship{Through, field, schema, intermediateSchema, endFilter, intermediateFilter})
 }
 
 func (q *BaseQuery) join(schema Schema, fk *ForeignKey) {
@@ -207,6 +212,27 @@ func (q *BaseQuery) join(schema Schema, fk *ForeignKey) {
 			col.QualifiedName(schema),
 		)
 	}
+}
+
+func (q *BaseQuery) joinThrough(lschema, intSchema, rschema Schema, lfk, rfk *ForeignKey) {
+	lfkCol := lfk.QualifiedName(intSchema)
+	rfkCol := rfk.QualifiedName(intSchema)
+	lidCol := lschema.ID().QualifiedName(lschema)
+	ridCol := rschema.ID().QualifiedName(rschema)
+
+	q.builder = q.builder.Join(fmt.Sprintf(
+		"%s %s ON (%s = %s)",
+		intSchema.Table(),
+		intSchema.Alias(),
+		rfkCol,
+		ridCol,
+	)).Join(fmt.Sprintf(
+		"%s %s ON (%s = %s)",
+		lschema.Table(),
+		lschema.Alias(),
+		lfkCol,
+		lidCol,
+	))
 }
 
 // Order adds the given order clauses to the list of columns to order the
@@ -256,7 +282,11 @@ func (q *BaseQuery) GetOffset() uint64 {
 //   q.Where(Gt(AgeColumn, 18))
 //   // ... WHERE name = "foo" AND age > 18
 func (q *BaseQuery) Where(cond Condition) {
-	q.builder = q.builder.Where(cond(q.schema))
+	q.where(cond, q.schema)
+}
+
+func (q *BaseQuery) where(cond Condition, schema Schema) {
+	q.builder = q.builder.Where(cond(schema))
 }
 
 // compile returns the selected column names and the select builder.

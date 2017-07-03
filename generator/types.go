@@ -129,6 +129,7 @@ type Package struct {
 	// Models are all the models found in the package.
 	Models        []*Model
 	indexedModels map[string]*Model
+	modelsByTable map[string]*Model
 }
 
 // NewPackage creates a new package.
@@ -137,6 +138,7 @@ func NewPackage(pkg *types.Package) *Package {
 		Name:          pkg.Name(),
 		pkg:           pkg,
 		indexedModels: make(map[string]*Model),
+		modelsByTable: make(map[string]*Model),
 	}
 }
 
@@ -144,6 +146,7 @@ func NewPackage(pkg *types.Package) *Package {
 func (p *Package) SetModels(models []*Model) {
 	for _, m := range models {
 		p.indexedModels[m.Name] = m
+		p.modelsByTable[m.Table] = m
 	}
 	p.Models = models
 }
@@ -153,18 +156,39 @@ func (p *Package) FindModel(name string) *Model {
 	return p.indexedModels[name]
 }
 
-func (p *Package) addMissingRelationships() error {
+func (p *Package) forEachModelField(fn func(m *Model, f *Field) error) error {
 	for _, m := range p.Models {
 		for _, f := range m.Fields {
-			if f.Kind == Relationship && !f.IsInverse() {
-				if err := p.trySetFK(f.TypeSchemaName(), f); err != nil {
-					return err
-				}
+			if err := fn(m, f); err != nil {
+				return err
 			}
 		}
 	}
-
 	return nil
+}
+
+func (p *Package) addThroughModels() error {
+	return p.forEachModelField(func(m *Model, f *Field) error {
+		if f.IsManyToManyRelationship() {
+			model, ok := p.modelsByTable[f.ThroughTable()]
+			if !ok {
+				return fmt.Errorf("kallax: cannot find a model with table name %s to access field %s of model %s", f.ThroughTable(), f.Name, m.Name)
+			}
+			f.ThroughModel = model
+		}
+		return nil
+	})
+}
+
+func (p *Package) addMissingRelationships() error {
+	return p.forEachModelField(func(m *Model, f *Field) error {
+		if f.Kind == Relationship && !f.IsInverse() && !f.IsManyToManyRelationship() {
+			if err := p.trySetFK(f.TypeSchemaName(), f); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (p *Package) trySetFK(model string, fk *Field) error {
@@ -611,6 +635,8 @@ type ImplicitFK struct {
 }
 
 // Field is the representation of a model field.
+// TODO(erizocosmico): please, refactor all this structure to use precomputed
+// data instead of calculating it upon each call.
 type Field struct {
 	// Name is the field name.
 	Name string
@@ -629,6 +655,9 @@ type Field struct {
 	Parent *Field
 	// Model is the reference to the model containing this field.
 	Model *Model
+	// ThroughModel is the reference to the model through which the field is
+	// accessed in a relationship.
+	ThroughModel *Model
 	// IsPtr reports whether the field is a pointer type or not.
 	IsPtr bool
 	// IsJSON reports whether the field has to be converted to JSON.
@@ -807,8 +836,12 @@ func (f *Field) IsInverse() bool {
 		return false
 	}
 
-	for _, part := range strings.Split(f.Tag.Get("fk"), ",") {
-		if part == "inverse" {
+	if f.IsManyToManyRelationship() {
+		return f.isInverseThrough()
+	}
+
+	for i, part := range strings.Split(f.Tag.Get("fk"), ",") {
+		if i > 0 && part == "inverse" {
 			return true
 		}
 	}
@@ -820,6 +853,58 @@ func (f *Field) IsInverse() bool {
 // relationship.
 func (f *Field) IsOneToManyRelationship() bool {
 	return f.Kind == Relationship && strings.HasPrefix(f.Type, "[]")
+}
+
+// IsManyToManyRelationship reports whether the field is a many to many
+// relationship.
+func (f *Field) IsManyToManyRelationship() bool {
+	return f.Kind == Relationship && f.Tag.Get("through") != ""
+}
+
+// ThroughTable returns the name of the intermediate table used to access the
+// current field.
+func (f *Field) ThroughTable() string {
+	return f.getThroughTablePart(0)
+}
+
+// LeftForeignKey is the name of the column used to join the current model with
+// the intermediate table.
+func (f *Field) LeftForeignKey() string {
+	fk := f.getThroughTablePart(1)
+	if fk == "" {
+		fk = foreignKeyForModel(f.Model.Name)
+	}
+	return fk
+}
+
+// RightForeignKey is the name of the column used to join the relationship
+// model with the intermediate table.
+func (f *Field) RightForeignKey() string {
+	fk := f.getThroughTablePart(2)
+	if fk == "" {
+		fk = foreignKeyForModel(f.TypeSchemaName())
+	}
+	return fk
+}
+
+func (f *Field) isInverseThrough() bool {
+	return f.getThroughPart(1) == "inverse"
+}
+
+func (f *Field) getThroughPart(idx int) string {
+	parts := strings.Split(f.Tag.Get("through"), ",")
+	if len(parts) > idx {
+		return strings.TrimSpace(parts[idx])
+	}
+	return ""
+}
+
+func (f *Field) getThroughTablePart(idx int) string {
+	parts := strings.Split(f.getThroughPart(0), ":")
+	if len(parts) > idx {
+		return strings.TrimSpace(parts[idx])
+	}
+	return ""
 }
 
 func foreignKeyForModel(model string) string {
@@ -958,6 +1043,11 @@ func (f *Field) Value() string {
 func (f *Field) TypeSchemaName() string {
 	parts := strings.Split(f.Type, ".")
 	return parts[len(parts)-1]
+}
+
+// ThroughSchemaName returns the name of the Schema for the through model type.
+func (f *Field) ThroughSchemaName() string {
+	return f.ThroughModel.Name
 }
 
 func (f *Field) SQLType() string {

@@ -306,7 +306,8 @@ func (s *Store) RawExec(sql string, params ...interface{}) (int64, error) {
 // Find performs a query and returns a result set with the results.
 func (s *Store) Find(q Query) (ResultSet, error) {
 	rels := q.getRelationships()
-	if containsRelationshipOfType(rels, OneToMany) {
+	if containsRelationshipOfType(rels, OneToMany) ||
+		containsRelationshipOfType(rels, Through) {
 		return NewBatchingResultSet(newBatchQueryRunner(q.Schema(), s.proxy, q)), nil
 	}
 

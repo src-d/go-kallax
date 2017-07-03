@@ -18,6 +18,9 @@ type Schema interface {
 	Columns() []SchemaField
 	// ForeignKey returns the name of the foreign key of the given model field.
 	ForeignKey(string) (*ForeignKey, bool)
+	// ForeignKeys returns the name of both of the foreign keys involved in a
+	// relationship through an intermediate table.
+	ForeignKeys(string) (left *ForeignKey, right *ForeignKey, ok bool)
 	// WithAlias returns a new schema with the given string added to the
 	// default alias.
 	// Calling WithAlias on a schema returned by WithAlias not return a
@@ -61,8 +64,18 @@ func (s *BaseSchema) Table() string          { return s.table }
 func (s *BaseSchema) ID() SchemaField        { return s.id }
 func (s *BaseSchema) Columns() []SchemaField { return s.columns }
 func (s *BaseSchema) ForeignKey(field string) (*ForeignKey, bool) {
-	k, ok := s.foreignKeys[field]
-	return k, ok
+	k := s.foreignKeys[field]
+	if len(k) > 0 {
+		return k[0], true
+	}
+	return nil, false
+}
+func (s *BaseSchema) ForeignKeys(field string) (*ForeignKey, *ForeignKey, bool) {
+	k := s.foreignKeys[field]
+	if len(k) == 2 {
+		return k[0], k[1], true
+	}
+	return nil, nil, false
 }
 func (s *BaseSchema) WithAlias(field string) Schema {
 	return &aliasSchema{s, field}
@@ -82,7 +95,7 @@ func (s *aliasSchema) Alias() string {
 }
 
 // ForeignKeys is a mapping between relationships and their foreign key field.
-type ForeignKeys map[string]*ForeignKey
+type ForeignKeys map[string][]*ForeignKey
 
 // SchemaField is a named field in the table schema.
 type SchemaField interface {
@@ -215,7 +228,7 @@ func AtJSONPath(field SchemaField, typ JSONKeyType, path ...string) SchemaField 
 	return NewJSONSchemaKey(typ, field.String(), path...)
 }
 
-// Relationship is a relationship with its schema and the field of te relation
+// Relationship is a relationship with its schema and the field of the relation
 // in the record.
 type Relationship struct {
 	// Type is the kind of relationship this is.
@@ -224,9 +237,15 @@ type Relationship struct {
 	Field string
 	// Schema is the schema of the relationship.
 	Schema Schema
+	// IntermediateSchema is the schema of the intermediate table used for
+	// matching models in the relationship. Only used in Through relationships.
+	IntermediateSchema Schema
 	// Filter establishes the filter to be applied when retrieving rows of the
 	// relationships.
 	Filter Condition
+	// IntermediateFilter is a filter to be applied on the intermediate table when
+	// retrieving rows of the relationship. Only used in Through relationships.
+	IntermediateFilter Condition
 }
 
 // RelationshipType describes the type of the relationship.
@@ -239,10 +258,10 @@ const (
 	// OneToMany is a relationship between one record in a table and multiple
 	// in another table.
 	OneToMany
-	// ManyToMany is a relationship between many records on both sides of the
-	// relationship.
-	// NOTE: It is not supported yet.
-	ManyToMany
+	// Through is a relationship that needs an intermediate table to relate
+	// both sides of the relationship.
+	// Typically a many to many.
+	Through
 )
 
 func containsRelationshipOfType(rels []Relationship, typ RelationshipType) bool {

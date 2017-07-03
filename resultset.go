@@ -51,15 +51,19 @@ func NewResultSet(rows *sql.Rows, readOnly bool, relationships []Relationship, c
 
 // Get returns the next record in the schema.
 func (rs *BaseResultSet) Get(schema Schema) (Record, error) {
+	return rs.customGet(schema)
+}
+
+func (rs *BaseResultSet) customGet(schema Schema, extra ...interface{}) (Record, error) {
 	record := schema.New()
-	if err := rs.Scan(record); err != nil {
+	if err := rs.Scan(record, extra...); err != nil {
 		return nil, err
 	}
 	return record, nil
 }
 
 // Scan fills the column fields of the given value with the current row.
-func (rs *BaseResultSet) Scan(record Record) error {
+func (rs *BaseResultSet) Scan(record Record, extra ...interface{}) error {
 	if len(rs.columns) == 0 {
 		return ErrRawScan
 	}
@@ -95,6 +99,7 @@ func (rs *BaseResultSet) Scan(record Record) error {
 		relationships[i] = rec
 	}
 
+	pointers = append(pointers, extra...)
 	if err := rs.Rows.Scan(pointers...); err != nil {
 		return err
 	}
