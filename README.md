@@ -21,7 +21,6 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
   * [Model constructors](#model-constructors)
   * [Model events](#model-events)
 * [Model schema](#model-schema)
-  * [Automatic schema generation and migrations](#automatic-schema-generation-and-migration)
   * [Use schema](#use-schema)
 * [Manipulate models](#manipulate-models)
   * [Insert models](#insert-models)
@@ -257,10 +256,6 @@ The query will contain methods for adding criteria to your query for every field
 * Schema of all the models containing all the fields. That way, you can access the name of a specific field without having to use a string, that is, a typesafe way.
 
 ## Model schema
-
-### Automatic schema generation and migrations
-
-Automatic `CREATE TABLE` for models and migrations is not yet supported, even though it will probably come in future releases.
 
 ### Use schema
 
