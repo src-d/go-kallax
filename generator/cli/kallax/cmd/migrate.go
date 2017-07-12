@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/mattes/migrate"
 	_ "github.com/mattes/migrate/database/postgres"
@@ -157,11 +156,14 @@ func runMigrationAction(fn runMigrationFunc) cli.ActionFunc {
 }
 
 func pathToFileURL(path string) string {
-	path = strings.Replace(path, "\\", "/", -1)
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
+	if !filepath.IsAbs(path) {
+		var err error
+		path, err = filepath.Abs(path)
+		if err != nil {
+			return ""
+		}
 	}
-	return fmt.Sprintf("file://%s", path)
+	return fmt.Sprintf("file://%s", filepath.ToSlash(path))
 }
 
 func migrateAction(c *cli.Context) error {
