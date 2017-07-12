@@ -52,7 +52,7 @@ func newBatchQueryRunner(schema Schema, db squirrel.DBProxy, q Query) *batchQuer
 }
 
 func (r *batchQueryRunner) next() (Record, error) {
-	if r.eof {
+	if r.eof && len(r.records) == 0 {
 		return nil, errNoMoreRows
 	}
 
@@ -63,7 +63,7 @@ func (r *batchQueryRunner) next() (Record, error) {
 		)
 
 		limit := r.q.GetLimit()
-		if limit <= 0 || limit > uint64(r.total) {
+		if limit == 0 || limit > uint64(r.total) {
 			records, err = r.loadNextBatch()
 			if err != nil {
 				return nil, err
@@ -73,6 +73,17 @@ func (r *batchQueryRunner) next() (Record, error) {
 		if len(records) == 0 {
 			r.eof = true
 			return nil, errNoMoreRows
+		}
+
+		batchSize := r.q.GetBatchSize()
+		if batchSize > 0 && batchSize < limit {
+			if uint64(len(records)) < batchSize {
+				r.eof = true
+			}
+		} else if limit > 0 {
+			if uint64(len(records)) < limit {
+				r.eof = true
+			}
 		}
 
 		r.total += len(records)
