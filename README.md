@@ -53,7 +53,7 @@ go get -u gopkg.in/src-d/go-kallax.v1/...
 please be sure that `$GOPATH/bin` is on your `$PATH`
 
 ## Usage
- 
+
 Imagine you have the following file in the package where your models are.
 ```go
 package models
@@ -398,7 +398,7 @@ err := store.RemoveThing(user)
 
 ### Simple queries
 
-To perform a query you have to do the following things: 
+To perform a query you have to do the following things:
 * Create a query
 * Pass the query to `Find`, `FindOne`, `MustFind` or `MustFindOne` of the store
 * Gather the results from the result set, if the used method was `Find` or `MustFind`
@@ -543,8 +543,8 @@ q := NewUserQuery().WithPosts(nil)
 rs, err := store.Find(q)
 ```
 
-To avoid the N+1 problem with 1:N relationships, kallax performs batching in this case. 
-So, a batch of users are retrieved from the database in a single query, then all the posts for those users and finally, they are merged. 
+To avoid the N+1 problem with 1:N relationships, kallax performs batching in this case.
+So, a batch of users are retrieved from the database in a single query, then all the posts for those users and finally, they are merged.
 This process is repeated until there are no more rows in the result.
 Because of this, retrieving 1:N relationships is really fast.
 
@@ -668,7 +668,7 @@ These are the flags available for `up` and `down`:
 | `--dir` or `-d` | directory where your migrations are stored | `./migrations` |
 | `--dsn` | database connection string | required |
 | `--steps` or `-s` | maximum number of migrations to run | `0` |
-| `--all` | migrate all the way up (only available for `up` | 
+| `--all` | migrate all the way up (only available for `up` |
 | `--version` or `-v` | final version of the database we want after running the migration. The version is the timestamp value at the beginning of migration files | `0` |
 
 * If no `--steps` or `--version` are provided to `down`, they will do nothing. If `--all` is provided to `up`, it will upgrade the database all the way up.
@@ -715,6 +715,8 @@ kallax migrate up --dir ./my-migrations --dsn 'user:pass@localhost:5432/dbname?s
 
 Any other type must be explicitly specified.
 
+All types that are not pointers will be `NOT NULL`.
+
 ## Custom operators
 
 You can create custom operators with kallax using the `NewOperator` and `NewMultiOperator` functions.
@@ -743,7 +745,7 @@ This function already takes care of wrapping `:arg:` with parenthesis.
 
 ### Further customization
 
-If you need further customization, you can create your own custom operator. 
+If you need further customization, you can create your own custom operator.
 
 You need these things:
 
@@ -840,7 +842,7 @@ Source code of the benchmarks can be found on the [benchmarks](https://github.co
 * [lib/pq](https://github.com/lib/pq), the Golang PostgreSQL driver that ships with a ton of support for builtin Go types.
 * [mattes/migrate](https://github.com/mattes/migrate), a Golang library to manage database migrations.
 
-## Contributing 
+## Contributing
 
 ### Reporting bugs
 

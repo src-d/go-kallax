@@ -825,7 +825,7 @@ func (t *packageTransformer) transformField(f *Field) (*ColumnSchema, error) {
 	return &ColumnSchema{
 		Name:       name,
 		PrimaryKey: f.IsPrimaryKey(),
-		NotNull:    false,
+		NotNull:    !f.IsPtr,
 		Type:       typ,
 		Reference:  ref,
 	}, nil
