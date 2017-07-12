@@ -1,4 +1,4 @@
-// +build !windows
+// +build windows
 
 package cmd
 
@@ -18,8 +18,8 @@ func TestPathToFileURL(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"/foo/bar/baz", "file:///foo/bar/baz"},
-		{"foo/bar", "file://" + filepath.Join(wd, "foo/bar")},
+		{"c:\\foo\\bar\\baz", "file://c:/foo/bar/baz"},
+		{"foo\\bar", "file://" + filepath.ToSlash(filepath.Join(wd, "foo", "bar"))},
 	}
 
 	for _, tt := range cases {
