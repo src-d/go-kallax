@@ -431,8 +431,10 @@ func TestNullable(t *testing.T) {
 		if c.isPtr {
 			elem = elem.Elem()
 		}
-		s.Equal(c.nonNullInput, elem.Interface(), c.name)
-
+		// TODO: can be commented in if tests fail locally until fixed.
+		//if c.name != "time.Time" && c.name != "*time.Time" {
+			s.Equal(c.nonNullInput, elem.Interface(), c.name)
+		//}
 		_, err = db.Exec("DROP TABLE foo")
 		s.Nil(err, c.name)
 	}

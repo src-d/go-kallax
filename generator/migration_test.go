@@ -609,7 +609,11 @@ func mkTable(name string, columns ...*ColumnSchema) *TableSchema {
 }
 
 func mkCol(name string, typ ColumnType, pk, notNull bool, ref *Reference) *ColumnSchema {
-	return &ColumnSchema{name, typ, pk, ref, notNull}
+	return &ColumnSchema{name, typ, pk, ref, notNull, false}
+}
+
+func mkColUnique(name string, typ ColumnType, pk, notNull bool, ref *Reference) *ColumnSchema {
+	return &ColumnSchema{name, typ, pk, ref, notNull, true}
 }
 
 func mkRef(table, col string, inverse bool) *Reference {
