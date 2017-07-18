@@ -21,6 +21,51 @@ func TestNewMigration(t *testing.T) {
 	require.Equal(t, migration.Lock, new)
 }
 
+func TestMigrationOrder(t *testing.T) {
+	a := mkTable("a",
+		mkCol("id", SerialColumn, true, false, nil),
+		mkCol("name", TextColumn, false, true, nil),
+	)
+
+	b := mkTable("b",
+		mkCol("id", SerialColumn, true, false, nil),
+		mkCol("a_id", SerialColumn, false, true, mkRef("a", "id", true)),
+	)
+
+	c := mkTable("c",
+		mkCol("id", SerialColumn, true, false, nil),
+		mkCol("a_id", SerialColumn, false, true, mkRef("a", "id", true)),
+		mkCol("b_id", SerialColumn, false, true, mkRef("b", "id", true)),
+	)
+
+	d := mkTable("d",
+		mkCol("id", SerialColumn, true, false, nil),
+		mkCol("name", TextColumn, false, true, nil),
+	)
+
+	old := mkSchema()
+	new := mkSchema(a, b, c, d)
+	migration, err := NewMigration(old, new)
+	require.NoError(t, err)
+
+	expectedUp := ChangeSet{
+		&CreateTable{a},
+		&CreateTable{b},
+		&CreateTable{c},
+		&CreateTable{d},
+	}
+
+	expectedDown := ChangeSet{
+		&DropTable{"d"},
+		&DropTable{"c"},
+		&DropTable{"b"},
+		&DropTable{"a"},
+	}
+
+	require.Equal(t, expectedUp, migration.Up)
+	require.Equal(t, expectedDown, migration.Down)
+}
+
 func TestNewMigration_SelfRef(t *testing.T) {
 	old := mkSchema()
 	new := mkSchema(mkTable(
@@ -484,7 +529,7 @@ type Profile struct {
 }
 
 type ProfileMetadata struct {
-	kallax.Model ` + "`table:\"metadata\"`" + `	
+	kallax.Model ` + "`table:\"metadata\"`" + `
 	// it's an pk, should be serial
 	ID int64 ` + "`pk:\"autoincr\"`" + `
 	// a json field
