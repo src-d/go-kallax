@@ -122,12 +122,12 @@ func (s *PersonStore) DebugWith(logger kallax.LoggerFunc) *PersonStore {
 func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSchema {
 	var records []kallax.RecordWithSchema
 
-	for _, rec := range record.Pets {
-		rec.ClearVirtualColumns()
-		rec.AddVirtualColumn("person_id", record.GetID())
+	for i := range record.Pets {
+		record.Pets[i].ClearVirtualColumns()
+		record.Pets[i].AddVirtualColumn("person_id", record.GetID())
 		records = append(records, kallax.RecordWithSchema{
 			Schema: Schema.Pet.BaseSchema,
-			Record: rec,
+			Record: record.Pets[i],
 		})
 	}
 
@@ -137,12 +137,10 @@ func (s *PersonStore) relationshipRecords(record *Person) []kallax.RecordWithSch
 // Insert inserts a Person in the database. A non-persisted object is
 // required for this operation.
 func (s *PersonStore) Insert(record *Person) error {
-
 	records := s.relationshipRecords(record)
 
 	if len(records) > 0 {
 		return s.Store.Transaction(func(s *kallax.Store) error {
-
 			if err := s.Insert(Schema.Person.BaseSchema, record); err != nil {
 				return err
 			}
@@ -167,7 +165,6 @@ func (s *PersonStore) Insert(record *Person) error {
 	}
 
 	return s.Store.Insert(Schema.Person.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -177,12 +174,10 @@ func (s *PersonStore) Insert(record *Person) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	records := s.relationshipRecords(record)
 
 	if len(records) > 0 {
 		err = s.Store.Transaction(func(s *kallax.Store) error {
-
 			updated, err = s.Update(Schema.Person.BaseSchema, record, cols...)
 			if err != nil {
 				return err
@@ -213,7 +208,6 @@ func (s *PersonStore) Update(record *Person, cols ...kallax.SchemaField) (update
 	}
 
 	return s.Store.Update(Schema.Person.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -233,9 +227,7 @@ func (s *PersonStore) Save(record *Person) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *PersonStore) Delete(record *Person) error {
-
 	return s.Store.Delete(Schema.Person.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -641,6 +633,8 @@ func (r *Pet) ColumnAddress(col string) (interface{}, error) {
 		return &r.Name, nil
 	case "kind":
 		return (*string)(&r.Kind), nil
+	case "person_id":
+		return types.Nullable(kallax.VirtualColumn("person_id", r, new(kallax.NumericID))), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Pet: %s", col)
@@ -656,6 +650,8 @@ func (r *Pet) Value(col string) (interface{}, error) {
 		return r.Name, nil
 	case "kind":
 		return (string)(r.Kind), nil
+	case "person_id":
+		return r.Model.VirtualColumn(col), nil
 
 	default:
 		return nil, fmt.Errorf("kallax: invalid column in Pet: %s", col)
@@ -710,9 +706,7 @@ func (s *PetStore) DebugWith(logger kallax.LoggerFunc) *PetStore {
 // Insert inserts a Pet in the database. A non-persisted object is
 // required for this operation.
 func (s *PetStore) Insert(record *Pet) error {
-
 	return s.Store.Insert(Schema.Pet.BaseSchema, record)
-
 }
 
 // Update updates the given record on the database. If the columns are given,
@@ -722,9 +716,7 @@ func (s *PetStore) Insert(record *Pet) error {
 // Only writable records can be updated. Writable objects are those that have
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *PetStore) Update(record *Pet, cols ...kallax.SchemaField) (updated int64, err error) {
-
 	return s.Store.Update(Schema.Pet.BaseSchema, record, cols...)
-
 }
 
 // Save inserts the object if the record is not persisted, otherwise it updates
@@ -744,9 +736,7 @@ func (s *PetStore) Save(record *Pet) (updated bool, err error) {
 
 // Delete removes the given record from the database.
 func (s *PetStore) Delete(record *Pet) error {
-
 	return s.Store.Delete(Schema.Pet.BaseSchema, record)
-
 }
 
 // Find returns the set of results for the given query.
@@ -1095,6 +1085,7 @@ var Schema = &schema{
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("name"),
 			kallax.NewSchemaField("kind"),
+			kallax.NewSchemaField("person_id"),
 		),
 		ID:   kallax.NewSchemaField("id"),
 		Name: kallax.NewSchemaField("name"),
