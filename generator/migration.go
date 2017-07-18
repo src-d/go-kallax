@@ -285,11 +285,7 @@ func (cs ChangeSet) sorted(dropIndex, createIndex map[string]*TableSchema) (Chan
 						continue
 					}
 
-					if r.inverse {
-						createGraph.dependsOn(c.Name, r.name)
-					} else {
-						createGraph.dependsOn(r.name, c.Name)
-					}
+					createGraph.dependsOn(r.name, c.Name)
 				}
 			} else {
 				createGraph.add(c.Name)
@@ -302,11 +298,7 @@ func (cs ChangeSet) sorted(dropIndex, createIndex map[string]*TableSchema) (Chan
 						continue
 					}
 
-					if r.inverse {
-						dropGraph.dependsOn(c.Name, r.name)
-					} else {
-						dropGraph.dependsOn(r.name, c.Name)
-					}
+					dropGraph.dependsOn(r.name, c.Name)
 				}
 			} else {
 				dropGraph.add(c.Name)
