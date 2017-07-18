@@ -8,7 +8,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-const version = "1.2.14"
+const version = "1.2.15"
 
 func main() {
 	newApp().Run(os.Args)
