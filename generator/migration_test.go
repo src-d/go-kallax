@@ -466,6 +466,7 @@ type User struct {
 	// array field
 	Emails []string
 	Profile *Profile
+	Phone *string
 }
 
 type Profile struct {
@@ -480,11 +481,11 @@ type Profile struct {
 	// a fk without reference in the other model
 	// should be added anyway
 	// should be added as bigint, as it is not a pk
-	Metadata *ProfileMetadata
+	Metadata ProfileMetadata
 }
 
 type ProfileMetadata struct {
-	kallax.Model ` + "`table:\"metadata\"`" + `	
+	kallax.Model ` + "`table:\"metadata\"`" + `
 	// it's an pk, should be serial
 	ID int64 ` + "`pk:\"autoincr\"`" + `
 	// a json field
@@ -518,23 +519,24 @@ func (s *PackageTransformerSuite) TestTransform() {
 	expected := mkSchema(
 		mkTable(
 			"profiles",
-			mkCol("id", SerialColumn, true, false, nil),
-			mkCol("color", ColumnType("char(6)"), false, false, nil),
-			mkCol("background", TextColumn, false, false, nil),
+			mkCol("id", SerialColumn, true, true, nil),
+			mkCol("color", ColumnType("char(6)"), false, true, nil),
+			mkCol("background", TextColumn, false, true, nil),
 			mkCol("user_id", UUIDColumn, false, false, mkRef("users", "id", true)),
 			mkCol("spouse", UUIDColumn, false, false, nil),
 		),
 		mkTable(
 			"metadata",
-			mkCol("id", SerialColumn, true, false, nil),
-			mkCol("metadata", JSONBColumn, false, false, nil),
-			mkCol("profile_id", BigIntColumn, false, false, mkRef("profiles", "id", false)),
+			mkCol("id", SerialColumn, true, true, nil),
+			mkCol("metadata", JSONBColumn, false, true, nil),
+			mkCol("profile_id", BigIntColumn, false, true, mkRef("profiles", "id", false)),
 		),
 		mkTable(
 			"users",
-			mkCol("id", UUIDColumn, true, false, nil),
-			mkCol("username", TextColumn, false, false, nil),
-			mkCol("emails", ArrayColumn(TextColumn), false, false, nil),
+			mkCol("id", UUIDColumn, true, true, nil),
+			mkCol("username", TextColumn, false, true, nil),
+			mkCol("emails", ArrayColumn(TextColumn), false, true, nil),
+			mkCol("phone", TextColumn, false, false, nil),
 		),
 	)
 
