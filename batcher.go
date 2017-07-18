@@ -76,7 +76,7 @@ func (r *batchQueryRunner) next() (Record, error) {
 		}
 
 		batchSize := r.q.GetBatchSize()
-		if batchSize > 0 && batchSize < limit {
+		if batchSize > 0 && (batchSize < limit || limit == 0) {
 			if uint64(len(records)) < batchSize {
 				r.eof = true
 			}

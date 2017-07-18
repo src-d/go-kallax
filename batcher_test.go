@@ -105,3 +105,42 @@ func TestBatcherNoExtraQueryIfLessThanLimit(t *testing.T) {
 	r.Equal(4, count)
 	r.Equal(2, queries)
 }
+
+func TestBatcherNoExtraQueryIfLessThanBatchSize(t *testing.T) {
+	r := require.New(t)
+	db, err := openTestDB()
+	r.NoError(err)
+	setupTables(t, db)
+	defer db.Close()
+	defer teardownTables(t, db)
+
+	store := NewStore(db)
+	for i := 0; i < 4; i++ {
+		m := newModel("foo", "bar", 1)
+		r.NoError(store.Insert(ModelSchema, m))
+
+		for i := 0; i < 4; i++ {
+			r.NoError(store.Insert(RelSchema, newRel(m.GetID(), fmt.Sprint(i))))
+		}
+	}
+
+	q := NewBaseQuery(ModelSchema)
+	q.BatchSize(3)
+	r.NoError(q.AddRelation(RelSchema, "rels", OneToMany, Eq(f("foo"), "1")))
+	var queries int
+	proxy := store.DebugWith(func(_ string, _ ...interface{}) {
+		queries++
+	}).proxy
+	runner := newBatchQueryRunner(ModelSchema, proxy, q)
+	rs := NewBatchingResultSet(runner)
+
+	var count int
+	for rs.Next() {
+		_, err := rs.Get(nil)
+		r.NoError(err)
+		count++
+	}
+	r.NoError(err)
+	r.Equal(4, count)
+	r.Equal(4, queries)
+}
