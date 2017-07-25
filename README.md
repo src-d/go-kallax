@@ -394,6 +394,22 @@ For one to one relationships:
 err := store.RemoveThing(user)
 ```
 
+Note that for that to work, the thing you're deleting must **not** be empty. That is, you need to eagerly load (or set afterwards) the relationships.
+
+```go
+user, err := store.FindOne(NewUserQuery())
+checkErr(err)
+
+// THIS WON'T WORK! We've not loaded "Things"
+err := store.RemoveThings(user)
+
+user, err := store.FindOne(NewUserQuery().WithThings())
+checkErr(err)
+
+// THIS WILL WORK!
+err := store.RemoveThings(user)
+```
+
 ## Query models
 
 ### Simple queries

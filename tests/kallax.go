@@ -3956,6 +3956,9 @@ func (s *ParentStore) Transaction(callback func(*ParentStore) error) error {
 // RemoveChildren removes the given items of the Children field of the
 // model. If no items are given, it removes all of them.
 // The items will also be removed from the passed record inside this method.
+// Note that is required that `Children` is not empty. This method clears the
+// the elements of Children in a model, it does not retrieve them to know
+// what relationships the model has.
 func (s *ParentStore) RemoveChildren(record *Parent, deleted ...*Child) error {
 	var updated []*Child
 	var clear bool
@@ -4555,6 +4558,9 @@ func (s *ParentNoPtrStore) Transaction(callback func(*ParentNoPtrStore) error) e
 // RemoveChildren removes the given items of the Children field of the
 // model. If no items are given, it removes all of them.
 // The items will also be removed from the passed record inside this method.
+// Note that is required that `Children` is not empty. This method clears the
+// the elements of Children in a model, it does not retrieve them to know
+// what relationships the model has.
 func (s *ParentNoPtrStore) RemoveChildren(record *ParentNoPtr, deleted ...Child) error {
 	var updated []Child
 	var clear bool
@@ -5228,6 +5234,9 @@ func (s *PersonStore) Transaction(callback func(*PersonStore) error) error {
 // RemovePets removes the given items of the Pets field of the
 // model. If no items are given, it removes all of them.
 // The items will also be removed from the passed record inside this method.
+// Note that is required that `Pets` is not empty. This method clears the
+// the elements of Pets in a model, it does not retrieve them to know
+// what relationships the model has.
 func (s *PersonStore) RemovePets(record *Person, deleted ...*Pet) error {
 	var updated []*Pet
 	var clear bool
@@ -6670,6 +6679,9 @@ func (s *QueryFixtureStore) RemoveRelation(record *QueryFixture) error {
 // RemoveNRelation removes the given items of the NRelation field of the
 // model. If no items are given, it removes all of them.
 // The items will also be removed from the passed record inside this method.
+// Note that is required that `NRelation` is not empty. This method clears the
+// the elements of NRelation in a model, it does not retrieve them to know
+// what relationships the model has.
 func (s *QueryFixtureStore) RemoveNRelation(record *QueryFixture, deleted ...*QueryRelationFixture) error {
 	var updated []*QueryRelationFixture
 	var clear bool

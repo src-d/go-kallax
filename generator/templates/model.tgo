@@ -62,7 +62,7 @@ func (r *{{.Name}}) SetRelationship(field string, rel interface{}) error {
                 {{else}}r.{{.Name}} = *val{{end}}
                 return nil
         {{else}}case "{{.Name}}":
-                records, ok := rel.([]kallax.Record) 
+                records, ok := rel.([]kallax.Record)
                 if !ok {
                         return fmt.Errorf("kallax: relationship field %s needs a collection of records, not %T", field, rel)
                 }
@@ -508,6 +508,9 @@ func (s *{{.StoreName}}) Transaction(callback func(*{{.StoreName}}) error) error
 // Remove{{.Name}} removes the given items of the {{.Name}} field of the
 // model. If no items are given, it removes all of them.
 // The items will also be removed from the passed record inside this method.
+// Note that is required that `{{.Name}}` is not empty. This method clears the
+// the elements of {{.Name}} in a model, it does not retrieve them to know
+// what relationships the model has.
 func (s *{{.Model.StoreName}}) Remove{{.Name}}(record *{{.Model.Name}}, deleted ...{{if $.IsPtrSlice .}}*{{end}}{{$.GenTypeName .}}) error {
         var updated []{{if $.IsPtrSlice .}}*{{end}}{{$.GenTypeName .}}
         var clear bool
