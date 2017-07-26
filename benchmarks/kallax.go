@@ -327,6 +327,9 @@ func (s *PersonStore) Transaction(callback func(*PersonStore) error) error {
 // RemovePets removes the given items of the Pets field of the
 // model. If no items are given, it removes all of them.
 // The items will also be removed from the passed record inside this method.
+// Note that is required that `Pets` is not empty. This method clears the
+// the elements of Pets in a model, it does not retrieve them to know
+// what relationships the model has.
 func (s *PersonStore) RemovePets(record *Person, deleted ...*Pet) error {
 	var updated []*Pet
 	var clear bool
