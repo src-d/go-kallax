@@ -1,9 +1,8 @@
 package tests
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/suite"
+	"testing"
 )
 
 type RelationshipsSuite struct {
@@ -16,10 +15,15 @@ func TestRelationships(t *testing.T) {
 			id serial primary key,
 			name text
 		)`,
+		`CREATE TABLE IF NOT EXISTS brands (
+			id uuid primary key,
+			name text
+		)`,
 		`CREATE TABLE IF NOT EXISTS cars (
 			id uuid primary key,
 			model_name text,
-			owner_id integer references persons(id)
+			owner_id integer references persons(id),
+			brand_id uuid references brands(id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS pets (
 			id uuid primary key,
@@ -124,6 +128,39 @@ func (s *RelationshipsSuite) TestSaveWithInverse() {
 	s.NoError(store.Insert(car))
 
 	s.NotNil(s.getPerson())
+}
+
+func (s *RelationshipsSuite) TestSaveRelations() {
+	p := NewPerson("Musk")
+	brand := newBrand("Tesla")
+	car := newBrandedCar("Model S", p, brand)
+
+	store := NewCarStore(s.db)
+	_, err := store.Save(car)
+	s.Nil(err)
+
+	car, err = store.FindOne(NewCarQuery().FindByID(car.ID).WithBrand())
+	s.Nil(err)
+	s.NotNil(car)
+	s.NotNil(car.Brand)
+
+	pStore := NewPersonStore(s.db)
+	pStore.Insert(p)
+
+	car, err = store.FindOne(NewCarQuery().FindByID(car.ID).WithBrand())
+	s.Nil(err)
+	s.NotNil(car)
+	s.NotNil(car.Brand)
+
+	p.Name = "Elon"
+	pStore.Save(p)
+	s.NotNil(p.Car)
+	s.NotNil(p.Car.Brand)
+
+	car, err = store.FindOne(NewCarQuery().FindByID(car.ID).WithBrand())
+	s.Nil(err)
+	s.NotNil(car)
+	s.NotNil(car.Brand)
 }
 
 func (s *RelationshipsSuite) assertEvents(evs map[string]int, events ...string) {
