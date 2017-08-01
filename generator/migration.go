@@ -161,6 +161,8 @@ type ColumnSchema struct {
 	Reference *Reference
 	// NotNull reports whether the column is not nullable.
 	NotNull bool
+	// Unique reports whether the column has a unique constraint
+	Unique bool
 }
 
 func (s *ColumnSchema) Equals(s2 *ColumnSchema) bool {
@@ -168,6 +170,7 @@ func (s *ColumnSchema) Equals(s2 *ColumnSchema) bool {
 		s.Type == s2.Type &&
 		s.PrimaryKey == s2.PrimaryKey &&
 		s.NotNull == s2.NotNull &&
+		s.Unique == s2.Unique &&
 		s.Reference.Equals(s2.Reference)
 }
 
@@ -179,6 +182,10 @@ func (s *ColumnSchema) String() string {
 
 	if s.NotNull {
 		buf.WriteString(" NOT NULL")
+	}
+
+	if s.Unique {
+		buf.WriteString(" UNIQUE")
 	}
 
 	if s.PrimaryKey {
@@ -650,6 +657,13 @@ func ColumnSchemaDiff(table string, old, new *ColumnSchema) ChangeSet {
 		})
 	}
 
+	// TODO: We could actually generate a migration from unique -> not unique but not vice versa!
+	if old.Unique != new.Unique {
+		cs = append(cs, &ManualChange{
+			fmt.Sprintf("don't know how to generate migration for a change of unique/not unique in %s(%s)", table, new.Name),
+		})
+	}
+
 	if referenceChanged(old, new) {
 		cs = append(cs, &ManualChange{
 			fmt.Sprintf("don't know how to generate migration for a change of foreign key in %s(%s)", table, new.Name),
@@ -823,6 +837,7 @@ func (t *packageTransformer) transformField(f *Field) (*ColumnSchema, error) {
 		NotNull:    !f.IsPtr,
 		Type:       typ,
 		Reference:  ref,
+		Unique: f.IsUnique(),
 	}, nil
 }
 
