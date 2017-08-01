@@ -725,6 +725,7 @@ func (t *packageTransformer) applyForeignKeys() error {
 		schema := t.tables[table]
 		for _, fk := range fks {
 			if col := schema.Column(fk.Name); col != nil {
+				fk.NotNull = col.NotNull
 				if !col.Equals(fk) {
 					return fmt.Errorf("kallax: there is an inverse definition conflicting with the column definition of column %s in the table %s. Please, make sure both definitions match.", fk.Name, table)
 				}
