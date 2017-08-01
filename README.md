@@ -724,7 +724,8 @@ kallax migrate up --dir ./my-migrations --dsn 'user:pass@localhost:5432/dbname?s
 | `url.URL` | `text` |
 | `time.Time` | `timestamptz` |
 | `time.Duration` | `bigint` |
-| `[]T` | `T'[]` * where `T'` is the SQL type of type `T` |
+| `[]byte` | `bytea` |
+| `[]T` | `T'[]` * where `T'` is the SQL type of type `T`, except for `T` = `byte` |
 | `map[K]V` | `jsonb` |
 | `struct` | `jsonb` |
 | `*struct` | `jsonb` |

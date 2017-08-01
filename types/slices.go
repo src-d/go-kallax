@@ -71,10 +71,10 @@ func Slice(v interface{}) SQLType {
 		return (*Int8Array)(&v)
 	case *[]int8:
 		return (*Int8Array)(v)
-	case []uint8:
-		return (*Uint8Array)(&v)
-	case *[]uint8:
-		return (*Uint8Array)(v)
+	case []byte:
+		return (*ByteArray)(&v)
+	case *[]byte:
+		return (*ByteArray)(v)
 	case *[]float32:
 		return (*Float32Array)(v)
 	case []float32:
@@ -646,67 +646,29 @@ func (a Int8Array) Value() (driver.Value, error) {
 	return "{}", nil
 }
 
-// Uint8Array represents a one-dimensional array of the PostgreSQL unsigned integer type.
-type Uint8Array []uint8
+// ByteArray represents a byte array `bytea`.
+type ByteArray []uint8
 
 // Scan implements the sql.Scanner interface.
-func (a *Uint8Array) Scan(src interface{}) error {
+func (a *ByteArray) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case []byte:
-		return a.scanBytes(src)
+		*(*[]byte)(a) = src
+		return nil
 	case string:
-		return a.scanBytes([]byte(src))
+		*(*[]byte)(a) = []byte(src)
+		return nil
 	case nil:
 		*a = nil
 		return nil
 	}
 
-	return fmt.Errorf("kallax: cannot convert %T to Uint8Array", src)
-}
-
-func (a *Uint8Array) scanBytes(src []byte) error {
-	elems, err := scanLinearArray(src, []byte{','}, "Uint8Array")
-	if err != nil {
-		return err
-	}
-	if *a != nil && len(elems) == 0 {
-		*a = (*a)[:0]
-	} else {
-		b := make(Uint8Array, len(elems))
-		for i, v := range elems {
-			val, err := strconv.ParseUint(string(v), 10, 8)
-			if err != nil {
-				return fmt.Errorf("kallax: parsing array element index %d: %v", i, err)
-			}
-			b[i] = uint8(val)
-		}
-		*a = b
-	}
-	return nil
+	return fmt.Errorf("kallax: cannot convert %T to ByteArray", src)
 }
 
 // Value implements the driver.Valuer interface.
-func (a Uint8Array) Value() (driver.Value, error) {
-	if a == nil {
-		return nil, nil
-	}
-
-	if n := len(a); n > 0 {
-		// There will be at least two curly brackets, N bytes of values,
-		// and N-1 bytes of delimiters.
-		b := make([]byte, 1, 1+2*n)
-		b[0] = '{'
-
-		b = strconv.AppendUint(b, uint64(a[0]), 10)
-		for i := 1; i < n; i++ {
-			b = append(b, ',')
-			b = strconv.AppendUint(b, uint64(a[i]), 10)
-		}
-
-		return string(append(b, '}')), nil
-	}
-
-	return "{}", nil
+func (a ByteArray) Value() (driver.Value, error) {
+	return ([]byte)(a), nil
 }
 
 // Float32Array represents a one-dimensional array of the PostgreSQL real type.
