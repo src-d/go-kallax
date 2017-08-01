@@ -72,7 +72,7 @@ type QueryRelationFixture struct {
 }
 
 var queryFixtures = []*QueryFixture{
-	&QueryFixture{
+	{
 		ID:               kallax.NewULID(),
 		Foo:              "Foo0",
 		StringProperty:   "StringProperty0",
@@ -87,7 +87,7 @@ var queryFixtures = []*QueryFixture{
 		AliasStringParam: "AliasString0",
 		AliasIntParam:    0,
 	},
-	&QueryFixture{
+	{
 		ID:               kallax.NewULID(),
 		Foo:              "Foo1",
 		StringProperty:   "StringProperty1",
@@ -102,7 +102,7 @@ var queryFixtures = []*QueryFixture{
 		AliasStringParam: "AliasString1",
 		AliasIntParam:    1,
 	},
-	&QueryFixture{
+	{
 		ID:               kallax.NewULID(),
 		Foo:              "Foo2",
 		StringProperty:   "StringProperty2",
