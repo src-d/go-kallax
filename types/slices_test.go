@@ -14,8 +14,6 @@ import (
 )
 
 func TestSlice(t *testing.T) {
-	require := require.New(t)
-
 	cases := []struct {
 		v     interface{}
 		input interface{}
@@ -77,16 +75,6 @@ func TestSlice(t *testing.T) {
 			&([]int8{}),
 		},
 		{
-			&([]uint8{1, 3, 4}),
-			[]uint8{1, 3, 4},
-			&([]uint8{}),
-		},
-		{
-			&([]byte{1, 3, 4}),
-			[]byte{1, 3, 4},
-			&([]byte{}),
-		},
-		{
 			&([]float32{1., 3., .4}),
 			[]float32{1., 3., .4},
 			&([]float32{}),
@@ -94,22 +82,35 @@ func TestSlice(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		arr := Slice(c.v)
-		val, err := arr.Value()
-		require.Nil(err)
+		t.Run(reflect.TypeOf(c.input).String(), func(t *testing.T) {
+			require := require.New(t)
+			arr := Slice(c.v)
+			val, err := arr.Value()
+			require.NoError(err)
 
-		pqArr := pq.Array(c.input)
-		pqVal, err := pqArr.Value()
-		require.Nil(err)
+			pqArr := pq.Array(c.input)
+			pqVal, err := pqArr.Value()
+			require.NoError(err)
 
-		require.Equal(pqVal, val)
-		require.Nil(Slice(c.dest).Scan(val))
-		require.Equal(c.v, c.dest)
+			require.Equal(pqVal, val)
+			require.NoError(Slice(c.dest).Scan(val))
+			require.Equal(c.v, c.dest)
+		})
 	}
+
+	t.Run("[]byte", func(t *testing.T) {
+		require := require.New(t)
+		arr := Slice([]byte{1, 2, 3})
+		val, err := arr.Value()
+		require.NoError(err)
+
+		var b []byte
+		require.NoError(Slice(&b).Scan(val))
+		require.Equal([]byte{1, 2, 3}, b)
+	})
 }
 
 func TestSlice_Integration(t *testing.T) {
-	s := require.New(t)
 	cases := []struct {
 		name  string
 		typ   string
@@ -118,85 +119,91 @@ func TestSlice_Integration(t *testing.T) {
 	}{
 		{
 			"int8",
-			"smallint",
+			"smallint[]",
 			[]int8{math.MaxInt8, math.MinInt8},
 			&([]int8{}),
 		},
 		{
-			"unsigned int8",
-			"smallint",
-			[]uint8{math.MaxUint8, 0},
-			&([]uint8{}),
+			"byte",
+			"bytea",
+			[]byte{math.MaxUint8, 0},
+			&([]byte{}),
 		},
 		{
 			"int16",
-			"smallint",
+			"smallint[]",
 			[]int16{math.MaxInt16, math.MinInt16},
 			&([]int16{}),
 		},
 		{
 			"unsigned int16",
-			"integer",
+			"integer[]",
 			[]uint16{math.MaxUint16, 0},
 			&([]uint16{}),
 		},
 		{
 			"int32",
-			"integer",
+			"integer[]",
 			[]int32{math.MaxInt32, math.MinInt32},
 			&([]int32{}),
 		},
 		{
 			"unsigned int32",
-			"bigint",
+			"bigint[]",
 			[]uint32{math.MaxUint32, 0},
 			&([]uint32{}),
 		},
 		{
 			"int/int64",
-			"bigint",
+			"bigint[]",
 			[]int{math.MaxInt64, math.MinInt64},
 			&([]int{}),
 		},
 		{
 			"unsigned int/int64",
-			"numeric(20)",
+			"numeric(20)[]",
 			[]uint{math.MaxUint64, 0},
 			&([]uint{}),
 		},
 		{
 			"float32",
-			"decimal(10,3)",
+			"decimal(10,3)[]",
 			[]float32{.3, .6},
 			&([]float32{.3, .6}),
 		},
 	}
 
 	db, err := openTestDB()
-	s.Nil(err)
+	require.NoError(t, err)
 
 	defer func() {
 		_, err = db.Exec("DROP TABLE IF EXISTS foo")
-		s.Nil(err)
+		require.NoError(t, err)
 
-		s.Nil(db.Close())
+		require.NoError(t, db.Close())
 	}()
 
 	for _, c := range cases {
-		_, err := db.Exec(fmt.Sprintf(`CREATE TABLE foo (
-			testcol %s[]
+		t.Run(c.name, func(t *testing.T) {
+			require := require.New(t)
+
+			_, err := db.Exec(fmt.Sprintf(`CREATE TABLE foo (
+			testcol %s
 		)`, c.typ))
-		s.Nil(err, c.name)
+			require.NoError(err, c.name)
 
-		_, err = db.Exec("INSERT INTO foo (testcol) VALUES ($1)", Slice(c.input))
-		s.Nil(err, c.name)
+			defer func() {
+				_, err := db.Exec("DROP TABLE foo")
+				require.NoError(err)
+			}()
 
-		s.Nil(db.QueryRow("SELECT testcol FROM foo LIMIT 1").Scan(Slice(c.dst)), c.name)
-		slice := reflect.ValueOf(c.dst).Elem().Interface()
-		s.Equal(c.input, slice, c.name)
+			_, err = db.Exec("INSERT INTO foo (testcol) VALUES ($1)", Slice(c.input))
+			require.NoError(err, c.name)
 
-		_, err = db.Exec("DROP TABLE foo")
-		s.Nil(err, c.name)
+			require.NoError(db.QueryRow("SELECT testcol FROM foo LIMIT 1").Scan(Slice(c.dst)), c.name)
+			slice := reflect.ValueOf(c.dst).Elem().Interface()
+			require.Equal(c.input, slice, c.name)
+		})
 	}
 }
 

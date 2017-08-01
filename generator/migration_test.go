@@ -527,6 +527,7 @@ type Profile struct {
 	// should be added anyway
 	// should be added as bigint, as it is not a pk
 	Metadata ProfileMetadata
+	SomeData []byte
 }
 
 type ProfileMetadata struct {
@@ -569,6 +570,7 @@ func (s *PackageTransformerSuite) TestTransform() {
 			mkCol("background", TextColumn, false, true, nil),
 			mkCol("user_id", UUIDColumn, false, false, mkRef("users", "id", true)),
 			mkCol("spouse", UUIDColumn, false, false, nil),
+			mkCol("some_data", ByteaColumn, false, true, nil),
 		),
 		mkTable(
 			"metadata",

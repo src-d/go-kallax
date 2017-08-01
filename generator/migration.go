@@ -197,6 +197,7 @@ func (s *ColumnSchema) String() string {
 type ColumnType string
 
 const (
+	ByteaColumn       ColumnType = "bytea"
 	SmallIntColumn    ColumnType = "smallint"
 	IntegerColumn     ColumnType = "integer"
 	BigIntColumn      ColumnType = "bigint"
@@ -225,6 +226,7 @@ func ArrayColumn(typ ColumnType) ColumnType {
 	if strings.HasSuffix(string(typ), "[]") {
 		return typ
 	}
+
 	return typ + "[]"
 }
 
@@ -833,7 +835,12 @@ func (t *packageTransformer) transformType(f *Field, pk bool) (ColumnType, error
 	}
 
 	if f.Kind == Array || f.Kind == Slice {
-		return ArrayColumn(typeMappings[removeTypePrefix(f.Type)]), nil
+		typ := removeTypePrefix(f.Type)
+		if typ == "byte" {
+			return ByteaColumn, nil
+		}
+
+		return ArrayColumn(typeMappings[typ]), nil
 	}
 
 	if pk {
