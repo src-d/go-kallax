@@ -1,6 +1,7 @@
 package kallax
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -162,10 +163,27 @@ func (s *Store) Insert(schema Schema, record Record) error {
 	cols = append(cols, virtualCols...)
 	values = append(values, virtualColValues...)
 
-	builder := s.builder.
-		Insert(schema.Table()).
-		Columns(cols...).
-		Values(values...)
+	var colBuf bytes.Buffer
+	var valBuf bytes.Buffer
+
+	for i, col := range cols {
+		if i != 0 {
+			colBuf.WriteRune(',')
+			valBuf.WriteRune(',')
+		}
+		colBuf.WriteString(col)
+		valBuf.WriteString(fmt.Sprintf("$%d", i+1))
+	}
+
+	var query bytes.Buffer
+	query.WriteString("INSERT INTO ")
+	query.WriteString(schema.Table())
+	query.WriteString(" (")
+	query.WriteString(colBuf.String())
+	query.WriteString(") VALUES (")
+	query.WriteString(valBuf.String())
+	query.WriteString(")")
+
 	if schema.isPrimaryKeyAutoIncrementable() {
 		var pk interface{}
 		pk, err = record.ColumnAddress(schema.ID().String())
@@ -173,12 +191,10 @@ func (s *Store) Insert(schema Schema, record Record) error {
 			return err
 		}
 
-		err = builder.
-			Suffix(fmt.Sprintf("RETURNING %q", schema.ID())).
-			QueryRow().
-			Scan(pk)
+		query.WriteString(fmt.Sprintf(" RETURNING %s", schema.ID().String()))
+		err = s.proxy.QueryRow(query.String(), values...).Scan(pk)
 	} else {
-		_, err = builder.Exec()
+		_, err = s.proxy.Exec(query.String(), values...)
 	}
 
 	if err != nil {
