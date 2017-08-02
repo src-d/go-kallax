@@ -7,7 +7,14 @@ type Car struct {
 	ID           kallax.ULID `pk:""`
 	Owner        *Person     `fk:"owner_id,inverse"`
 	ModelName    string
+	Brand        *Brand `fk:"brand_id,inverse"`
 	events       map[string]int
+}
+
+type Brand struct {
+	kallax.Model `table:"brands"`
+	ID           kallax.ULID `pk:""`
+	Name         string
 }
 
 func (c *Car) ensureMapInitialized() {
@@ -133,4 +140,14 @@ func newCar(model string, owner *Person) *Car {
 	car := &Car{ID: kallax.NewULID(), ModelName: model, Owner: owner}
 	owner.Car = car
 	return car
+}
+
+func newBrandedCar(model string, owner *Person, brand *Brand) *Car {
+	car := &Car{ID: kallax.NewULID(), ModelName: model, Owner: owner, Brand: brand}
+	owner.Car = car
+	return car
+}
+
+func newBrand(name string) *Brand {
+	return &Brand{Name: name, ID: kallax.NewULID()}
 }
