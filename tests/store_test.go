@@ -47,8 +47,22 @@ func TestStoreSuite(t *testing.T) {
 			name text,
 			parent_id bigint references parents(id)
 		)`,
+		`CREATE TABLE IF NOT EXISTS a (
+			id serial primary key,
+			name text
+		)`,
+		`CREATE TABLE IF NOT EXISTS b (
+			id serial primary key,
+			name text,
+			a_id bigint references a(id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS c (
+			id serial primary key,
+			name text,
+			b_id bigint references b(id)
+		)`,
 	}
-	suite.Run(t, &StoreSuite{NewBaseSuite(schema, "store_construct", "store", "store_new", "query", "nullable", "children", "parents")})
+	suite.Run(t, &StoreSuite{NewBaseSuite(schema, "store_construct", "store", "store_new", "query", "nullable", "children", "parents", "c", "b", "a")})
 }
 
 type StoreSuite struct {
@@ -306,4 +320,114 @@ func (s *StoreSuite) TestInsert_RelWithNoInverseNoPtr() {
 	for _, c := range p.Children {
 		s.NotEqual(int64(0), c.ID)
 	}
+}
+
+func (s *StoreSuite) TestRecursiveInsert() {
+	store := NewAStore(s.db).Debug()
+	a := NewA("foo")
+	b := NewB("bar", a)
+	NewC("baz", b)
+
+	s.NoError(store.Insert(a))
+
+	retrievedA, err := store.FindOne(NewAQuery().FindByID(a.ID).WithB())
+	s.NoError(err)
+	s.NotNil(retrievedA.B)
+
+	bstore := NewBStore(s.db).Debug()
+	retrievedB, err := bstore.FindOne(NewBQuery().FindByID(b.ID).WithC())
+	s.NoError(err)
+	s.NotNil(retrievedB.C)
+}
+
+func (s *StoreSuite) TestRecursiveInsert_Reverse() {
+	store := NewCStore(s.db).Debug()
+	a := NewA("foo")
+	b := NewB("bar", a)
+	c := NewC("baz", b)
+
+	s.NoError(store.Insert(c))
+
+	retrievedC, err := store.FindOne(NewCQuery().FindByID(c.ID).WithB())
+	s.NoError(err)
+	s.NotNil(retrievedC.B)
+
+	bstore := NewBStore(s.db).Debug()
+	retrievedB, err := bstore.FindOne(NewBQuery().FindByID(b.ID).WithA())
+	s.NoError(err)
+	s.NotNil(retrievedB.A)
+}
+
+func (s *StoreSuite) TestRecursiveUpdate() {
+	store := NewAStore(s.db).Debug()
+	a := NewA("foo")
+	b := NewB("bar", a)
+	c := NewC("baz", b)
+
+	s.NoError(store.Insert(a))
+
+	a.Name = "foo1"
+	b.Name = "bar1"
+	c.Name = "baz1"
+
+	_, err := store.Update(a)
+	s.NoError(err)
+
+	retrievedA, err := store.FindOne(NewAQuery().FindByID(a.ID).WithB())
+	s.NoError(err)
+	s.Equal(a.Name, retrievedA.Name)
+
+	bstore := NewBStore(s.db).Debug()
+	retrievedB, err := bstore.FindOne(NewBQuery().FindByID(b.ID).WithC())
+	s.NoError(err)
+	s.Equal(b.Name, retrievedB.Name)
+	s.Equal(c.Name, retrievedB.C.Name)
+}
+
+func (s *StoreSuite) TestRecursiveUpdate_Reverse() {
+	store := NewCStore(s.db).Debug()
+	a := NewA("foo")
+	b := NewB("bar", a)
+	c := NewC("baz", b)
+
+	s.NoError(store.Insert(c))
+
+	a.Name = "foo1"
+	b.Name = "bar1"
+	c.Name = "baz1"
+
+	_, err := store.Update(c)
+	s.NoError(err)
+
+	astore := NewAStore(s.db).Debug()
+	retrievedA, err := astore.FindOne(NewAQuery().FindByID(a.ID).WithB())
+	s.NoError(err)
+	s.Equal(a.Name, retrievedA.Name)
+
+	bstore := NewBStore(s.db).Debug()
+	retrievedB, err := bstore.FindOne(NewBQuery().FindByID(b.ID).WithC())
+	s.NoError(err)
+	s.Equal(b.Name, retrievedB.Name)
+	s.Equal(c.Name, retrievedB.C.Name)
+}
+
+func (s *StoreSuite) TestInsertEmptyVirtualColumns() {
+	store := NewAStore(s.db).Debug()
+	a := NewA("foo")
+	b := NewB("bar", a)
+	NewC("baz", b)
+
+	s.NoError(store.Insert(a))
+
+	aOnly, err := store.FindOne(NewAQuery().FindByID(a.ID))
+	s.NoError(err)
+	s.Nil(aOnly.B)
+
+	aOnly.Name = "foo1"
+	_, err = store.Save(aOnly)
+	s.NoError(err)
+
+	retrievedA, err := store.FindOne(NewAQuery().FindByID(a.ID).WithB())
+	s.NoError(err)
+	s.NotNil(retrievedA.B)
 }

@@ -15,5 +15,7 @@ import (
 var _ types.SQLType
 var _ fmt.Formatter
 
+type modelSaveFunc func(*kallax.Store) error
+
 {{template "model" .}}
 {{template "schema" .}}

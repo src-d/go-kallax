@@ -134,8 +134,7 @@ func (td *TemplateData) GenColumnValues(model *Model) string {
 	var buf bytes.Buffer
 	td.genFieldsValues(&buf, model.Fields)
 	for _, fk := range model.ImplicitFKs {
-		buf.WriteString(fmt.Sprintf("case \"%s\":\n", fk.Name))
-		buf.WriteString(fmt.Sprintf("return r.Model.VirtualColumn(col), nil\n"))
+		buf.WriteString(fmt.Sprintf(virtualFieldValueTpl, fk.Name))
 	}
 	return buf.String()
 }
@@ -145,13 +144,20 @@ const nilPtrReturnsUntypedNilTpl = `if %s == (*%s)(nil) {
 }
 `
 
+const virtualFieldValueTpl = `case "%s":
+v := r.Model.VirtualColumn(col)
+if v == nil {
+return nil, kallax.ErrEmptyVirtualColumn
+}
+return v, nil
+`
+
 func (td *TemplateData) genFieldsValues(buf *bytes.Buffer, fields []*Field) {
 	for _, f := range fields {
 		if f.Inline() {
 			td.genFieldsValues(buf, f.Fields)
 		} else if isOneToOneRelationship(f) && f.IsInverse() {
-			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ForeignKey()))
-			buf.WriteString(fmt.Sprintf("return r.Model.VirtualColumn(col), nil\n"))
+			buf.WriteString(fmt.Sprintf(virtualFieldValueTpl, f.ForeignKey()))
 		} else if f.Kind != Relationship {
 			buf.WriteString(fmt.Sprintf("case \"%s\":\n", f.ColumnName()))
 			if f.IsPtr {
@@ -529,7 +535,7 @@ const (
 	// The passed values to the FindBy will be used in an kallax.ArrayContains
 	tplFindByCollection = `
 		// FindBy%[1]s adds a new filter to the query that will require that
-		// the %[1]s property contains all the passed values; if no passed values, 
+		// the %[1]s property contains all the passed values; if no passed values,
 		// it will do nothing.
 		func (q *%[2]s) FindBy%[1]s(v ...%[3]s) *%[2]s {
 		    if len(v) == 0 {return q}
@@ -557,7 +563,7 @@ const (
 	// The passed values to the FindBy will be used in an kallax.In condition.
 	tplFindByID = `
 		// FindBy%[1]s adds a new filter to the query that will require that
-		// the %[1]s property is equal to one of the passed values; if no passed values, 
+		// the %[1]s property is equal to one of the passed values; if no passed values,
 		// it will do nothing.
 		func (q *%[2]s) FindBy%[1]s(v ...%[3]s) *%[2]s {
 			if len(v) == 0 {return q}

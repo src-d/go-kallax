@@ -6,6 +6,44 @@ import (
 	"gopkg.in/src-d/go-kallax.v1"
 )
 
+type A struct {
+	kallax.Model `table:"a" pk:"id,autoincr"`
+	ID           int64
+	Name         string
+	B            *B
+}
+
+func newA(name string) *A {
+	return &A{Name: name}
+}
+
+type B struct {
+	kallax.Model `table:"b" pk:"id,autoincr"`
+	ID           int64
+	Name         string
+	A            *A `fk:",inverse"`
+	C            *C
+}
+
+func newB(name string, a *A) *B {
+	b := &B{Name: name, A: a}
+	a.B = b
+	return b
+}
+
+type C struct {
+	kallax.Model `table:"c" pk:"id,autoincr"`
+	ID           int64
+	Name         string
+	B            *B `fk:",inverse"`
+}
+
+func newC(name string, b *B) *C {
+	c := &C{Name: name, B: b}
+	b.C = c
+	return c
+}
+
 type AliasSliceString []string
 
 type StoreFixture struct {
