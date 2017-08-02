@@ -468,3 +468,23 @@ func TestPkProperties(t *testing.T) {
 		require.Equal(tt.isPrimaryKey, isPrimaryKey, tt.tag)
 	}
 }
+
+func TestIsUnique(t *testing.T) {
+	cases := []struct {
+		tag    string
+		unique bool
+	}{
+		{``, false},
+		{`fk:"foo"`, false},
+		{`unique:""`, false},
+		{`unique:"true"`, true},
+		{`fk:"foo" unique:"true"`, true},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.tag, func(t *testing.T) {
+			f := NewField("", "", reflect.StructTag(tt.tag))
+			require.Equal(t, tt.unique, f.IsUnique())
+		})
+	}
+}

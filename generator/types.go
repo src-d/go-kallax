@@ -642,6 +642,7 @@ type Field struct {
 
 	primaryKey      string
 	isPrimaryKey    bool
+	isUnique        bool
 	isAutoincrement bool
 	columnName      string
 }
@@ -709,8 +710,13 @@ func NewField(n, t string, tag reflect.StructTag) *Field {
 		primaryKey:      pkName,
 		columnName:      columnName(n, tag),
 		isPrimaryKey:    isPrimaryKey,
+		isUnique:        isUnique(tag),
 		isAutoincrement: autoincr,
 	}
+}
+
+func isUnique(tag reflect.StructTag) bool {
+	return tag.Get("unique") == "true"
 }
 
 // pkProperties returns the primary key properties from a struct tag.
@@ -794,6 +800,11 @@ func (f *Field) ForeignKey() string {
 // IsPrimaryKey reports whether the field is the primary key.
 func (f *Field) IsPrimaryKey() bool {
 	return f.isPrimaryKey
+}
+
+// IsUnique reports whether the field is unique.
+func (f *Field) IsUnique() bool {
+	return f.isUnique
 }
 
 // IsAutoIncrement reports whether the field is an autoincrementable primary key.

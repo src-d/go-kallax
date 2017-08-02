@@ -161,6 +161,8 @@ type ColumnSchema struct {
 	Reference *Reference
 	// NotNull reports whether the column is not nullable.
 	NotNull bool
+	// Unique reports whether the column has a unique constraint
+	Unique bool
 }
 
 func (s *ColumnSchema) Equals(s2 *ColumnSchema) bool {
@@ -168,6 +170,7 @@ func (s *ColumnSchema) Equals(s2 *ColumnSchema) bool {
 		s.Type == s2.Type &&
 		s.PrimaryKey == s2.PrimaryKey &&
 		s.NotNull == s2.NotNull &&
+		s.Unique == s2.Unique &&
 		s.Reference.Equals(s2.Reference)
 }
 
@@ -179,6 +182,10 @@ func (s *ColumnSchema) String() string {
 
 	if s.NotNull {
 		buf.WriteString(" NOT NULL")
+	}
+
+	if s.Unique {
+		buf.WriteString(" UNIQUE")
 	}
 
 	if s.PrimaryKey {
@@ -467,6 +474,69 @@ func (c *DropColumn) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;\n", c.Table, c.Name)), nil
 }
 
+// CreateIndex is a change that will create an index.
+type CreateIndex struct {
+	// Table name.
+	Table string
+	// Column name.
+	Column string
+	// Kind of index.
+	Kind string
+}
+
+func (c *CreateIndex) Reverse(old *DBSchema) Change {
+	return &DropIndex{
+		Table:  c.Table,
+		Column: c.Column,
+		Kind:   c.Kind,
+	}
+}
+
+func (c *CreateIndex) String() string {
+	return fmt.Sprintf("A manual change is required because a new %q index has been added at column %q of table %q.", c.Kind, c.Column, c.Table)
+}
+
+func (c *CreateIndex) MarshalText() ([]byte, error) {
+	var unique string
+	if c.Kind == "unique" {
+		unique = "UNIQUE"
+	}
+	return []byte(fmt.Sprintf(`+++
+THIS REQUIRES MANUAL MIGRATION:
+Adding an index on a table that may not be empty.
+If you're sure about this, here's the SQL for this operation.
++++
+
+CREATE %s INDEX %s ON %s;
+`, unique, indexName(c.Table, c.Column, c.Kind), c.Table)), nil
+}
+
+// DropIndex is a change that will drop an index.
+type DropIndex struct {
+	// Table name.
+	Table string
+	// Column name.
+	Column string
+	// Kind of index.
+	Kind string
+}
+
+func (c *DropIndex) Reverse(old *DBSchema) Change {
+	return &CreateIndex{
+		Table:  c.Table,
+		Column: c.Column,
+		Kind:   c.Kind,
+	}
+}
+
+func (c *DropIndex) String() string {
+	return fmt.Sprintf("The %q index at column %q of table %q has been removed and it will be dropped.", c.Kind, c.Column, c.Table)
+}
+
+func (c *DropIndex) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("DROP INDEX %s;\n", indexName(c.Table, c.Column, c.Kind))), nil
+}
+
 // ManualChange is a change that cannot be made automatically and requires
 // the user to write a proper migration.
 type ManualChange struct {
@@ -650,6 +720,20 @@ func ColumnSchemaDiff(table string, old, new *ColumnSchema) ChangeSet {
 		})
 	}
 
+	if old.Unique && !new.Unique {
+		cs = append(cs, &DropIndex{
+			Table:  table,
+			Column: new.Name,
+			Kind:   "unique",
+		})
+	} else if new.Unique && !old.Unique {
+		cs = append(cs, &CreateIndex{
+			Table:  table,
+			Column: new.Name,
+			Kind:   "unique",
+		})
+	}
+
 	if referenceChanged(old, new) {
 		cs = append(cs, &ManualChange{
 			fmt.Sprintf("don't know how to generate migration for a change of foreign key in %s(%s)", table, new.Name),
@@ -823,6 +907,7 @@ func (t *packageTransformer) transformField(f *Field) (*ColumnSchema, error) {
 		NotNull:    !f.IsPtr,
 		Type:       typ,
 		Reference:  ref,
+		Unique:     f.IsUnique(),
 	}, nil
 }
 
@@ -939,4 +1024,8 @@ func reverse(slice []string) []string {
 		result[i] = slice[len-1-i]
 	}
 	return result
+}
+
+func indexName(table, column, kind string) string {
+	return fmt.Sprintf("%s__%s__%s", table, column, kind)
 }
