@@ -154,6 +154,7 @@ type Metadata struct {
 | `kallax:",inline"` | Adds the fields of the struct field to the model. Column name can also be given before the comma, but it is ignored, since the field is not a column anymore | Any struct field |
 | `fk:"foreign_key_name"` | Name of the foreign key column | Any relationship field |
 | `fk:",inverse"` | Specifies the relationship is an inverse relationship. Foreign key name can also be given before the comma | Any relationship field |
+| `unique:"true"` | Specifies the column has an unique constraint. | Any non-primary key field |
 
 ### Primary keys
 

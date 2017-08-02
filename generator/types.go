@@ -710,22 +710,13 @@ func NewField(n, t string, tag reflect.StructTag) *Field {
 		primaryKey:      pkName,
 		columnName:      columnName(n, tag),
 		isPrimaryKey:    isPrimaryKey,
-		isUnique:        uniqueProperty(tag),
+		isUnique:        isUnique(tag),
 		isAutoincrement: autoincr,
 	}
 }
 
-func uniqueProperty(tag reflect.StructTag) bool {
-	val, ok := tag.Lookup("unique")
-	if !ok {
-		return false
-	}
-
-	if val == "" || strings.ToLower(val) == "false" {
-		return false
-	}
-
-	return true
+func isUnique(tag reflect.StructTag) bool {
+	return tag.Get("unique") == "true"
 }
 
 // pkProperties returns the primary key properties from a struct tag.

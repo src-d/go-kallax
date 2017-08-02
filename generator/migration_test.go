@@ -131,10 +131,16 @@ func TestCreateTable(t *testing.T) {
 			"table",
 			mkCol("foo", SmallIntColumn, false, false, nil),
 			mkCol("bar", SerialColumn, false, false, nil),
+			mkCol("bar2", SerialColumn, false, true, nil),
+			mkCol("id", SerialColumn, true, false, nil),
+			mkColUnique("uniq", TextColumn, false, false, nil),
 		)},
 		`CREATE TABLE table (
 	foo smallint,
-	bar serial
+	bar serial,
+	bar2 serial NOT NULL,
+	id serial PRIMARY KEY,
+	uniq text UNIQUE
 );
 
 `)
@@ -156,6 +162,33 @@ func TestAddColumn(t *testing.T) {
 			"table",
 		},
 		"ALTER TABLE table ADD COLUMN foo smallint;\n",
+	)
+
+	assertChange(
+		t,
+		&AddColumn{
+			mkColUnique("foo", SmallIntColumn, false, false, nil),
+			"table",
+		},
+		"ALTER TABLE table ADD COLUMN foo smallint UNIQUE;\n",
+	)
+
+	assertChange(
+		t,
+		&AddColumn{
+			mkColUnique("foo", SmallIntColumn, false, true, nil),
+			"table",
+		},
+		"ALTER TABLE table ADD COLUMN foo smallint NOT NULL UNIQUE;\n",
+	)
+
+	assertChange(
+		t,
+		&AddColumn{
+			mkCol("foo", SmallIntColumn, false, true, nil),
+			"table",
+		},
+		"ALTER TABLE table ADD COLUMN foo smallint NOT NULL;\n",
 	)
 }
 
@@ -227,6 +260,35 @@ func TestTableSchemaDiff(t *testing.T) {
 	}
 
 	require.Equal(t, expected, TableSchemaDiff(old, new))
+}
+
+func TestColumnSchemaDiff_Unique(t *testing.T) {
+	cases := []struct {
+		name     string
+		old, new *ColumnSchema
+		result   Change
+	}{
+		{
+			"unique index added",
+			mkCol("foo", TextColumn, false, false, nil),
+			mkColUnique("foo", TextColumn, false, false, nil),
+			&CreateIndex{"table", "foo", "unique"},
+		},
+		{
+			"unique index dropped",
+			mkColUnique("foo", TextColumn, false, false, nil),
+			mkCol("foo", TextColumn, false, false, nil),
+			&DropIndex{"table", "foo", "unique"},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			changes := ColumnSchemaDiff("table", tt.old, tt.new)
+			require.Len(t, changes, 1)
+			require.Equal(t, tt.result, changes[0])
+		})
+	}
 }
 
 func TestColumnSchemaDiff(t *testing.T) {
@@ -335,6 +397,14 @@ func TestReverseChange(t *testing.T) {
 				Table:  "foo",
 				Column: mkCol("bar", SmallIntColumn, false, false, nil),
 			},
+		},
+		{
+			&CreateIndex{"foo", "bar", "baz"},
+			&DropIndex{"foo", "bar", "baz"},
+		},
+		{
+			&DropIndex{"foo", "bar", "baz"},
+			&CreateIndex{"foo", "bar", "baz"},
 		},
 		{
 			&ManualChange{"foo"},
@@ -507,7 +577,7 @@ import (
 type User struct {
 	kallax.Model ` + "`table:\"users\"`" + `
 	ID kallax.ULID ` + "`pk:\"\"`" + `
-	Username string
+	Username string ` + "`unique:\"true\"`" + `
 	// array field
 	Emails []string
 	Profile *Profile
@@ -581,7 +651,7 @@ func (s *PackageTransformerSuite) TestTransform() {
 		mkTable(
 			"users",
 			mkCol("id", UUIDColumn, true, true, nil),
-			mkCol("username", TextColumn, false, true, nil),
+			mkColUnique("username", TextColumn, false, true, nil),
 			mkCol("emails", ArrayColumn(TextColumn), false, true, nil),
 			mkCol("phone", TextColumn, false, false, nil),
 		),
