@@ -227,7 +227,8 @@ func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64
 		cols = schema.Columns()
 	}
 
-	columnNames := ColumnNames(cols)
+	// remove the ID from there
+	columnNames := ColumnNames(cols)[1:]
 	values, columnNames, err := RecordValues(record, columnNames...)
 	if err != nil {
 		return 0, err
@@ -237,18 +238,24 @@ func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64
 	columnNames = append(columnNames, virtualCols...)
 	values = append(values, virtualColValues...)
 
-	var clauses = make(map[string]interface{}, len(cols))
+	var query bytes.Buffer
+	query.WriteString("UPDATE ")
+	query.WriteString(schema.Table())
+	query.WriteString(" SET ")
 	for i, col := range columnNames {
-		clauses[col] = values[i]
+		if i != 0 {
+			query.WriteRune(',')
+		}
+		query.WriteString(col)
+		query.WriteRune('=')
+		query.WriteString(fmt.Sprintf("$%d", i+1))
 	}
+	query.WriteString(" WHERE ")
+	query.WriteString(schema.ID().String())
+	query.WriteRune('=')
+	query.WriteString(fmt.Sprintf("$%d", len(columnNames)+1))
 
-	result, err := s.builder.
-		Update(schema.Table()).
-		SetMap(clauses).
-		Where(squirrel.Eq{
-			schema.ID().String(): record.GetID(),
-		}).
-		Exec()
+	result, err := s.proxy.Exec(query.String(), append(values, record.GetID())...)
 	if err != nil {
 		return 0, err
 	}
