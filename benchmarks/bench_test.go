@@ -118,6 +118,23 @@ func BenchmarkKallaxInsertWithRelationships(b *testing.B) {
 	}
 }
 
+func BenchmarkKallaxUpdateWithRelationships(b *testing.B) {
+	db := setupDB(b, openTestDB(b))
+	defer teardownDB(b, db)
+
+	store := NewPersonStore(db)
+	pers := mkPersonWithRels()
+	if err := store.Insert(pers); err != nil {
+		b.Fatalf("error inserting: %s", err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		if _, err := store.Update(pers); err != nil {
+			b.Fatalf("error updating: %s", err)
+		}
+	}
+}
+
 func BenchmarkSQLBoilerInsertWithRelationships(b *testing.B) {
 	db := setupDB(b, openTestDB(b))
 	defer teardownDB(b, db)
@@ -189,6 +206,23 @@ func BenchmarkKallaxInsert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		if err := store.Insert(&Person{Name: "foo"}); err != nil {
 			b.Fatalf("error inserting: %s", err)
+		}
+	}
+}
+
+func BenchmarkKallaxUpdate(b *testing.B) {
+	db := setupDB(b, openTestDB(b))
+	defer teardownDB(b, db)
+
+	store := NewPersonStore(db)
+	pers := &Person{Name: "foo"}
+	if err := store.Insert(pers); err != nil {
+		b.Fatalf("error inserting: %s", err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		if _, err := store.Update(pers); err != nil {
+			b.Fatalf("error updating: %s", err)
 		}
 	}
 }
