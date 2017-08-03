@@ -293,12 +293,14 @@ func (s *Store) Delete(schema Schema, record Record) error {
 		return ErrEmptyID
 	}
 
-	_, err := s.builder.
-		Delete(schema.Table()).
-		Where(squirrel.Eq{
-			schema.ID().String(): record.GetID(),
-		}).
-		Exec()
+	var query bytes.Buffer
+	query.WriteString("DELETE FROM ")
+	query.WriteString(schema.Table())
+	query.WriteString(" WHERE ")
+	query.WriteString(schema.ID().String())
+	query.WriteString("=$1")
+
+	_, err := s.proxy.Exec(query.String(), record.GetID())
 	return err
 }
 
