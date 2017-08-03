@@ -38,6 +38,7 @@ type Model struct {
 	virtualColumns map[string]Identifier
 	persisted      bool
 	writable       bool
+	saving         bool
 }
 
 // NewModel creates a new Model that is writable and not persisted.
@@ -46,6 +47,7 @@ func NewModel() Model {
 		persisted:      false,
 		writable:       true,
 		virtualColumns: make(map[string]Identifier),
+		saving:         false,
 	}
 }
 
@@ -70,6 +72,19 @@ func (m *Model) IsWritable() bool {
 
 func (m *Model) setWritable(w bool) {
 	m.writable = w
+}
+
+// IsSaving reports whether the model is in the process of being saved or not.
+func (m *Model) IsSaving() bool {
+	return m.saving
+}
+
+// SetSaving sets the saving status of the model.
+// This is an internal function, even though it is exposed for the concrete
+// kallax generated code to use. Please, don't use it, and if you do,
+// bad things may happen.
+func (m *Model) SetSaving(saving bool) {
+	m.saving = saving
 }
 
 // ClearVirtualColumns clears all the previous virtual columns.
@@ -171,18 +186,33 @@ type VirtualColumnContainer interface {
 	getVirtualColumns() map[string]Identifier
 }
 
+var ErrEmptyVirtualColumn = fmt.Errorf("empty virtual column")
+
 // RecordValues returns the values of a record at the given columns in the same
 // order as the columns.
-func RecordValues(record Valuer, columns ...string) ([]interface{}, error) {
-	var values = make([]interface{}, len(columns))
-	for i, col := range columns {
+// It also returns the columns with any empty virtual column removed.
+func RecordValues(record Valuer, columns ...string) ([]interface{}, []string, error) {
+	var cols = make([]string, 0, len(columns))
+	var values = make([]interface{}, 0, len(columns))
+	for _, col := range columns {
 		v, err := record.Value(col)
-		if err != nil {
-			return nil, err
+		if err == ErrEmptyVirtualColumn {
+			continue
 		}
-		values[i] = v
+
+		if err != nil {
+			return nil, nil, err
+		}
+		values = append(values, v)
+		cols = append(cols, col)
 	}
-	return values, nil
+	return values, cols, nil
+}
+
+// Saveable can report whether it's being saved or change the saving status.
+type Saveable interface {
+	IsSaving() bool
+	SetSaving(bool)
 }
 
 // Record is something that can be stored as a row in the database.
@@ -194,6 +224,7 @@ type Record interface {
 	ColumnAddresser
 	Valuer
 	VirtualColumnContainer
+	Saveable
 }
 
 var randPool = &sync.Pool{

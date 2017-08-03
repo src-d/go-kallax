@@ -141,7 +141,11 @@ return (*types.URL)(r.URL), nil
 case "url_no_ptr":
 return (*types.URL)(&r.UrlNoPtr), nil
 case "rel_id":
-return r.Model.VirtualColumn(col), nil
+v := r.Model.VirtualColumn(col)
+if v == nil {
+return nil, kallax.ErrEmptyVirtualColumn
+}
+return v, nil
 `
 
 func (s *TemplateSuite) TestGenColumnValues() {

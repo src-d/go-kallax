@@ -153,7 +153,7 @@ func (s *Store) Insert(schema Schema, record Record) error {
 		return ErrNoColumns
 	}
 
-	values, err := RecordValues(record, cols...)
+	values, cols, err := RecordValues(record, cols...)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64
 	}
 
 	columnNames := ColumnNames(cols)
-	values, err := RecordValues(record, columnNames...)
+	values, columnNames, err := RecordValues(record, columnNames...)
 	if err != nil {
 		return 0, err
 	}

@@ -119,53 +119,57 @@ func (s *{{.StoreName}}) DebugWith(logger kallax.LoggerFunc) *{{.StoreName}} {
 }
 
 {{if .HasNonInverses}}
-func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []kallax.RecordWithSchema {
-        var records []kallax.RecordWithSchema
+func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []modelSaveFunc {
+        var result []modelSaveFunc
         {{range .NonInverses}}
         {{if .IsOneToManyRelationship}}
         for i := range record.{{.Name}} {
-                record.{{.Name}}[i].ClearVirtualColumns()
-                record.{{.Name}}[i].AddVirtualColumn("{{.ForeignKey}}", record.GetID())
-                records = append(records, kallax.RecordWithSchema{
-                        Schema: Schema.{{.TypeSchemaName}}.BaseSchema,
-                        Record: {{if not ($.IsPtrSlice .)}}&{{end}}record.{{.Name}}[i],
-                })
+                r := {{if not ($.IsPtrSlice .)}}&{{end}}record.{{.Name}}[i]
+                if !r.IsSaving() {
+                        r.AddVirtualColumn("{{.ForeignKey}}", record.GetID())
+                        result = append(result, func(store *kallax.Store) error {
+                                _, err := (&{{.TypeSchemaName}}Store{store}).Save(r)
+                                return err
+                        })
+                }
         }
         {{else}}
-        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} {
-                record.{{.Name}}.ClearVirtualColumns()
-                record.{{.Name}}.AddVirtualColumn("{{.ForeignKey}}", record.GetID())
-                records = append(records, kallax.RecordWithSchema{
-                        Schema: Schema.{{.TypeSchemaName}}.BaseSchema,
-                        Record: {{if not .IsPtr}}&{{end}}record.{{.Name}},
+        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} && !record.{{.Name}}.IsSaving() {
+                r := {{if not .IsPtr}}&{{end}}record.{{.Name}}
+                r.AddVirtualColumn("{{.ForeignKey}}", record.GetID())
+                result = append(result, func(store *kallax.Store) error {
+                        _, err := (&{{.TypeSchemaName}}Store{store}).Save(r)
+                        return err
                 })
         }
         {{end}}
         {{end}}
-        return records
+        return result
 }
 {{end}}
 
 {{if .HasInverses}}
-func (s *{{.StoreName}}) inverseRecords(record *{{.Name}}) []kallax.RecordWithSchema {
-        record.ClearVirtualColumns()
-        var records []kallax.RecordWithSchema
+func (s *{{.StoreName}}) inverseRecords(record *{{.Name}}) []modelSaveFunc {
+        var result []modelSaveFunc
         {{range .Inverses}}
-        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} {
+        if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} && !record.{{.Name}}.IsSaving() {
                 record.AddVirtualColumn("{{.ForeignKey}}", record.{{.Name}}.GetID())
-                records = append(records, kallax.RecordWithSchema{
-                        Schema: Schema.{{.TypeSchemaName}}.BaseSchema,
-                        Record: {{if not .IsPtr}}&{{end}}record.{{.Name}},
+                result = append(result, func(store *kallax.Store) error {
+                        _, err := (&{{.TypeSchemaName}}Store{store}).Save(record.{{.Name}})
+                        return err
                 })
         }
         {{end}}
-        return records
+        return result
 }
 {{end}}
 
 // Insert inserts a {{.Name}} in the database. A non-persisted object is
 // required for this operation.
 func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
+        record.SetSaving(true)
+        defer record.SetSaving(false)
+
         {{$.GenTimeTruncations .}}
         {{if .Events.Has "BeforeSave"}}
         if err := record.BeforeSave(); err != nil {
@@ -183,20 +187,11 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
         {{if .HasInverses}}
         inverseRecords := s.inverseRecords(record)
         {{end}}
-        if {{if .HasNonInverses}}len(records) > 0{{end}} {{if and (.HasNonInverses) (.HasInverses)}}&&{{end}} {{if .HasInverses}}len(inverseRecords) > 0{{end}} {
+        if {{if .HasNonInverses}}len(records) > 0{{end}} {{if and (.HasNonInverses) (.HasInverses)}}||{{end}} {{if .HasInverses}}len(inverseRecords) > 0{{end}} {
                 return s.Store.Transaction(func(s *kallax.Store) error {
                         {{if .HasInverses}}
                         for _, r := range inverseRecords {
-                                if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-                                        return err
-                                }
-                                persisted := r.Record.IsPersisted()
-
-                                if _, err := s.Save(r.Schema, r.Record); err != nil {
-                                        return err
-                                }
-
-                                if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+                                if err := r(s); err != nil {
                                         return err
                                 }
                         }
@@ -206,16 +201,7 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
                         }
                         {{if .HasNonInverses}}
                         for _, r := range records {
-                                if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-                                        return err
-                                }
-                                persisted := r.Record.IsPersisted()
-
-                                if _, err := s.Save(r.Schema, r.Record); err != nil {
-                                        return err
-                                }
-
-                                if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+                                if err := r(s); err != nil {
                                         return err
                                 }
                         }
@@ -267,6 +253,9 @@ func (s *{{.StoreName}}) Insert(record *{{.Name}}) error {
 // been just inserted or retrieved using a query with no custom select fields.
 func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (updated int64, err error) {
         {{$.GenTimeTruncations .}}
+
+        record.SetSaving(true)
+        defer record.SetSaving(false)
         {{if .Events.Has "BeforeSave"}}
         if err := record.BeforeSave(); err != nil {
                 return 0, err
@@ -284,20 +273,11 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
         {{if .HasInverses}}
         inverseRecords := s.inverseRecords(record)
         {{end}}
-        if {{if .HasNonInverses}}len(records) > 0{{end}} {{if and (.HasNonInverses) (.HasInverses)}}&&{{end}} {{if .HasInverses}}len(inverseRecords) > 0{{end}} {
+        if {{if .HasNonInverses}}len(records) > 0{{end}} {{if and (.HasNonInverses) (.HasInverses)}}||{{end}} {{if .HasInverses}}len(inverseRecords) > 0{{end}} {
                 err = s.Store.Transaction(func(s *kallax.Store) error {
                         {{if .HasInverses}}
                         for _, r := range inverseRecords {
-                                if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-                                        return err
-                                }
-                                persisted := r.Record.IsPersisted()
-
-                                if _, err := s.Save(r.Schema, r.Record); err != nil {
-                                        return err
-                                }
-
-                                if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+                                if err := r(s); err != nil {
                                         return err
                                 }
                         }
@@ -310,16 +290,7 @@ func (s *{{.StoreName}}) Update(record *{{.Name}}, cols ...kallax.SchemaField) (
 
                         {{if .HasNonInverses}}
                         for _, r := range records {
-                                if err := kallax.ApplyBeforeEvents(r.Record); err != nil {
-                                        return err
-                                }
-                                persisted := r.Record.IsPersisted()
-
-                                if _, err := s.Save(r.Schema, r.Record); err != nil {
-                                        return err
-                                }
-
-                                if err := kallax.ApplyAfterEvents(r.Record, persisted); err != nil {
+                                if err := r(s); err != nil {
                                         return err
                                 }
                         }

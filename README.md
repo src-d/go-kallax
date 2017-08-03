@@ -284,7 +284,8 @@ if err != nil {
 }
 ```
 
-If our model has relationships, they will be saved (**note:** saved as in insert or update) as well. The relationships of the relationships will not, though. Relationships are only saved with one level of depth.
+If our model has relationships, they will be saved, and so will the relationships of the relationships and so on. TL;DR: inserts are recursive.
+**Note:** the relationships will be saved using `Save`, not `Insert`.
 
 ```go
 user := NewUser("foo")
@@ -319,7 +320,8 @@ if err != nil {
 }
 ```
 
-If our model has relationships, they will be saved (**note:** saved as in insert or update) as well. The relationships of the relationships will not, though. Relationships are only saved with one level of depth.
+If our model has relationships, they will be saved, and so will the relationships of the relationships and so on. TL;DR: updates are recursive.
+**Note:** the relationships will be saved using `Save`, not `Update`.
 
 ```go
 user := FindLastPoster()
@@ -346,7 +348,7 @@ if updated {
 }
 ```
 
-If our model has relationships, they will be saved as well. The relationships of the relationships will not, though. Relationships are only saved with one level of depth.
+If our model has relationships, they will be saved, and so will the relationships of the relationships and so on. TL;DR: saves are recursive.
 
 ```go
 user := NewUser("foo")

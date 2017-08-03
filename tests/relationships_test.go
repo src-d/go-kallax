@@ -16,10 +16,15 @@ func TestRelationships(t *testing.T) {
 			id serial primary key,
 			name text
 		)`,
+		`CREATE TABLE IF NOT EXISTS brands (
+			id uuid primary key,
+			name text
+		)`,
 		`CREATE TABLE IF NOT EXISTS cars (
 			id uuid primary key,
 			model_name text,
-			owner_id integer references persons(id)
+			owner_id integer references persons(id),
+			brand_id uuid references brands(id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS pets (
 			id uuid primary key,
@@ -32,13 +37,14 @@ func TestRelationships(t *testing.T) {
 }
 
 func (s *RelationshipsSuite) TestInsertFind() {
+	require := s.Require()
 	p := NewPerson("Dolan")
 	car := NewCar("Tesla Model S", p)
 	cat := NewPet("Garfield", "cat", p)
 	dog := NewPet("Oddie", "dog", p)
 
 	store := NewPersonStore(s.db)
-	s.NoError(store.Insert(p))
+	require.NoError(store.Insert(p))
 
 	pers := s.getPerson()
 	s.assertPerson(p.Name, pers, car, cat, dog)
@@ -126,6 +132,34 @@ func (s *RelationshipsSuite) TestSaveWithInverse() {
 	s.NotNil(s.getPerson())
 }
 
+func (s *RelationshipsSuite) TestSaveRelations() {
+	p := NewPerson("Musk")
+	brand := newBrand("Tesla")
+	car := newBrandedCar("Model S", p, brand)
+
+	store := NewCarStore(s.db).Debug()
+	_, err := store.Save(car)
+	s.NoError(err)
+
+	car, err = store.FindOne(NewCarQuery().FindByID(car.ID).WithBrand())
+	s.NoError(err)
+	s.NotNil(car)
+	s.NotNil(car.Brand)
+
+	pStore := NewPersonStore(s.db).Debug()
+
+	p.Name = "Elon"
+	_, err = pStore.Save(p)
+	s.NoError(err)
+	s.NotNil(p.Car)
+	s.NotNil(p.Car.Brand)
+
+	car, err = store.FindOne(NewCarQuery().FindByID(car.ID).WithBrand())
+	s.NoError(err)
+	s.NotNil(car)
+	s.NotNil(car.Brand)
+}
+
 func (s *RelationshipsSuite) assertEvents(evs map[string]int, events ...string) {
 	for _, e := range events {
 		s.Equal(1, evs[e])
@@ -139,10 +173,11 @@ func (s *RelationshipsSuite) assertNoEvents(evs map[string]int, events ...string
 }
 
 func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, pets ...*Pet) {
-	s.False(pers.GetID().IsEmpty(), "ID should not be empty")
-	s.Equal(name, pers.Name)
+	require := s.Require()
+	require.False(pers.GetID().IsEmpty(), "ID should not be empty")
+	require.Equal(name, pers.Name)
 	pers.events = nil
-	s.Len(pers.Pets, len(pets))
+	require.Len(pers.Pets, len(pets))
 
 	// Owner are set to nil to be able to deep equal in the tests.
 	// Records coming from relationships don't have their relationships
@@ -151,7 +186,7 @@ func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, p
 	var petList = make([]*Pet, len(pets))
 	for i, pet := range pets {
 		p := *pet
-		s.False(p.GetID().IsEmpty(), "ID should not be empty")
+		require.False(p.GetID().IsEmpty(), "ID should not be empty")
 		p.Owner = nil
 		p.events = nil
 		petList[i] = &p
@@ -159,26 +194,27 @@ func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, p
 
 	var c Car
 	if car == nil {
-		s.Nil(pers.Car)
+		require.Nil(pers.Car)
 	} else {
 		c = *car
-		s.False(c.GetID().IsEmpty(), "ID should not be empty")
+		require.False(c.GetID().IsEmpty(), "ID should not be empty")
 		c.Owner = nil
 		c.events = nil
-		s.Equal(&c, pers.Car)
+		require.Equal(&c, pers.Car)
 	}
 	for i, p := range petList {
-		s.Equal(p, pers.Pets[i])
+		require.Equal(p, pers.Pets[i])
 	}
 }
 
 func (s *RelationshipsSuite) getPerson() *Person {
+	require := s.Require()
 	q := NewPersonQuery().
 		WithCar().
 		WithPets(nil)
 	pers, err := NewPersonStore(s.db).FindOne(q)
-	s.NoError(err)
-	s.NotNil(pers)
+	require.NoError(err)
+	require.NotNil(pers)
 
 	return pers
 }
