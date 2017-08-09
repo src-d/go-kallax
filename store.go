@@ -228,7 +228,7 @@ func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64
 	}
 
 	// remove the ID from there
-	columnNames := ColumnNames(cols)[1:]
+	columnNames := ColumnNames(cols)
 	values, columnNames, err := RecordValues(record, columnNames...)
 	if err != nil {
 		return 0, err

@@ -88,6 +88,12 @@ func (s *StoreSuite) TestUpdate() {
 	s.Equal(int64(1), rows, "rows affected")
 	s.assertModel(m)
 
+	m.Name = "c"
+	rows, err = s.store.Update(ModelSchema, m, NewSchemaField("name"))
+	s.NoError(err)
+	s.Equal(int64(1), rows, "rows affected")
+	s.assertModel(m)
+
 	m.setWritable(false)
 	_, err = s.store.Update(ModelSchema, m)
 	s.Equal(ErrNotWritable, err)
