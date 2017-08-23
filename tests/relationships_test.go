@@ -132,6 +132,39 @@ func (s *RelationshipsSuite) TestSaveWithInverse() {
 	s.NotNil(s.getPerson())
 }
 
+func (s *RelationshipsSuite) TestInsertWithInverseZeroId() {
+	p := &Person{Name: "Foo"}
+	car := &Car{ModelName: "Bar"}
+
+	car.Owner = p
+
+	store := NewCarStore(s.db)
+	s.NoError(store.Insert(car))
+
+	car, err := store.FindOne(NewCarQuery().FindByID(car.ID).WithOwner())
+	s.NoError(err)
+	s.NotNil(car.Owner)
+}
+
+
+func (s *RelationshipsSuite) TestSaveWithInverseZeroId() {
+	p := &Person{Name: "Foo"}
+	car := &Car{ModelName: "Bar"}
+
+	store := NewCarStore(s.db)
+	s.NoError(store.Insert(car))
+
+	car, err := store.FindOne(NewCarQuery().FindByID(car.ID))
+	s.NoError(err)
+
+	car.Owner = p
+	store.Save(car)
+
+	car, err = store.FindOne(NewCarQuery().FindByID(car.ID).WithOwner())
+	s.NoError(err)
+	s.NotNil(car.Owner)
+}
+
 func (s *RelationshipsSuite) TestSaveRelations() {
 	p := NewPerson("Musk")
 	brand := newBrand("Tesla")
