@@ -408,6 +408,25 @@ func (s *{{.StoreName}}) MustCount(q *{{.QueryName}}) int64 {
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *{{.StoreName}}) Exists(q *{{.QueryName}}) (bool, error) {
+	q.Limit(1)
+        q.Select(Schema.{{.Name}}.ID)
+        q.Offset(0)
+        rs, err := s.Find(q)
+        if err != nil {
+                return false, err
+        }
+
+        if !rs.Next() {
+                return false, nil
+        }
+
+        err = rs.Close()
+        return true, err
+}
+
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *{{.StoreName}}) FindOne(q *{{.QueryName}}) (*{{.Name}}, error) {
