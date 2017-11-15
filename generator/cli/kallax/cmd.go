@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"gopkg.in/src-d/go-kallax.v1/generator/cli/kallax/cmd"
@@ -11,7 +12,10 @@ import (
 const version = "1.3.0"
 
 func main() {
-	newApp().Run(os.Args)
+	if err := newApp().Run(os.Args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
 
 func newApp() *cli.App {
