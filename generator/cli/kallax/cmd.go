@@ -9,7 +9,7 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-const version = "1.3.0"
+const version = "1.3.2"
 
 func main() {
 	if err := newApp().Run(os.Args); err != nil {
