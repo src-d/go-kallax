@@ -7,7 +7,7 @@ type Car struct {
 	ID           kallax.ULID `pk:""`
 	Owner        *Person     `fk:"owner_id,inverse"`
 	ModelName    string
-	Brand        *Brand `fk:"brand_id,inverse"`
+	Brand        Brand `fk:"brand_id,inverse"`
 	events       map[string]int
 }
 
@@ -142,7 +142,7 @@ func newCar(model string, owner *Person) *Car {
 	return car
 }
 
-func newBrandedCar(model string, owner *Person, brand *Brand) *Car {
+func newBrandedCar(model string, owner *Person, brand Brand) *Car {
 	car := &Car{ID: kallax.NewULID(), ModelName: model, Owner: owner, Brand: brand}
 	owner.Car = car
 	return car
@@ -150,4 +150,8 @@ func newBrandedCar(model string, owner *Person, brand *Brand) *Car {
 
 func newBrand(name string) *Brand {
 	return &Brand{Name: name, ID: kallax.NewULID()}
+}
+
+func makeBrand(name string) Brand {
+	return Brand{Name: name, ID: kallax.NewULID()}
 }

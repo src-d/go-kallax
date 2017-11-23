@@ -155,7 +155,7 @@ func (s *{{.StoreName}}) inverseRecords(record *{{.Name}}) []modelSaveFunc {
         if {{if .IsPtr}}record.{{.Name}} != nil{{else}}!record.{{.Name}}.GetID().IsEmpty(){{end}} && !record.{{.Name}}.IsSaving() {
                 record.AddVirtualColumn("{{.ForeignKey}}", record.{{.Name}}.GetID())
                 result = append(result, func(store *kallax.Store) error {
-                        _, err := (&{{.TypeSchemaName}}Store{store}).Save(record.{{.Name}})
+                        _, err := (&{{.TypeSchemaName}}Store{store}).Save({{if not .IsPtr}}&{{end}}record.{{.Name}})
                         return err
                 })
         }
