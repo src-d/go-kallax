@@ -2131,10 +2131,7 @@ func (r *Car) SetRelationship(field string, rel interface{}) error {
 		if !ok {
 			return fmt.Errorf("kallax: record of type %t can't be assigned to relationship Brand", rel)
 		}
-		if !val.GetID().IsEmpty() {
-			r.Brand = val
-		}
-
+		r.Brand = *val
 		return nil
 
 	}
@@ -2186,10 +2183,10 @@ func (s *CarStore) inverseRecords(record *Car) []modelSaveFunc {
 		})
 	}
 
-	if record.Brand != nil && !record.Brand.IsSaving() {
+	if !record.Brand.GetID().IsEmpty() && !record.Brand.IsSaving() {
 		record.AddVirtualColumn("brand_id", record.Brand.GetID())
 		result = append(result, func(store *kallax.Store) error {
-			_, err := (&BrandStore{store}).Save(record.Brand)
+			_, err := (&BrandStore{store}).Save(&record.Brand)
 			return err
 		})
 	}

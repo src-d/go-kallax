@@ -134,7 +134,7 @@ func (s *RelationshipsSuite) TestSaveWithInverse() {
 
 func (s *RelationshipsSuite) TestSaveRelations() {
 	p := NewPerson("Musk")
-	brand := newBrand("Tesla")
+	brand := makeBrand("Tesla")
 	car := newBrandedCar("Model S", p, brand)
 
 	store := NewCarStore(s.db).Debug()
