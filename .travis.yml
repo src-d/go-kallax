@@ -2,6 +2,7 @@ language: go
 
 go:
   - 1.8
+  - 1.9
   - tip
 
 matrix:
@@ -33,3 +34,8 @@ script:
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always
