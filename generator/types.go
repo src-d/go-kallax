@@ -376,7 +376,11 @@ func (m *Model) CtorArgs() string {
 
 		if paramsLen == i+1 && sig.Variadic() {
 			typeName = "..." + typeName
+		} else // TODO: Dirty fix for #229, address properly inside findableTypeName or typeString
+		if collectionElemType(param.Type()) != nil && !strings.HasPrefix(typeName, "[]") {
+			typeName = "[]" + typeName
 		}
+
 		paramName := param.Name()
 		if paramName == "s" {
 			paramName = fmt.Sprintf("arg%v", i)
