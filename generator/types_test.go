@@ -221,11 +221,11 @@ type User struct {
 	Settings     *Settings
 }
 
-func newUser(id kallax.ULID, username, email string) (*User, error) {
+func newUser(id kallax.ULID, username, email string, websites []string) (*User, error) {
 	if strings.Contains(email, "@spam.org") {
 		return nil, errors.New("kallax: is spam!")
 	}
-	return &User{ID: id, Username: username, Email: email}, nil
+	return &User{ID: id, Username: username, Email: email, Websites: websites}, nil
 }
 
 type Email struct {
@@ -302,8 +302,8 @@ func (s *ModelSuite) TestModel() {
 }
 
 func (s *ModelSuite) TestCtor() {
-	s.Equal("id kallax.ULID, username string, email string", s.model.CtorArgs())
-	s.Equal("id, username, email", s.model.CtorArgVars())
+	s.Equal("id kallax.ULID, username string, email string, websites []string", s.model.CtorArgs())
+	s.Equal("id, username, email, websites", s.model.CtorArgVars())
 	s.Equal("(record *User, err error)", s.model.CtorReturns())
 	s.Equal("record, err", s.model.CtorRetVars())
 }
