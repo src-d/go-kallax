@@ -128,6 +128,7 @@ func (s *ResulsetSuite) TestResultSetForEachError() {
 
 	s.NotPanics(func() {
 		rs := store.MustFind(NewResultSetFixtureQuery())
+		defer rs.Close()
 		err := rs.ForEach(func(*ResultSetFixture) error {
 			return fail
 		})
