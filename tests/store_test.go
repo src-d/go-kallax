@@ -89,6 +89,7 @@ func (s *StoreSuite) TestStoreMustFind() {
 	query := NewStoreFixtureQuery()
 	s.NotPanics(func() {
 		rs := store.MustFind(query)
+		defer rs.Close()
 		s.NotNil(rs)
 	})
 }
@@ -109,6 +110,64 @@ func (s *StoreSuite) TestStoreFindOneReturnValues() {
 
 	doc, err = store.FindOne(NewStoreWithConstructFixtureQuery())
 	s.resultOrError(doc, err)
+}
+
+func (s *StoreSuite) TestStoreFindAllReturnValues() {
+	store := NewStoreWithConstructFixtureStore(s.db)
+	s.Nil(store.Insert(NewStoreWithConstructFixture("foo")))
+	s.Nil(store.Insert(NewStoreWithConstructFixture("bar")))
+
+	notFoundQuery := NewStoreWithConstructFixtureQuery()
+	notFoundQuery.Where(kallax.Eq(Schema.ResultSetFixture.ID, kallax.NewULID()))
+	docs, err := store.FindAll(notFoundQuery)
+	s.resultsOrError(docs, err)
+	s.NotPanics(func() {
+		s.Equal(0, len(docs))
+	})
+
+	docs, err = store.FindAll(NewStoreWithConstructFixtureQuery().Order(kallax.Asc(Schema.StoreWithConstructFixture.Foo)))
+	s.resultsOrError(docs, err)
+	s.NotPanics(func() {
+		s.Equal(2, len(docs))
+		s.Equal("bar", docs[0].Foo)
+		s.Equal("foo", docs[1].Foo)
+	})
+}
+
+func (s *StoreSuite) TestStoreCount() {
+	store := NewStoreWithConstructFixtureStore(s.db)
+	s.Nil(store.Insert(NewStoreWithConstructFixture("foo")))
+	s.Nil(store.Insert(NewStoreWithConstructFixture("bar")))
+
+	notFoundQuery := NewStoreWithConstructFixtureQuery()
+	notFoundQuery.Where(kallax.Eq(Schema.ResultSetFixture.ID, kallax.NewULID()))
+	count, err := store.Count(notFoundQuery)
+	s.Nil(err)
+	s.NotPanics(func() {
+		s.Equal(int64(0), count)
+	})
+
+	count, err = store.Count(NewStoreWithConstructFixtureQuery())
+	s.Nil(err)
+	s.NotPanics(func() {
+		s.Equal(int64(2), count)
+	})
+}
+
+func (s *StoreSuite) TestStoreReload() {
+	store := NewStoreWithConstructFixtureStore(s.db)
+	s.Nil(store.Insert(NewStoreWithConstructFixture("bar")))
+
+	doc, err := store.FindOne(NewStoreWithConstructFixtureQuery().FindByFoo("bar").Select(Schema.StoreWithConstructFixture.ID))
+	s.Nil(err)
+	s.NotPanics(func() {
+		s.Equal("", doc.Foo)
+	})
+	err = store.Reload(doc)
+	s.Nil(err)
+	s.NotPanics(func() {
+		s.Equal("bar", doc.Foo)
+	})
 }
 
 func (s *StoreSuite) TestStoreInsertUpdateMustFind() {
