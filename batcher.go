@@ -175,7 +175,7 @@ func (r *batchQueryRunner) getRecordRelationships(ids []interface{}, rel Relatio
 
 	filter := In(fk, ids...)
 	if rel.Filter != nil {
-		And(rel.Filter, filter)
+		rel.Filter = And(rel.Filter, filter)
 	} else {
 		rel.Filter = filter
 	}
