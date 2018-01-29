@@ -166,6 +166,8 @@ The following types can be used as primary key:
 * [`uuid.UUID`](https://godoc.org/github.com/satori/go.uuid#UUID)
 * [`kallax.ULID`](https://godoc.org/github.com/src-d/go-kallax/#ULID): this is a type kallax provides that implements a lexically sortable UUID. You can store it as `uuid` like any other UUID, but internally it's an ULID and you will be able to sort lexically by it.
 
+Due to how sql mapping works, pointers to `uuid.UUID` and `kallax.ULID` are not set to `nil` if they appear as `NULL` in the database, but to [`uuid.Nil`](https://godoc.org/github.com/satori/go.uuid#pkg-variables). Using pointers to UUIDs is discouraged for this reason.
+
 If you need another type as primary key, feel free to open a pull request implementing that.
 
 **Known limitations**
