@@ -82,6 +82,16 @@ func (s *QuerySuite) TestString() {
 	s.Equal("SELECT __model.foo FROM model __model", s.q.String())
 }
 
+func (s *QuerySuite) TestToSql() {
+	s.q.Select(f("foo"))
+	s.q.Where(Eq(f("foo"), 5))
+	s.q.Where(Eq(f("bar"), "baz"))
+	sql, args, err := s.q.ToSql()
+	s.Equal("SELECT __model.foo FROM model __model WHERE __model.foo = $1 AND __model.bar = $2", sql)
+	s.Equal([]interface{}{5, "baz"}, args)
+	s.Equal(err, nil)
+}
+
 func (s *QuerySuite) TestAddRelation() {
 	s.Nil(s.q.AddRelation(RelSchema, "rel", OneToOne, nil))
 	s.Equal("SELECT __model.id, __model.name, __model.email, __model.age, __rel_rel.id, __rel_rel.model_id, __rel_rel.foo FROM model __model LEFT JOIN rel __rel_rel ON (__rel_rel.model_id = __model.id)", s.q.String())

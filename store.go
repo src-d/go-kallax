@@ -60,62 +60,87 @@ func StoreFrom(to, from GenericStorer) {
 // logs it.
 type LoggerFunc func(string, ...interface{})
 
-// debugProxy is a database proxy that logs all SQL statements executed.
-type debugProxy struct {
-	logger LoggerFunc
-	proxy  squirrel.DBProxy
-}
-
 func defaultLogger(message string, args ...interface{}) {
 	log.Printf("%s, args: %v", message, args)
 }
 
-func (p *debugProxy) Exec(query string, args ...interface{}) (sql.Result, error) {
+// basicLogger is a database runner that logs all SQL statements executed.
+type basicLogger struct {
+	logger LoggerFunc
+	runner squirrel.BaseRunner
+}
+
+// basicLogger is a database runner that logs all SQL statements executed.
+type proxyLogger struct {
+	basicLogger
+}
+
+func (p *basicLogger) Exec(query string, args ...interface{}) (sql.Result, error) {
 	p.logger(fmt.Sprintf("kallax: Exec: %s", query), args...)
-	return p.proxy.Exec(query, args...)
+	return p.runner.Exec(query, args...)
 }
 
-func (p *debugProxy) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (p *basicLogger) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	p.logger(fmt.Sprintf("kallax: Query: %s", query), args...)
-	return p.proxy.Query(query, args...)
+	return p.runner.Query(query, args...)
 }
 
-func (p *debugProxy) QueryRow(query string, args ...interface{}) squirrel.RowScanner {
-	p.logger(fmt.Sprintf("kallax: QueryRow: %s", query), args...)
-	return p.proxy.QueryRow(query, args...)
+func (p *proxyLogger) QueryRow(query string, args ...interface{}) squirrel.RowScanner {
+	p.basicLogger.logger(fmt.Sprintf("kallax: QueryRow: %s", query), args...)
+	if queryRower, ok := p.basicLogger.runner.(squirrel.QueryRower); ok {
+		return queryRower.QueryRow(query, args...)
+	} else {
+		panic("Called proxyLogger with a runner which doesn't implement QueryRower")
+	}
 }
 
-func (p *debugProxy) Prepare(query string) (*sql.Stmt, error) {
-	p.logger(fmt.Sprintf("kallax: Prepare: %s", query))
-	return p.proxy.Prepare(query)
+func (p *proxyLogger) Prepare(query string) (*sql.Stmt, error) {
+	// If chained runner is a proxy, run Prepare(). Otherwise, noop.
+	if preparer, ok := p.basicLogger.runner.(squirrel.Preparer); ok {
+		p.basicLogger.logger(fmt.Sprintf("kallax: Prepare: %s", query))
+		return preparer.Prepare(query)
+	} else {
+		panic("Called proxyLogger with a runner which doesn't implement QueryRower")
+	}
 }
 
 // Store is a structure capable of retrieving records from a concrete table in
 // the database.
 type Store struct {
-	builder squirrel.StatementBuilderType
-	db      *sql.DB
-	proxy   squirrel.DBProxy
+	db interface {
+		squirrel.BaseRunner
+		squirrel.PreparerContext
+	}
+	runner    squirrel.BaseRunner
+	useCacher bool
+	logger    LoggerFunc
 }
 
 // NewStore returns a new Store instance.
 func NewStore(db *sql.DB) *Store {
-	proxy := squirrel.NewStmtCacher(db)
-	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar).RunWith(proxy)
-	return &Store{
-		db:      db,
-		proxy:   proxy,
-		builder: builder,
-	}
+	return (&Store{
+		db:        db,
+		useCacher: true,
+	}).init()
 }
 
-func newStoreWithTransaction(tx *sql.Tx) *Store {
-	proxy := squirrel.NewStmtCacher(tx)
-	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar).RunWith(proxy)
-	return &Store{
-		proxy:   proxy,
-		builder: builder,
+// init initializes the store runner with debugging or caching, and returns itself for chainability
+func (s *Store) init() *Store {
+	s.runner = s.db
+
+	if s.useCacher {
+		s.runner = squirrel.NewStmtCacher(s.db)
 	}
+
+	if s.logger != nil && !s.useCacher {
+		// Use BasicLogger as wrapper
+		s.runner = &basicLogger{s.logger, s.runner}
+	} else if s.logger != nil && s.useCacher {
+		// We're using a proxy (cacher), so use proxyLogger instead
+		s.runner = &proxyLogger{basicLogger{s.logger, s.runner}}
+	}
+
+	return s
 }
 
 // Debug returns a new store that will print all SQL statements to stdout using
@@ -127,12 +152,29 @@ func (s *Store) Debug() *Store {
 // DebugWith returns a new store that will print all SQL statements using the
 // given logger function.
 func (s *Store) DebugWith(logger LoggerFunc) *Store {
-	proxy := &debugProxy{logger, s.proxy}
-	return &Store{
-		builder: s.builder.RunWith(proxy),
-		db:      s.db,
-		proxy:   proxy,
-	}
+	return (&Store{
+		db:        s.db,
+		useCacher: s.useCacher,
+		logger:    logger,
+	}).init()
+}
+
+// DisableCacher turns off prepared statements.
+func (s *Store) DisableCacher() *Store {
+	return (&Store{
+		db:        s.db,
+		logger:    s.logger,
+		useCacher: false,
+	}).init()
+}
+
+// EnableCacher turns on prepared statements. This is the default.
+func (s *Store) EnableCacher() *Store {
+	return (&Store{
+		db:        s.db,
+		logger:    s.logger,
+		useCacher: true,
+	}).init()
 }
 
 // Insert insert the given record in the table, returns error if no-new
@@ -192,9 +234,20 @@ func (s *Store) Insert(schema Schema, record Record) error {
 		}
 
 		query.WriteString(fmt.Sprintf(" RETURNING %s", schema.ID().String()))
-		err = s.proxy.QueryRow(query.String(), values...).Scan(pk)
+		//err = s.runner.QueryRow(query.String(), values...).Scan(pk)
+		rows, err := s.runner.Query(query.String(), values...)
+		if err != nil {
+			return err
+		}
+		if rows.Next() {
+			err = rows.Scan(pk)
+			rows.Close()
+			if err != nil {
+				return err
+			}
+		}
 	} else {
-		_, err = s.proxy.Exec(query.String(), values...)
+		_, err = s.runner.Exec(query.String(), values...)
 	}
 
 	if err != nil {
@@ -255,7 +308,7 @@ func (s *Store) Update(schema Schema, record Record, cols ...SchemaField) (int64
 	query.WriteRune('=')
 	query.WriteString(fmt.Sprintf("$%d", len(columnNames)+1))
 
-	result, err := s.proxy.Exec(query.String(), append(values, record.GetID())...)
+	result, err := s.runner.Exec(query.String(), append(values, record.GetID())...)
 	if err != nil {
 		return 0, err
 	}
@@ -300,7 +353,7 @@ func (s *Store) Delete(schema Schema, record Record) error {
 	query.WriteString(schema.ID().String())
 	query.WriteString("=$1")
 
-	_, err := s.proxy.Exec(query.String(), record.GetID())
+	_, err := s.runner.Exec(query.String(), record.GetID())
 	return err
 }
 
@@ -309,7 +362,7 @@ func (s *Store) Delete(schema Schema, record Record) error {
 // WARNING: A result set created from a raw query can only be scanned using the
 // RawScan method of ResultSet, instead of Scan.
 func (s *Store) RawQuery(sql string, params ...interface{}) (ResultSet, error) {
-	rows, err := s.proxy.Query(sql, params...)
+	rows, err := s.runner.Query(sql, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +373,7 @@ func (s *Store) RawQuery(sql string, params ...interface{}) (ResultSet, error) {
 // RawExec executes a raw SQL query with the given parameters and returns
 // the number of affected rows.
 func (s *Store) RawExec(sql string, params ...interface{}) (int64, error) {
-	result, err := s.proxy.Exec(sql, params...)
+	result, err := s.runner.Exec(sql, params...)
 	if err != nil {
 		return 0, err
 	}
@@ -332,7 +385,7 @@ func (s *Store) RawExec(sql string, params ...interface{}) (int64, error) {
 func (s *Store) Find(q Query) (ResultSet, error) {
 	rels := q.getRelationships()
 	if containsRelationshipOfType(rels, OneToMany) {
-		return NewBatchingResultSet(newBatchQueryRunner(q.Schema(), s.proxy, q)), nil
+		return NewBatchingResultSet(newBatchQueryRunner(q.Schema(), s.runner, q)), nil
 	}
 
 	columns, builder := q.compile()
@@ -344,7 +397,7 @@ func (s *Store) Find(q Query) (ResultSet, error) {
 		builder = builder.Limit(limit)
 	}
 
-	rows, err := builder.RunWith(s.proxy).Query()
+	rows, err := builder.RunWith(s.runner).Query()
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +432,7 @@ func (s *Store) Reload(schema Schema, record Record) error {
 	q.Limit(1)
 	columns, builder := q.compile()
 
-	rows, err := builder.RunWith(s.proxy).Query()
+	rows, err := builder.RunWith(s.runner).Query()
 	if err != nil {
 		return err
 	}
@@ -399,7 +452,7 @@ func (s *Store) Count(q Query) (count int64, err error) {
 	_, queryBuilder := q.compile()
 	builder := builder.Set(queryBuilder, "Columns", nil).(squirrel.SelectBuilder)
 	err = builder.Column(fmt.Sprintf("COUNT(%s)", all.QualifiedName(q.Schema()))).
-		RunWith(s.proxy).
+		RunWith(s.runner).
 		QueryRow().
 		Scan(&count)
 	return
@@ -423,16 +476,26 @@ func (s *Store) MustCount(q Query) int64 {
 // If a transaction is already opened in this store, instead of opening a new
 // one, the other will be reused.
 func (s *Store) Transaction(callback func(*Store) error) error {
-	if s.db == nil {
+	var tx *sql.Tx
+	var err error
+	if db, ok := s.db.(*sql.DB); ok {
+		// db is *sql.DB, not *sql.Tx
+		tx, err = db.Begin()
+		if err != nil {
+			return fmt.Errorf("kallax: can't open transaction: %s", err)
+		}
+	} else {
+		// store is already holding a transaction
 		return callback(s)
 	}
 
-	tx, err := s.db.Begin()
-	if err != nil {
-		return fmt.Errorf("kallax: can't open transaction: %s", err)
-	}
+	txStore := (&Store{
+		db:        tx,
+		logger:    s.logger,
+		useCacher: true,
+	}).init()
 
-	if err := callback(newStoreWithTransaction(tx)); err != nil {
+	if err := callback(txStore); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return fmt.Errorf("kallax: unable to rollback transaction: %s", err)
 		}
