@@ -159,6 +159,24 @@ func (s *Store) DebugWith(logger LoggerFunc) *Store {
 	}).init()
 }
 
+// DisableCacher turns off prepared statements.
+func (s *Store) DisableCacher() *Store {
+	return (&Store{
+		db:        s.db,
+		logger:    s.logger,
+		useCacher: false,
+	}).init()
+}
+
+// EnableCacher turns on prepared statements. This is the default.
+func (s *Store) EnableCacher() *Store {
+	return (&Store{
+		db:        s.db,
+		logger:    s.logger,
+		useCacher: true,
+	}).init()
+}
+
 // Insert insert the given record in the table, returns error if no-new
 // record is given. The record id is set if it's empty.
 func (s *Store) Insert(schema Schema, record Record) error {
