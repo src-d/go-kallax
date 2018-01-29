@@ -321,6 +321,21 @@ func (s *StoreSuite) TestTransaction() {
 	s.assertCount(2)
 }
 
+func (s *StoreSuite) TestTransaction_FromDebugStore() {
+	debugStore := s.store.Debug()
+	s.Equal(true, debugStore.debugEnabled)
+	transactionDebuggingEnabled := false
+	err := debugStore.Transaction(func(store *Store) error {
+		transactionDebuggingEnabled = store.debugEnabled
+
+		return store.Transaction(func(store *Store) error {
+			return store.Insert(ModelSchema, newModel("Anna", "", 1))
+		})
+	})
+	s.NoError(err)
+	s.Equal(true, transactionDebuggingEnabled)
+}
+
 func (s *StoreSuite) TestTransaction_CantOpen() {
 	err := s.errStore.Transaction(func(store *Store) error {
 		return nil

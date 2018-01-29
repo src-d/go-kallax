@@ -93,9 +93,10 @@ func (p *debugProxy) Prepare(query string) (*sql.Stmt, error) {
 // Store is a structure capable of retrieving records from a concrete table in
 // the database.
 type Store struct {
-	builder squirrel.StatementBuilderType
-	db      *sql.DB
-	proxy   squirrel.DBProxy
+	builder      squirrel.StatementBuilderType
+	db           *sql.DB
+	proxy        squirrel.DBProxy
+	debugEnabled bool
 }
 
 // NewStore returns a new Store instance.
@@ -103,9 +104,10 @@ func NewStore(db *sql.DB) *Store {
 	proxy := squirrel.NewStmtCacher(db)
 	builder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar).RunWith(proxy)
 	return &Store{
-		db:      db,
-		proxy:   proxy,
-		builder: builder,
+		db:           db,
+		proxy:        proxy,
+		builder:      builder,
+		debugEnabled: false,
 	}
 }
 
@@ -129,9 +131,10 @@ func (s *Store) Debug() *Store {
 func (s *Store) DebugWith(logger LoggerFunc) *Store {
 	proxy := &debugProxy{logger, s.proxy}
 	return &Store{
-		builder: s.builder.RunWith(proxy),
-		db:      s.db,
-		proxy:   proxy,
+		builder:      s.builder.RunWith(proxy),
+		db:           s.db,
+		proxy:        proxy,
+		debugEnabled: true,
 	}
 }
 
@@ -432,7 +435,12 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 		return fmt.Errorf("kallax: can't open transaction: %s", err)
 	}
 
-	if err := callback(newStoreWithTransaction(tx)); err != nil {
+	storeWithTransaction := newStoreWithTransaction(tx)
+	if s.debugEnabled {
+		storeWithTransaction = storeWithTransaction.Debug()
+	}
+
+	if err := callback(storeWithTransaction); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return fmt.Errorf("kallax: unable to rollback transaction: %s", err)
 		}
