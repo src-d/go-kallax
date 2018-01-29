@@ -14,7 +14,7 @@ type batchQueryRunner struct {
 	q             Query
 	oneToOneRels  []Relationship
 	oneToManyRels []Relationship
-	db            squirrel.DBProxy
+	db            squirrel.BaseRunner
 	builder       squirrel.SelectBuilder
 	total         int
 	eof           bool
@@ -24,7 +24,7 @@ type batchQueryRunner struct {
 
 var errNoMoreRows = errors.New("kallax: there are no more rows in the result set")
 
-func newBatchQueryRunner(schema Schema, db squirrel.DBProxy, q Query) *batchQueryRunner {
+func newBatchQueryRunner(schema Schema, db squirrel.BaseRunner, q Query) *batchQueryRunner {
 	cols, builder := q.compile()
 	var (
 		oneToOneRels  []Relationship

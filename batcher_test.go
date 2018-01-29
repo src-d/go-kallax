@@ -54,7 +54,7 @@ func TestBatcherLimit(t *testing.T) {
 	q.BatchSize(2)
 	q.Limit(5)
 	r.NoError(q.AddRelation(RelSchema, "rels", OneToMany, Eq(f("foo"), "1")))
-	runner := newBatchQueryRunner(ModelSchema, store.proxy, q)
+	runner := newBatchQueryRunner(ModelSchema, store.runner, q)
 	rs := NewBatchingResultSet(runner)
 
 	var count int
@@ -91,7 +91,7 @@ func TestBatcherNoExtraQueryIfLessThanLimit(t *testing.T) {
 	var queries int
 	proxy := store.DebugWith(func(_ string, _ ...interface{}) {
 		queries++
-	}).proxy
+	}).runner
 	runner := newBatchQueryRunner(ModelSchema, proxy, q)
 	rs := NewBatchingResultSet(runner)
 
@@ -130,7 +130,7 @@ func TestBatcherNoExtraQueryIfLessThanBatchSize(t *testing.T) {
 	var queries int
 	proxy := store.DebugWith(func(_ string, _ ...interface{}) {
 		queries++
-	}).proxy
+	}).runner
 	runner := newBatchQueryRunner(ModelSchema, proxy, q)
 	rs := NewBatchingResultSet(runner)
 
