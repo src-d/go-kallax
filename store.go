@@ -492,7 +492,7 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 	txStore := (&Store{
 		db:        tx,
 		logger:    s.logger,
-		useCacher: true,
+		useCacher: s.useCacher,
 	}).init()
 
 	if err := callback(txStore); err != nil {
