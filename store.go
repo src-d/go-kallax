@@ -159,7 +159,7 @@ func (s *Store) DebugWith(logger LoggerFunc) *Store {
 	}).init()
 }
 
-// DisableCacher turns off prepared statements.
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
 func (s *Store) DisableCacher() *Store {
 	return (&Store{
 		db:        s.db,

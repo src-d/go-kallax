@@ -119,6 +119,16 @@ func (s *AStore) DebugWith(logger kallax.LoggerFunc) *AStore {
 	return &AStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *AStore) DisableCacher() *AStore {
+	return &AStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *AStore) EnableCacher() *AStore {
+	return &AStore{s.Store.EnableCacher()}
+}
+
 func (s *AStore) relationshipRecords(record *A) []modelSaveFunc {
 	var result []modelSaveFunc
 
@@ -661,6 +671,16 @@ func (s *BStore) Debug() *BStore {
 // given logger function.
 func (s *BStore) DebugWith(logger kallax.LoggerFunc) *BStore {
 	return &BStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *BStore) DisableCacher() *BStore {
+	return &BStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *BStore) EnableCacher() *BStore {
+	return &BStore{s.Store.EnableCacher()}
 }
 
 func (s *BStore) relationshipRecords(record *B) []modelSaveFunc {
@@ -1210,6 +1230,16 @@ func (s *BrandStore) DebugWith(logger kallax.LoggerFunc) *BrandStore {
 	return &BrandStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *BrandStore) DisableCacher() *BrandStore {
+	return &BrandStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *BrandStore) EnableCacher() *BrandStore {
+	return &BrandStore{s.Store.EnableCacher()}
+}
+
 // Insert inserts a Brand in the database. A non-persisted object is
 // required for this operation.
 func (s *BrandStore) Insert(record *Brand) error {
@@ -1647,6 +1677,16 @@ func (s *CStore) Debug() *CStore {
 // given logger function.
 func (s *CStore) DebugWith(logger kallax.LoggerFunc) *CStore {
 	return &CStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *CStore) DisableCacher() *CStore {
+	return &CStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *CStore) EnableCacher() *CStore {
+	return &CStore{s.Store.EnableCacher()}
 }
 
 func (s *CStore) inverseRecords(record *C) []modelSaveFunc {
@@ -2170,6 +2210,16 @@ func (s *CarStore) Debug() *CarStore {
 // given logger function.
 func (s *CarStore) DebugWith(logger kallax.LoggerFunc) *CarStore {
 	return &CarStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *CarStore) DisableCacher() *CarStore {
+	return &CarStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *CarStore) EnableCacher() *CarStore {
+	return &CarStore{s.Store.EnableCacher()}
 }
 
 func (s *CarStore) inverseRecords(record *Car) []modelSaveFunc {
@@ -2732,6 +2782,16 @@ func (s *ChildStore) DebugWith(logger kallax.LoggerFunc) *ChildStore {
 	return &ChildStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *ChildStore) DisableCacher() *ChildStore {
+	return &ChildStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *ChildStore) EnableCacher() *ChildStore {
+	return &ChildStore{s.Store.EnableCacher()}
+}
+
 // Insert inserts a Child in the database. A non-persisted object is
 // required for this operation.
 func (s *ChildStore) Insert(record *Child) error {
@@ -3151,6 +3211,16 @@ func (s *EventsAllFixtureStore) Debug() *EventsAllFixtureStore {
 // given logger function.
 func (s *EventsAllFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsAllFixtureStore {
 	return &EventsAllFixtureStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *EventsAllFixtureStore) DisableCacher() *EventsAllFixtureStore {
+	return &EventsAllFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *EventsAllFixtureStore) EnableCacher() *EventsAllFixtureStore {
+	return &EventsAllFixtureStore{s.Store.EnableCacher()}
 }
 
 // Insert inserts a EventsAllFixture in the database. A non-persisted object is
@@ -3618,6 +3688,16 @@ func (s *EventsFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsFixtureS
 	return &EventsFixtureStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *EventsFixtureStore) DisableCacher() *EventsFixtureStore {
+	return &EventsFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *EventsFixtureStore) EnableCacher() *EventsFixtureStore {
+	return &EventsFixtureStore{s.Store.EnableCacher()}
+}
+
 // Insert inserts a EventsFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *EventsFixtureStore) Insert(record *EventsFixture) error {
@@ -4065,6 +4145,16 @@ func (s *EventsSaveFixtureStore) Debug() *EventsSaveFixtureStore {
 // given logger function.
 func (s *EventsSaveFixtureStore) DebugWith(logger kallax.LoggerFunc) *EventsSaveFixtureStore {
 	return &EventsSaveFixtureStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *EventsSaveFixtureStore) DisableCacher() *EventsSaveFixtureStore {
+	return &EventsSaveFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *EventsSaveFixtureStore) EnableCacher() *EventsSaveFixtureStore {
+	return &EventsSaveFixtureStore{s.Store.EnableCacher()}
 }
 
 // Insert inserts a EventsSaveFixture in the database. A non-persisted object is
@@ -4526,6 +4616,16 @@ func (s *JSONModelStore) DebugWith(logger kallax.LoggerFunc) *JSONModelStore {
 	return &JSONModelStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *JSONModelStore) DisableCacher() *JSONModelStore {
+	return &JSONModelStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *JSONModelStore) EnableCacher() *JSONModelStore {
+	return &JSONModelStore{s.Store.EnableCacher()}
+}
+
 // Insert inserts a JSONModel in the database. A non-persisted object is
 // required for this operation.
 func (s *JSONModelStore) Insert(record *JSONModel) error {
@@ -4945,6 +5045,16 @@ func (s *MultiKeySortFixtureStore) Debug() *MultiKeySortFixtureStore {
 // given logger function.
 func (s *MultiKeySortFixtureStore) DebugWith(logger kallax.LoggerFunc) *MultiKeySortFixtureStore {
 	return &MultiKeySortFixtureStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *MultiKeySortFixtureStore) DisableCacher() *MultiKeySortFixtureStore {
+	return &MultiKeySortFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *MultiKeySortFixtureStore) EnableCacher() *MultiKeySortFixtureStore {
+	return &MultiKeySortFixtureStore{s.Store.EnableCacher()}
 }
 
 // Insert inserts a MultiKeySortFixture in the database. A non-persisted object is
@@ -5401,6 +5511,16 @@ func (s *NullableStore) DebugWith(logger kallax.LoggerFunc) *NullableStore {
 	return &NullableStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *NullableStore) DisableCacher() *NullableStore {
+	return &NullableStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *NullableStore) EnableCacher() *NullableStore {
+	return &NullableStore{s.Store.EnableCacher()}
+}
+
 // Insert inserts a Nullable in the database. A non-persisted object is
 // required for this operation.
 func (s *NullableStore) Insert(record *Nullable) error {
@@ -5849,6 +5969,16 @@ func (s *ParentStore) Debug() *ParentStore {
 // given logger function.
 func (s *ParentStore) DebugWith(logger kallax.LoggerFunc) *ParentStore {
 	return &ParentStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *ParentStore) DisableCacher() *ParentStore {
+	return &ParentStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *ParentStore) EnableCacher() *ParentStore {
+	return &ParentStore{s.Store.EnableCacher()}
 }
 
 func (s *ParentStore) relationshipRecords(record *Parent) []modelSaveFunc {
@@ -6441,6 +6571,16 @@ func (s *ParentNoPtrStore) Debug() *ParentNoPtrStore {
 // given logger function.
 func (s *ParentNoPtrStore) DebugWith(logger kallax.LoggerFunc) *ParentNoPtrStore {
 	return &ParentNoPtrStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *ParentNoPtrStore) DisableCacher() *ParentNoPtrStore {
+	return &ParentNoPtrStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *ParentNoPtrStore) EnableCacher() *ParentNoPtrStore {
+	return &ParentNoPtrStore{s.Store.EnableCacher()}
 }
 
 func (s *ParentNoPtrStore) relationshipRecords(record *ParentNoPtr) []modelSaveFunc {
@@ -7045,6 +7185,16 @@ func (s *PersonStore) Debug() *PersonStore {
 // given logger function.
 func (s *PersonStore) DebugWith(logger kallax.LoggerFunc) *PersonStore {
 	return &PersonStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *PersonStore) DisableCacher() *PersonStore {
+	return &PersonStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *PersonStore) EnableCacher() *PersonStore {
+	return &PersonStore{s.Store.EnableCacher()}
 }
 
 func (s *PersonStore) relationshipRecords(record *Person) []modelSaveFunc {
@@ -7742,6 +7892,16 @@ func (s *PetStore) Debug() *PetStore {
 // given logger function.
 func (s *PetStore) DebugWith(logger kallax.LoggerFunc) *PetStore {
 	return &PetStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *PetStore) DisableCacher() *PetStore {
+	return &PetStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *PetStore) EnableCacher() *PetStore {
+	return &PetStore{s.Store.EnableCacher()}
 }
 
 func (s *PetStore) inverseRecords(record *Pet) []modelSaveFunc {
@@ -8444,6 +8604,16 @@ func (s *QueryFixtureStore) Debug() *QueryFixtureStore {
 // given logger function.
 func (s *QueryFixtureStore) DebugWith(logger kallax.LoggerFunc) *QueryFixtureStore {
 	return &QueryFixtureStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *QueryFixtureStore) DisableCacher() *QueryFixtureStore {
+	return &QueryFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *QueryFixtureStore) EnableCacher() *QueryFixtureStore {
+	return &QueryFixtureStore{s.Store.EnableCacher()}
 }
 
 func (s *QueryFixtureStore) relationshipRecords(record *QueryFixture) []modelSaveFunc {
@@ -9307,6 +9477,16 @@ func (s *QueryRelationFixtureStore) DebugWith(logger kallax.LoggerFunc) *QueryRe
 	return &QueryRelationFixtureStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *QueryRelationFixtureStore) DisableCacher() *QueryRelationFixtureStore {
+	return &QueryRelationFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *QueryRelationFixtureStore) EnableCacher() *QueryRelationFixtureStore {
+	return &QueryRelationFixtureStore{s.Store.EnableCacher()}
+}
+
 func (s *QueryRelationFixtureStore) inverseRecords(record *QueryRelationFixture) []modelSaveFunc {
 	var result []modelSaveFunc
 
@@ -9787,6 +9967,16 @@ func (s *ResultSetFixtureStore) DebugWith(logger kallax.LoggerFunc) *ResultSetFi
 	return &ResultSetFixtureStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *ResultSetFixtureStore) DisableCacher() *ResultSetFixtureStore {
+	return &ResultSetFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *ResultSetFixtureStore) EnableCacher() *ResultSetFixtureStore {
+	return &ResultSetFixtureStore{s.Store.EnableCacher()}
+}
+
 // Insert inserts a ResultSetFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *ResultSetFixtureStore) Insert(record *ResultSetFixture) error {
@@ -10256,6 +10446,16 @@ func (s *SchemaFixtureStore) Debug() *SchemaFixtureStore {
 // given logger function.
 func (s *SchemaFixtureStore) DebugWith(logger kallax.LoggerFunc) *SchemaFixtureStore {
 	return &SchemaFixtureStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *SchemaFixtureStore) DisableCacher() *SchemaFixtureStore {
+	return &SchemaFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *SchemaFixtureStore) EnableCacher() *SchemaFixtureStore {
+	return &SchemaFixtureStore{s.Store.EnableCacher()}
 }
 
 func (s *SchemaFixtureStore) relationshipRecords(record *SchemaFixture) []modelSaveFunc {
@@ -10813,6 +11013,16 @@ func (s *SchemaRelationshipFixtureStore) DebugWith(logger kallax.LoggerFunc) *Sc
 	return &SchemaRelationshipFixtureStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *SchemaRelationshipFixtureStore) DisableCacher() *SchemaRelationshipFixtureStore {
+	return &SchemaRelationshipFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *SchemaRelationshipFixtureStore) EnableCacher() *SchemaRelationshipFixtureStore {
+	return &SchemaRelationshipFixtureStore{s.Store.EnableCacher()}
+}
+
 // Insert inserts a SchemaRelationshipFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *SchemaRelationshipFixtureStore) Insert(record *SchemaRelationshipFixture) error {
@@ -11226,6 +11436,16 @@ func (s *StoreFixtureStore) Debug() *StoreFixtureStore {
 // given logger function.
 func (s *StoreFixtureStore) DebugWith(logger kallax.LoggerFunc) *StoreFixtureStore {
 	return &StoreFixtureStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *StoreFixtureStore) DisableCacher() *StoreFixtureStore {
+	return &StoreFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *StoreFixtureStore) EnableCacher() *StoreFixtureStore {
+	return &StoreFixtureStore{s.Store.EnableCacher()}
 }
 
 // Insert inserts a StoreFixture in the database. A non-persisted object is
@@ -11669,6 +11889,16 @@ func (s *StoreWithConstructFixtureStore) DebugWith(logger kallax.LoggerFunc) *St
 	return &StoreWithConstructFixtureStore{s.Store.DebugWith(logger)}
 }
 
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *StoreWithConstructFixtureStore) DisableCacher() *StoreWithConstructFixtureStore {
+	return &StoreWithConstructFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *StoreWithConstructFixtureStore) EnableCacher() *StoreWithConstructFixtureStore {
+	return &StoreWithConstructFixtureStore{s.Store.EnableCacher()}
+}
+
 // Insert inserts a StoreWithConstructFixture in the database. A non-persisted object is
 // required for this operation.
 func (s *StoreWithConstructFixtureStore) Insert(record *StoreWithConstructFixture) error {
@@ -12084,6 +12314,16 @@ func (s *StoreWithNewFixtureStore) Debug() *StoreWithNewFixtureStore {
 // given logger function.
 func (s *StoreWithNewFixtureStore) DebugWith(logger kallax.LoggerFunc) *StoreWithNewFixtureStore {
 	return &StoreWithNewFixtureStore{s.Store.DebugWith(logger)}
+}
+
+// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+func (s *StoreWithNewFixtureStore) DisableCacher() *StoreWithNewFixtureStore {
+	return &StoreWithNewFixtureStore{s.Store.DisableCacher()}
+}
+
+// DisableCacher turns on prepared statements. This is the default.
+func (s *StoreWithNewFixtureStore) EnableCacher() *StoreWithNewFixtureStore {
+	return &StoreWithNewFixtureStore{s.Store.EnableCacher()}
 }
 
 // Insert inserts a StoreWithNewFixture in the database. A non-persisted object is
