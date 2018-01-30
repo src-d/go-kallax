@@ -6,6 +6,7 @@ import (
 
 	"gopkg.in/src-d/go-kallax.v1/generator"
 	cli "gopkg.in/urfave/cli.v1"
+	"os"
 )
 
 var Generate = cli.Command{
@@ -44,6 +45,13 @@ func generateAction(c *cli.Context) error {
 		return fmt.Errorf("kallax: Input path should be a directory %s", input)
 	}
 
+	var foundPrevious bool
+	if _, err = os.Stat(output); err == nil {
+		foundPrevious = true
+		fmt.Fprintf(os.Stderr, "NOTE: Previous generated file `%s` found, renaming to `%s`\n", output, output+".old")
+		err = os.Rename(output, output+".old")
+	}
+
 	p := generator.NewProcessor(input, excluded)
 	pkg, err := p.Do()
 	if err != nil {
@@ -54,6 +62,11 @@ func generateAction(c *cli.Context) error {
 	err = gen.Generate(pkg)
 	if err != nil {
 		return err
+	}
+
+	if foundPrevious {
+		fmt.Fprintf(os.Stderr, "NOTE: Generation succeded, removing `%s`\n", output+".old")
+		os.Remove(output + ".old")
 	}
 
 	return nil
