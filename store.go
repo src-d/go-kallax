@@ -100,7 +100,7 @@ func (p *proxyLogger) Prepare(query string) (*sql.Stmt, error) {
 		p.basicLogger.logger(fmt.Sprintf("kallax: Prepare: %s", query))
 		return preparer.Prepare(query)
 	} else {
-		panic("Called proxyLogger with a runner which doesn't implement QueryRower")
+		panic("Called proxyLogger with a runner which doesn't implement Preparer")
 	}
 }
 
@@ -134,7 +134,7 @@ func (s *Store) init() *Store {
 
 	if s.logger != nil && !s.useCacher {
 		// Use BasicLogger as wrapper
-		s.runner = &basicLogger{s.logger, s.runner}
+		s.runner = &basicLogger{s.logger, s.db}
 	} else if s.logger != nil && s.useCacher {
 		// We're using a proxy (cacher), so use proxyLogger instead
 		s.runner = &proxyLogger{basicLogger{s.logger, s.runner}}
@@ -159,7 +159,7 @@ func (s *Store) DebugWith(logger LoggerFunc) *Store {
 	}).init()
 }
 
-// DisableCacher turns off prepared statements, which can be useful in some scenarios.
+// DisableCacher returns a new store with prepared statements turned off, which can be useful in some scenarios.
 func (s *Store) DisableCacher() *Store {
 	return (&Store{
 		db:        s.db,
