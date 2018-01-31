@@ -232,6 +232,65 @@ func (s *StoreSuite) TestFindOne() {
 	}
 }
 
+func (s *StoreSuite) TestDebug() {
+	store := NewStoreWithConstructFixtureStore(s.db)
+
+	docInserted := NewStoreWithConstructFixture("bar")
+	s.Nil(store.DisableCacher().Insert(docInserted))
+
+	query := NewStoreWithConstructFixtureQuery()
+
+	// Normal find
+	docFound, err := store.FindOne(query)
+
+	s.resultOrError(docFound, err)
+	if s.NotNil(docFound) {
+		s.Equal(docInserted.Foo, docFound.Foo)
+	}
+
+	// Debug
+	docFound, err = store.Debug().FindOne(query)
+
+	s.resultOrError(docFound, err)
+	if s.NotNil(docFound) {
+		s.Equal(docInserted.Foo, docFound.Foo)
+	}
+}
+
+func (s *StoreSuite) TestDebugWithoutCacher() {
+	store := NewStoreWithConstructFixtureStore(s.db)
+
+	docInserted := NewStoreWithConstructFixture("bar")
+	s.Nil(store.DisableCacher().Insert(docInserted))
+
+	query := NewStoreWithConstructFixtureQuery()
+
+	// Normal find
+	docFound, err := store.FindOne(query)
+
+	s.resultOrError(docFound, err)
+	if s.NotNil(docFound) {
+		s.Equal(docInserted.Foo, docFound.Foo)
+	}
+
+	// No cacher -> debug
+	noCacherDebugStore := store.DisableCacher().Debug()
+	docFound, err = noCacherDebugStore.FindOne(query)
+
+	s.resultOrError(docFound, err)
+	if s.NotNil(docFound) {
+		s.Equal(docInserted.Foo, docFound.Foo)
+	}
+
+	// Debug -> no cacher
+	docFound, err = store.Debug().DisableCacher().FindOne(query)
+
+	s.resultOrError(docFound, err)
+	if s.NotNil(docFound) {
+		s.Equal(docInserted.Foo, docFound.Foo)
+	}
+}
+
 func (s *StoreSuite) TestFindAliasSlice() {
 	store := NewStoreFixtureStore(s.db)
 
