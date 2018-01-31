@@ -123,11 +123,6 @@ func (s *{{.StoreName}}) DisableCacher() *{{.StoreName}} {
         return &{{.StoreName}}{s.Store.DisableCacher()}
 }
 
-// DisableCacher turns on prepared statements. This is the default.
-func (s *{{.StoreName}}) EnableCacher() *{{.StoreName}} {
-        return &{{.StoreName}}{s.Store.EnableCacher()}
-}
-
 {{if .HasNonInverses}}
 func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []modelSaveFunc {
         var result []modelSaveFunc
