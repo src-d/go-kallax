@@ -64,54 +64,61 @@ func defaultLogger(message string, args ...interface{}) {
 	log.Printf("%s, args: %v", message, args)
 }
 
-// basicLogger is a database runner that logs all SQL statements executed.
-type basicLogger struct {
-	logger LoggerFunc
-	runner squirrel.BaseRunner
-}
-
-// basicLogger is a database runner that logs all SQL statements executed.
+// runnerLogger is a database runner that logs all SQL statements executed.
 type proxyLogger struct {
-	basicLogger
+	squirrel.DBProxyContext
+	logger LoggerFunc
 }
 
-func (p *basicLogger) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (p *proxyLogger) Exec(query string, args ...interface{}) (sql.Result, error) {
 	p.logger(fmt.Sprintf("kallax: Exec: %s", query), args...)
-	return p.runner.Exec(query, args...)
+	return p.DBProxyContext.Exec(query, args...)
 }
 
-func (p *basicLogger) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (p *proxyLogger) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	p.logger(fmt.Sprintf("kallax: Query: %s", query), args...)
-	return p.runner.Query(query, args...)
+	return p.DBProxyContext.Query(query, args...)
 }
 
 func (p *proxyLogger) QueryRow(query string, args ...interface{}) squirrel.RowScanner {
-	p.basicLogger.logger(fmt.Sprintf("kallax: QueryRow: %s", query), args...)
-	if queryRower, ok := p.basicLogger.runner.(squirrel.QueryRower); ok {
-		return queryRower.QueryRow(query, args...)
-	} else {
-		panic("Called proxyLogger with a runner which doesn't implement QueryRower")
-	}
+	p.logger(fmt.Sprintf("kallax: QueryRow: %s", query), args...)
+	return p.DBProxyContext.QueryRow(query, args...)
 }
 
 func (p *proxyLogger) Prepare(query string) (*sql.Stmt, error) {
-	// If chained runner is a proxy, run Prepare(). Otherwise, noop.
-	if preparer, ok := p.basicLogger.runner.(squirrel.Preparer); ok {
-		p.basicLogger.logger(fmt.Sprintf("kallax: Prepare: %s", query))
-		return preparer.Prepare(query)
-	} else {
-		panic("Called proxyLogger with a runner which doesn't implement Preparer")
-	}
+	//If chained runner is a proxy, run Prepare(). Otherwise, noop.
+	p.logger(fmt.Sprintf("kallax: Prepare: %s", query))
+	return p.DBProxyContext.Prepare(query)
+}
+
+// PrepareContext will not be logged
+
+// dbRunner is a copypaste from squirrel.dbRunner, used to make sql.DB implement squirrel.QueryRower.
+// squirrel will silently fail and return nil if BaseRunner(s) supplied to RunWith don't implement QueryRower, so
+// it has been copied there to avoid that.
+// TODO: Delete this when squirrel dependency is dropped.
+type dbRunner struct {
+	*sql.DB
+}
+
+func (r *dbRunner) QueryRow(query string, args ...interface{}) squirrel.RowScanner {
+	return r.DB.QueryRow(query, args...)
+}
+
+// txRunner does the analogous for sql.Tx
+type txRunner struct {
+	*sql.Tx
+}
+
+func (r *txRunner) QueryRow(query string, args ...interface{}) squirrel.RowScanner {
+	return r.Tx.QueryRow(query, args...)
 }
 
 // Store is a structure capable of retrieving records from a concrete table in
 // the database.
 type Store struct {
-	db interface {
-		squirrel.BaseRunner
-		squirrel.PreparerContext
-	}
-	runner    squirrel.BaseRunner
+	db        squirrel.DBProxyContext
+	runner    squirrel.DBProxyContext
 	useCacher bool
 	logger    LoggerFunc
 }
@@ -119,7 +126,7 @@ type Store struct {
 // NewStore returns a new Store instance.
 func NewStore(db *sql.DB) *Store {
 	return (&Store{
-		db:        db,
+		db:        &dbRunner{db},
 		useCacher: true,
 	}).init()
 }
@@ -132,12 +139,8 @@ func (s *Store) init() *Store {
 		s.runner = squirrel.NewStmtCacher(s.db)
 	}
 
-	if s.logger != nil && !s.useCacher {
-		// Use BasicLogger as wrapper
-		s.runner = &basicLogger{s.logger, s.db}
-	} else if s.logger != nil && s.useCacher {
-		// We're using a proxy (cacher), so use proxyLogger instead
-		s.runner = &proxyLogger{basicLogger{s.logger, s.runner}}
+	if s.logger != nil {
+		s.runner = &proxyLogger{logger: s.logger, DBProxyContext: s.runner}
 	}
 
 	return s
@@ -469,7 +472,7 @@ func (s *Store) MustCount(q Query) int64 {
 func (s *Store) Transaction(callback func(*Store) error) error {
 	var tx *sql.Tx
 	var err error
-	if db, ok := s.db.(*sql.DB); ok {
+	if db, ok := s.db.(*dbRunner); ok {
 		// db is *sql.DB, not *sql.Tx
 		tx, err = db.Begin()
 		if err != nil {
@@ -481,7 +484,7 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 	}
 
 	txStore := (&Store{
-		db:        tx,
+		db:        &txRunner{tx},
 		logger:    s.logger,
 		useCacher: s.useCacher,
 	}).init()
