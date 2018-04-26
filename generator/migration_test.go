@@ -602,7 +602,7 @@ type Profile struct {
 
 type ProfileMetadata struct {
 	kallax.Model ` + "`table:\"metadata\"`" + `
-	// it's an pk, should be serial
+	// it's an pk, should be bigserial
 	ID int64 ` + "`pk:\"autoincr\"`" + `
 	// a json field
 	Metadata map[string]interface{}
@@ -635,7 +635,7 @@ func (s *PackageTransformerSuite) TestTransform() {
 	expected := mkSchema(
 		mkTable(
 			"profiles",
-			mkCol("id", SerialColumn, true, true, nil),
+			mkCol("id", BigSerialColumn, true, true, nil),
 			mkCol("color", ColumnType("char(6)"), false, true, nil),
 			mkCol("background", TextColumn, false, true, nil),
 			mkCol("user_id", UUIDColumn, false, false, mkRef("users", "id", true)),
@@ -644,7 +644,7 @@ func (s *PackageTransformerSuite) TestTransform() {
 		),
 		mkTable(
 			"metadata",
-			mkCol("id", SerialColumn, true, true, nil),
+			mkCol("id", BigSerialColumn, true, true, nil),
 			mkCol("metadata", JSONBColumn, false, true, nil),
 			mkCol("profile_id", BigIntColumn, false, true, mkRef("profiles", "id", false)),
 		),

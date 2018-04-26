@@ -1014,7 +1014,7 @@ var typeMappings = map[string]ColumnType{
 var idTypeMappings = map[string]ColumnType{
 	"kallax.ULID":      UUIDColumn,
 	"kallax.UUID":      UUIDColumn,
-	"kallax.NumericID": SerialColumn,
+	"kallax.NumericID": BigSerialColumn,
 }
 
 func reverse(slice []string) []string {
