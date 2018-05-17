@@ -1,33 +1,31 @@
 language: go
-
-go:
-  - 1.9.x
-  - 1.10.x
-  - tip
+go_import_path: gopkg.in/src-d/go-kallax.v1
+sudo: required
 
 matrix:
-    allow_failures:
-        - go: tip
-    fast_finish: true
-
-addons:
-  postgresql: "9.4"
+  allow_failures:
+    - go: tip
+  fast_finish: true
+  include:
+    - {os: linux,                    go: 1.9.x,  env: 'POSTGRESQL_VERSION=9.6'}
+    - {os: linux,                    go: 1.10.x, env: 'POSTGRESQL_VERSION=9.4'}
+    - {os: linux,                    go: 1.10.x, env: 'POSTGRESQL_VERSION=9.5'}
+    - {os: linux,                    go: 1.10.x, env: 'POSTGRESQL_VERSION=9.6'}
+    - {os: linux,                    go: tip,    env: 'POSTGRESQL_VERSION=9.6'}
+    - {os: osx, osx_image: xcode9.3, go: 1.10.x, env: 'POSTGRESQL_VERSION=9.6'}
 
 env:
-  - DBNAME=kallax_test DBUSER=postgres DBPASS='' GOPATH=/tmp/whatever:$GOPATH
+  global:
+    - DBNAME=kallax_test
+    - DBUSER=postgres DBPASS=''
+    - GOPATH=/tmp/whatever:$GOPATH
 
-services:
-  - postgresql
+install:
+  - wget -qO - https://raw.githubusercontent.com/smola/ci-tricks/master/get.sh | bash
+  - go get -v -t ./...
 
 before_script:
   - psql -c 'create database kallax_test;' -U postgres
-
-install:
-  - rm -rf $GOPATH/src/gopkg.in/src-d
-  - mkdir -p $GOPATH/src/gopkg.in/src-d
-  - mv $PWD $GOPATH/src/gopkg.in/src-d/go-kallax.v1
-  - cd $GOPATH/src/gopkg.in/src-d/go-kallax.v1
-  - go get -v -t ./...
 
 script:
   - make test
