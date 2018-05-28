@@ -140,12 +140,13 @@ func BenchmarkSQLBoilerInsertWithRelationships(b *testing.B) {
 	defer teardownDB(b, db)
 
 	for i := 0; i < b.N; i++ {
+		tx, _ := db.Begin()
 		person := &models.Person{Name: null.StringFrom("Dolan")}
-		if err := person.Insert(db); err != nil {
+		if err := person.Insert(tx); err != nil {
 			b.Fatalf("error inserting: %s", err)
 		}
 
-		err := person.SetPets(db, true, []*models.Pet{
+		err := person.SetPets(tx, true, []*models.Pet{
 			{Name: null.StringFrom("Garfield"), Kind: null.StringFrom("cat")},
 			{Name: null.StringFrom("Oddie"), Kind: null.StringFrom("dog")},
 			{Name: null.StringFrom("Reptar"), Kind: null.StringFrom("fish")},
@@ -153,6 +154,8 @@ func BenchmarkSQLBoilerInsertWithRelationships(b *testing.B) {
 		if err != nil {
 			b.Fatalf("error inserting relationships: %s", err)
 		}
+
+		tx.Commit()
 	}
 }
 
@@ -483,7 +486,7 @@ func BenchmarkGORMQuery(b *testing.B) {
 			var persons []*GORMPerson
 			db := store.Find(&persons)
 			if db.Error != nil {
-				b.Fatalf("error retrieving persons:", db.Error)
+				b.Fatal("error retrieving persons:", db.Error)
 			}
 		}
 	})
