@@ -829,7 +829,7 @@ BenchmarkKallaxUpdate-4                       	     300	   4179176 ns/op	     65
 BenchmarkKallaxUpdateWithRelationships-4      	     200	   5662703 ns/op	    6642 B/op	     175 allocs/op
 
 BenchmarkKallaxInsertWithRelationships-4      	     200	   5648433 ns/op	   10221 B/op	     218 allocs/op
-BenchmarkSQLBoilerInsertWithRelationships-4   	     100	  17543073 ns/op	    5898 B/op	     185 allocs/op
+BenchmarkSQLBoilerInsertWithRelationships-4   	     XXX	   XXXXXXX ns/op	    XXXX B/op	     XXX allocs/op
 BenchmarkRawSQLInsertWithRelationships-4      	     200	   5427503 ns/op	    4516 B/op	     127 allocs/op
 BenchmarkGORMInsertWithRelationships-4        	     200	   6196277 ns/op	   35080 B/op	     610 allocs/op
 
@@ -852,12 +852,13 @@ PASS
 ok  	gopkg.in/src-d/go-kallax.v1/benchmarks	44.899s
 ```
 
-As we can see on the benchmark, the performance loss is not very much compared to raw `database/sql`, while GORMs performance loss is very big and the memory consumption is way higher. SQLBoiler, on the other hand, has a lower memory footprint than kallax (in some cases), but a bigger performance loss (though not very significant in most cases), except for queries with relationships (that is a regression, though, and should be improved in the future).
+As we can see on the benchmark, the performance loss is not very much compared to raw `database/sql`, while GORMs performance loss is very big and the memory consumption is way higher. SQLBoiler, on the other hand, has a lower memory footprint than kallax (in some cases), but a bigger performance loss (though not very significant), except for queries with relationships (that is a regression, though, and should be improved in the future).
 
 Source code of the benchmarks can be found on the [benchmarks](https://github.com/src-d/go-kallax/tree/master/benchmarks) folder.
 
 **Notes:**
 
+* Benchmark runs are out of date as of 2018-05-28 (result of PR #269), some results are pending a re-run and will be updated soon.
 * Benchmarks were run on a 2015 MacBook Pro with i5 and 8GB of RAM and 128GB SSD hard drive running fedora 25.
 * Benchmark of `database/sql` for querying with relationships is implemented with a very naive 1+n solution. That's why the result is that bad.
 
