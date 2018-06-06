@@ -1,6 +1,7 @@
 package kallax
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,16 +24,34 @@ func TestULID_Value(t *testing.T) {
 
 func TestUULID_ThreeNewIDsAreDifferent(t *testing.T) {
 	r := require.New(t)
-	id1 := NewULID()
-	id2 := NewULID()
-	id3 := NewULID()
 
-	r.NotEqual(id1, id2)
-	r.NotEqual(id1, id3)
-	r.NotEqual(id2, id3)
+	goroutines := 100
+	ids_per_goroutine := 1000
 
-	r.True(id1 == id1)
-	r.False(id1 == id2)
+	ids := make(map[ULID]bool, ids_per_goroutine*goroutines)
+	m := &sync.Mutex{}
+
+	wg := &sync.WaitGroup{}
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func() {
+			var oids []ULID
+			for j := 0; j < ids_per_goroutine; j++ {
+				oids = append(oids, NewULID())
+			}
+
+			m.Lock()
+			for _, id := range oids {
+				ids[id] = true
+			}
+			m.Unlock()
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+
+	r.Equal(goroutines*ids_per_goroutine, len(ids))
 }
 
 func TestULID_ScanValue(t *testing.T) {
