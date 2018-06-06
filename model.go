@@ -229,7 +229,8 @@ type Record interface {
 
 var randPool = &sync.Pool{
 	New: func() interface{} {
-		return rand.NewSource(time.Now().UnixNano())
+		seed := time.Now().UnixNano() + rand.Int63()
+		return rand.NewSource(seed)
 	},
 }
 
