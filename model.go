@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"encoding/binary"
 	"github.com/oklog/ulid"
 	uuid "github.com/satori/go.uuid"
 )
@@ -230,12 +231,10 @@ type Record interface {
 
 var randPool = &sync.Pool{
 	New: func() interface{} {
-		var seedbuffer [8]byte
-		crand.Read(seedbuffer[:])
-
 		var seed int64
-		for i, seedbyte := range seedbuffer {
-			seed |= int64(seedbyte) << uint8(8*i)
+		err := binary.Read(crand.Reader, binary.LittleEndian, &seed)
+		if err != nil {
+			panic(err)
 		}
 
 		return rand.NewSource(seed)
