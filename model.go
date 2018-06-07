@@ -2,6 +2,7 @@ package kallax
 
 import (
 	"bytes"
+	crand "crypto/rand"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/hex"
@@ -229,7 +230,14 @@ type Record interface {
 
 var randPool = &sync.Pool{
 	New: func() interface{} {
-		seed := time.Now().UnixNano() + rand.Int63()
+		var seedbuffer [8]byte
+		crand.Read(seedbuffer[:])
+
+		var seed int64
+		for i, seedbyte := range seedbuffer {
+			seed |= int64(seedbyte) << uint8(8*i)
+		}
+
 		return rand.NewSource(seed)
 	},
 }
