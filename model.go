@@ -2,12 +2,11 @@ package kallax
 
 import (
 	"bytes"
+	"crypto/rand"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/hex"
 	"fmt"
-	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/oklog/ulid"
@@ -227,13 +226,6 @@ type Record interface {
 	Saveable
 }
 
-var randPool = &sync.Pool{
-	New: func() interface{} {
-		seed := time.Now().UnixNano() + rand.Int63()
-		return rand.NewSource(seed)
-	},
-}
-
 // ULID is an ID type provided by kallax that is a lexically sortable UUID.
 // The internal representation is an ULID (https://github.com/oklog/ulid).
 // It already implements sql.Scanner and driver.Valuer, so it's perfectly
@@ -242,11 +234,7 @@ type ULID uuid.UUID
 
 // NewULID returns a new ULID, which is a lexically sortable UUID.
 func NewULID() ULID {
-	entropy := randPool.Get().(rand.Source)
-	id := ULID(ulid.MustNew(ulid.Timestamp(time.Now()), rand.New(entropy)))
-	randPool.Put(entropy)
-
-	return id
+	return ULID(ulid.MustNew(ulid.Timestamp(time.Now()), rand.Reader))
 }
 
 // NewULIDFromText creates a new ULID from its string representation. Will
