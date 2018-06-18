@@ -217,9 +217,10 @@ func envOrDefault(key string, def string) string {
 
 func openTestDB() (*sql.DB, error) {
 	return sql.Open("postgres", fmt.Sprintf(
-		"postgres://%s:%s@0.0.0.0:5432/%s?sslmode=disable",
+		"postgres://%s:%s@%s/%s?sslmode=disable",
 		envOrDefault("DBUSER", "testing"),
 		envOrDefault("DBPASS", "testing"),
+		envOrDefault("DBHOST", "0.0.0.0:5432"),
 		envOrDefault("DBNAME", "testing"),
 	))
 }
