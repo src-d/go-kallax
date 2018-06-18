@@ -139,7 +139,8 @@ func TestNullable(t *testing.T) {
 		PtrDuration *time.Duration
 	)
 	tim := time.Now().UTC()
-	tim = time.Date(tim.Year(), tim.Month(), tim.Day(), tim.Hour(), tim.Minute(), tim.Second(), 0, tim.Location())
+	tim = time.Date(tim.Year(), tim.Month(), tim.Day(), tim.Hour(),
+		tim.Minute(), tim.Second(), 0, tim.Location())
 	s := require.New(t)
 	url, err := url.Parse("http://foo.me")
 	s.NoError(err)
@@ -431,7 +432,14 @@ func TestNullable(t *testing.T) {
 		if c.isPtr {
 			elem = elem.Elem()
 		}
-		s.Equal(c.nonNullInput, elem.Interface(), c.name)
+
+		result := elem.Interface()
+		switch v := result.(type) {
+		case time.Time:
+			result = v.UTC()
+		}
+
+		s.Equal(c.nonNullInput, result, c.name)
 
 		_, err = db.Exec("DROP TABLE foo")
 		s.Nil(err, c.name)
