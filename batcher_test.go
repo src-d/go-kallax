@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/Masterminds/squirrel.v1"
 )
 
 func TestOneToManyWithFilterNotWritable(t *testing.T) {

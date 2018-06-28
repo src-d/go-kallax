@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/lann/builder"
+	"gopkg.in/Masterminds/squirrel.v1"
 )
 
 var (
