@@ -60,6 +60,18 @@ func (rs *BaseResultSet) Get(schema Schema) (Record, error) {
 
 // Scan fills the column fields of the given value with the current row.
 func (rs *BaseResultSet) Scan(record Record) error {
+	// If the query did not set columns, then we MUST use the columns defined by
+	// the RowDescription response.
+	if len(rs.columns) == 0 {
+		columns, err := rs.Rows.Columns()
+		if err != nil {
+			return err
+		}
+		rs.columns = columns
+	}
+
+	// Now if the columns are still empty, then the database did not inform
+	// us so we can't scan.
 	if len(rs.columns) == 0 {
 		return ErrRawScan
 	}

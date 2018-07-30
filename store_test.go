@@ -164,7 +164,7 @@ func (s *StoreSuite) TestRawQuery() {
 	var names []string
 	for rs.Next() {
 		_, err := rs.Get(ModelSchema)
-		s.Equal(ErrRawScan, err)
+		s.NoError(err)
 		var name string
 		s.NoError(rs.RawScan(&name))
 		names = append(names, name)
