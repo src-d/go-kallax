@@ -182,11 +182,11 @@ If you implement this constructor:
 
 ```go
 func newUser(username, password string, emails ...string) (*User, error) {
-        if username != "" || len(emails) == 0 || password != "" {
-                return errors.New("all fields are required")
+        if username == "" || len(emails) == 0 || password == "" {
+                return nil, errors.New("all fields are required")
         }
 
-        return &User{Username: username, Password: password, Emails: emails}
+        return &User{Username: username, Password: password, Emails: emails}, nil
 }
 ```
 
