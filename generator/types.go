@@ -111,6 +111,7 @@ var specialTypes = map[string]string{
 	"gopkg.in/src-d/go-kallax.v1.ULID":      "kallax.ULID",
 	"gopkg.in/src-d/go-kallax.v1.NumericID": "kallax.NumericID",
 	"github.com/satori/go.uuid.UUID":        "kallax.UUID",
+	"github.com/gofrs/uuid.UUID":            "kallax.UUID",
 	"net/url.URL":                           "url.URL",
 	"time.Time":                             "time.Time",
 }
@@ -984,6 +985,7 @@ var identifierTypes = map[string]string{
 	"gopkg.in/src-d/go-kallax.v1.ULID":      "kallax.ULID",
 	"gopkg.in/src-d/go-kallax.v1.NumericID": "kallax.NumericID",
 	"github.com/satori/go.uuid.UUID":        "kallax.UUID",
+	"github.com/gofrs/uuid.UUID":            "kallax.UUID",
 	"int64": "kallax.NumericID",
 }
 
