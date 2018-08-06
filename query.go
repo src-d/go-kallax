@@ -261,6 +261,12 @@ func (q *BaseQuery) Where(cond Condition) {
 
 // compile returns the selected column names and the select builder.
 func (q *BaseQuery) compile() ([]string, squirrel.SelectBuilder) {
+	// If we have no explicitly selected columns, and no relation columns,
+	// then we can skip compiling column names.
+	if len(q.relationships) == 0 && !q.selectChanged {
+		return nil, q.builder.Columns("*")
+	}
+
 	columns := q.selectedColumns()
 	var (
 		qualifiedColumns = make([]string, len(columns))
