@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/mattes/migrate"
-	_ "github.com/mattes/migrate/database/postgres"
-	_ "github.com/mattes/migrate/source/file"
+	"github.com/golang-migrate/migrate"
+	_ "github.com/golang-migrate/migrate/database/postgres"
+	_ "github.com/golang-migrate/migrate/source/file"
 
 	"gopkg.in/src-d/go-kallax.v1/generator"
 	cli "gopkg.in/urfave/cli.v1"
