@@ -439,13 +439,11 @@ func (s *Store) Reload(schema Schema, record Record) error {
 	return rs.Scan(record)
 }
 
-var all = NewSchemaField("*")
-
 // Count returns the number of rows selected by the given query.
 func (s *Store) Count(q Query) (count int64, err error) {
 	_, queryBuilder := q.compile()
 	builder := builder.Set(queryBuilder, "Columns", nil).(squirrel.SelectBuilder)
-	err = builder.Column(fmt.Sprintf("COUNT(%s)", all.QualifiedName(q.Schema()))).
+	err = builder.Column("COUNT(*)").
 		RunWith(s.runner).
 		QueryRow().
 		Scan(&count)
