@@ -345,6 +345,11 @@ func (s *ModelSuite) TestModelValidate() {
 	require.Error(m.Validate(), "should return error")
 }
 
+func (s *ModelSuite) TestString() {
+	s.Equal("\"Variadic\" [3 Field(s)] [Events: []]", s.variadic.String())
+	s.Equal("\"User\" [7 Field(s)] [Events: []]", s.model.String())
+}
+
 func TestFieldForeignKey(t *testing.T) {
 	r := require.New(t)
 	m := &Model{Name: "Foo", Table: "bar", Type: "foo.Foo"}
