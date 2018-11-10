@@ -891,6 +891,22 @@ If that is not the case you can set the following environment variables:
 - `DBUSER`: database user
 - `DBPASS`: database user password
 
+#### Docker PostgreSQL
+
+If you have docker, you may run an instance of postgres in a container:
+
+```
+docker run -it --rm --name kallax \
+ -e POSTGRES_PASSWORD=testing \
+ -e POSTGRES_USER=testing \
+ -e POSTGRES_DB=testing \
+ -v `pwd`/.pgdata:/var/lib/postgresql/data \
+ -p 127.0.0.1:5432:5432 \
+ postgres:11
+```
+
+Remove `.pgdata` after you are done.
+
 License
 -------
 
