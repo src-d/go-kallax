@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/oklog/ulid"
-	uuid "github.com/satori/go.uuid"
 )
 
 // Model contains all the basic fields that make something a model, that is,
@@ -340,7 +340,7 @@ func (id ULID) Value() (driver.Value, error) {
 // IsEmpty returns whether the ID is empty or not. An empty ID means it has not
 // been set yet.
 func (id ULID) IsEmpty() bool {
-	return uuid.Equal(uuid.UUID(id), uuid.Nil)
+	return uuid.UUID(id) == uuid.Nil
 }
 
 // String returns the string representation of the ID.
@@ -355,7 +355,7 @@ func (id ULID) Equals(other Identifier) bool {
 		return false
 	}
 
-	return uuid.Equal(uuid.UUID(id), uuid.UUID(*v))
+	return uuid.UUID(id) == uuid.UUID(*v)
 }
 
 // Raw returns the underlying raw value.
@@ -430,7 +430,7 @@ func (id UUID) Value() (driver.Value, error) {
 // IsEmpty returns whether the ID is empty or not. An empty ID means it has not
 // been set yet.
 func (id UUID) IsEmpty() bool {
-	return uuid.Equal(uuid.UUID(id), uuid.Nil)
+	return uuid.UUID(id) == uuid.Nil
 }
 
 // String returns the string representation of the ID.
@@ -445,7 +445,7 @@ func (id UUID) Equals(other Identifier) bool {
 		return false
 	}
 
-	return uuid.Equal(uuid.UUID(id), uuid.UUID(*v))
+	return uuid.UUID(id) == uuid.UUID(*v)
 }
 
 // Raw returns the underlying raw value.

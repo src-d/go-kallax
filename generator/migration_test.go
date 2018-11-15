@@ -5,6 +5,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	// we need this external libs to be able to generate code corrrectly
+	_ "github.com/gofrs/uuid"
+	_ "github.com/satori/go.uuid"
 )
 
 func TestNewMigration(t *testing.T) {
@@ -572,6 +576,8 @@ package foo
 import (
 	"gopkg.in/src-d/go-kallax.v1"
 	"net/url"
+	satori "github.com/satori/go.uuid"
+	gofrs "github.com/gofrs/uuid"
 )
 
 type User struct {
@@ -606,6 +612,14 @@ type ProfileMetadata struct {
 	ID int64 ` + "`pk:\"autoincr\"`" + `
 	// a json field
 	Metadata map[string]interface{}
+}
+
+// contains all possible uuid types
+type UUIDTable struct {
+	kallax.Model
+	ID kallax.ULID ` + "`pk:\"\"`" + `
+	SatoriUUID satori.UUID
+	GofrsUUID gofrs.UUID
 }
 `
 
@@ -647,6 +661,12 @@ func (s *PackageTransformerSuite) TestTransform() {
 			mkCol("id", SerialColumn, true, true, nil),
 			mkCol("metadata", JSONBColumn, false, true, nil),
 			mkCol("profile_id", BigIntColumn, false, true, mkRef("profiles", "id", false)),
+		),
+		mkTable(
+			"uuidtable",
+			mkCol("id", UUIDColumn, true, true, nil),
+			mkCol("satori_uuid", UUIDColumn, false, true, nil),
+			mkCol("gofrs_uuid", UUIDColumn, false, true, nil),
 		),
 		mkTable(
 			"users",
