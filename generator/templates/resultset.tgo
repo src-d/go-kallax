@@ -69,6 +69,7 @@ func (rs *{{.ResultSetName}}) ForEach(fn func(*{{.Name}}) error) error {
 // All returns all records on the result set and closes the result set.
 func (rs *{{.ResultSetName}}) All() ([]*{{.Name}}, error) {
 	var result []*{{.Name}}
+	defer rs.Close()
 	for rs.Next() {
 		record, err := rs.Get()
 		if err != nil {
