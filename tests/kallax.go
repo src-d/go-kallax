@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	"gopkg.in/src-d/go-kallax.v1"
+	kallax "gopkg.in/src-d/go-kallax.v1"
 	"gopkg.in/src-d/go-kallax.v1/tests/fixtures"
 	"gopkg.in/src-d/go-kallax.v1/types"
 )
