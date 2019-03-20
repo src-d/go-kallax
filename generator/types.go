@@ -276,7 +276,7 @@ func (m *Model) String() string {
 		events = append(events, string(e))
 	}
 
-	return fmt.Sprintf("%q [%d Field(s)] [Events: %s]", m.Name, len(m.Fields), events)
+	return fmt.Sprintf("%q [%d Field(s)] [Events: %s]", m.Name, len(m.Fields)-1, events)
 }
 
 type occurrences map[string]uint
