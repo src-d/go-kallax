@@ -207,6 +207,23 @@ func TestSlice_Integration(t *testing.T) {
 	}
 }
 
+func TestByteArray_ScannerNoBufferReuse(t *testing.T) {
+	require := require.New(t)
+
+	var sharedbuf [32]byte
+
+	var ba ByteArray
+
+	err := ba.Scan(sharedbuf[:])
+	require.NoError(err)
+
+	// Modify the "driver" buffer src
+	sharedbuf[0] = 1
+
+	require.Equal(uint8(0), ba[0], "ByteBuffer should not share reference with scanned src")
+
+}
+
 func envOrDefault(key string, def string) string {
 	v := os.Getenv(key)
 	if v == "" {
