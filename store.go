@@ -439,6 +439,7 @@ func (s *Store) Reload(schema Schema, record Record) error {
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
 	rs := NewResultSet(rows, false, nil, columns...)
 	if !rs.Next() {
