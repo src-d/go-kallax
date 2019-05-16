@@ -251,6 +251,24 @@ func (s *AStore) MustCount(q *AQuery) int64 {
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *AStore) Exists(q *AQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.A.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *AStore) FindOne(q *AQuery) (*A, error) {
@@ -830,6 +848,24 @@ func (s *BStore) MustCount(q *BQuery) int64 {
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *BStore) Exists(q *BQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.B.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *BStore) FindOne(q *BQuery) (*B, error) {
@@ -1293,6 +1329,24 @@ func (s *BrandStore) Count(q *BrandQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *BrandStore) MustCount(q *BrandQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *BrandStore) Exists(q *BrandQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.Brand.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -1793,6 +1847,24 @@ func (s *CStore) Count(q *CQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *CStore) MustCount(q *CQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *CStore) Exists(q *CQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.C.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -2384,6 +2456,24 @@ func (s *CarStore) MustCount(q *CarQuery) int64 {
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *CarStore) Exists(q *CarQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.Car.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *CarStore) FindOne(q *CarQuery) (*Car, error) {
@@ -2830,6 +2920,24 @@ func (s *ChildStore) Count(q *ChildQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *ChildStore) MustCount(q *ChildQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *ChildStore) Exists(q *ChildQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.Child.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -3308,6 +3416,24 @@ func (s *EventsAllFixtureStore) MustCount(q *EventsAllFixtureQuery) int64 {
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *EventsAllFixtureStore) Exists(q *EventsAllFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.EventsAllFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *EventsAllFixtureStore) FindOne(q *EventsAllFixtureQuery) (*EventsAllFixture, error) {
@@ -3760,6 +3886,24 @@ func (s *EventsFixtureStore) Count(q *EventsFixtureQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *EventsFixtureStore) MustCount(q *EventsFixtureQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *EventsFixtureStore) Exists(q *EventsFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.EventsFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -4216,6 +4360,24 @@ func (s *EventsSaveFixtureStore) MustCount(q *EventsSaveFixtureQuery) int64 {
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *EventsSaveFixtureStore) Exists(q *EventsSaveFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.EventsSaveFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *EventsSaveFixtureStore) FindOne(q *EventsSaveFixtureQuery) (*EventsSaveFixture, error) {
@@ -4644,6 +4806,24 @@ func (s *JSONModelStore) Count(q *JSONModelQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *JSONModelStore) MustCount(q *JSONModelQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *JSONModelStore) Exists(q *JSONModelQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.JSONModel.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -5076,6 +5256,24 @@ func (s *MultiKeySortFixtureStore) Count(q *MultiKeySortFixtureQuery) (int64, er
 // query, but panics if there is an error.
 func (s *MultiKeySortFixtureStore) MustCount(q *MultiKeySortFixtureQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *MultiKeySortFixtureStore) Exists(q *MultiKeySortFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.MultiKeySortFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -5537,6 +5735,24 @@ func (s *NullableStore) Count(q *NullableQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *NullableStore) MustCount(q *NullableQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *NullableStore) Exists(q *NullableQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.Nullable.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -6043,6 +6259,24 @@ func (s *ParentStore) Count(q *ParentQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *ParentStore) MustCount(q *ParentQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *ParentStore) Exists(q *ParentQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.Parent.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -6640,6 +6874,24 @@ func (s *ParentNoPtrStore) Count(q *ParentNoPtrQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *ParentNoPtrStore) MustCount(q *ParentNoPtrQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *ParentNoPtrStore) Exists(q *ParentNoPtrQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.ParentNoPtr.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -7311,6 +7563,24 @@ func (s *PersonStore) Count(q *PersonQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *PersonStore) MustCount(q *PersonQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *PersonStore) Exists(q *PersonQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.Person.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -8001,6 +8271,24 @@ func (s *PetStore) Count(q *PetQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *PetStore) MustCount(q *PetQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *PetStore) Exists(q *PetQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.Pet.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -8701,6 +8989,24 @@ func (s *QueryFixtureStore) Count(q *QueryFixtureQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *QueryFixtureStore) MustCount(q *QueryFixtureQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *QueryFixtureStore) Exists(q *QueryFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.QueryFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -9523,6 +9829,24 @@ func (s *QueryRelationFixtureStore) MustCount(q *QueryRelationFixtureQuery) int6
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *QueryRelationFixtureStore) Exists(q *QueryRelationFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.QueryRelationFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *QueryRelationFixtureStore) FindOne(q *QueryRelationFixtureQuery) (*QueryRelationFixture, error) {
@@ -9950,6 +10274,24 @@ func (s *ResultSetFixtureStore) Count(q *ResultSetFixtureQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *ResultSetFixtureStore) MustCount(q *ResultSetFixtureQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *ResultSetFixtureStore) Exists(q *ResultSetFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.ResultSetFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -10515,6 +10857,24 @@ func (s *SchemaFixtureStore) MustCount(q *SchemaFixtureQuery) int64 {
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *SchemaFixtureStore) Exists(q *SchemaFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.SchemaFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *SchemaFixtureStore) FindOne(q *SchemaFixtureQuery) (*SchemaFixture, error) {
@@ -10988,6 +11348,24 @@ func (s *SchemaRelationshipFixtureStore) MustCount(q *SchemaRelationshipFixtureQ
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *SchemaRelationshipFixtureStore) Exists(q *SchemaRelationshipFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.SchemaRelationshipFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *SchemaRelationshipFixtureStore) FindOne(q *SchemaRelationshipFixtureQuery) (*SchemaRelationshipFixture, error) {
@@ -11406,6 +11784,24 @@ func (s *StoreFixtureStore) Count(q *StoreFixtureQuery) (int64, error) {
 // query, but panics if there is an error.
 func (s *StoreFixtureStore) MustCount(q *StoreFixtureQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *StoreFixtureStore) Exists(q *StoreFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.StoreFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
@@ -11854,6 +12250,24 @@ func (s *StoreWithConstructFixtureStore) MustCount(q *StoreWithConstructFixtureQ
 	return s.Store.MustCount(q)
 }
 
+// Exists returns true if there is at least one record by given query.
+func (s *StoreWithConstructFixtureStore) Exists(q *StoreWithConstructFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.StoreWithConstructFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
+}
+
 // FindOne returns the first row returned by the given query.
 // `ErrNotFound` is returned if there are no results.
 func (s *StoreWithConstructFixtureStore) FindOne(q *StoreWithConstructFixtureQuery) (*StoreWithConstructFixture, error) {
@@ -12274,6 +12688,24 @@ func (s *StoreWithNewFixtureStore) Count(q *StoreWithNewFixtureQuery) (int64, er
 // query, but panics if there is an error.
 func (s *StoreWithNewFixtureStore) MustCount(q *StoreWithNewFixtureQuery) int64 {
 	return s.Store.MustCount(q)
+}
+
+// Exists returns true if there is at least one record by given query.
+func (s *StoreWithNewFixtureStore) Exists(q *StoreWithNewFixtureQuery) (bool, error) {
+	q.Limit(1)
+	q.Select(Schema.StoreWithNewFixture.ID)
+	q.Offset(0)
+	rs, err := s.Find(q)
+	if err != nil {
+		return false, err
+	}
+
+	if !rs.Next() {
+		return false, nil
+	}
+
+	err = rs.Close()
+	return true, err
 }
 
 // FindOne returns the first row returned by the given query.
