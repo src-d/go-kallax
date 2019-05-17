@@ -707,8 +707,8 @@ kallax migrate up --dir ./my-migrations --dsn 'user:pass@localhost:5432/dbname?s
 | --- | --- |
 | `kallax.ULID` | `uuid` |
 | `kallax.UUID` | `uuid` |
-| `kallax.NumericID` | `serial` on primary keys, `bigint` on foreign keys |
-| `int64` on primary keys | `serial` |
+| `kallax.NumericID` | `bigserial` on primary keys, `bigint` on foreign keys |
+| `int64` on primary keys | `bigserial` |
 | `int64` on foreign keys and other fields| `bigint` |
 | `string` | `text` |
 | `rune` | `char(1)` |
