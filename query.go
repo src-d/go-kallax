@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Masterminds/squirrel"
+	"gopkg.in/Masterminds/squirrel.v1"
 )
 
 var (

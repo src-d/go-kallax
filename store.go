@@ -8,8 +8,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/lann/builder"
+	"gopkg.in/Masterminds/squirrel.v1"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/src-d/go-kallax.v1/types"
 
-	"github.com/Masterminds/squirrel"
+	"gopkg.in/Masterminds/squirrel.v1"
 )
 
 // ScalarCond returns a kallax.Condition that compares a property with the passed
