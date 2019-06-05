@@ -19,7 +19,7 @@ func (s *ProcessorSuite) TestInlineStruct() {
 	fixtureSrc := `
   package fixture
 
-  import  "gopkg.in/src-d/go-kallax.v1"
+  import  "github.com/T-M-A/go-kallax"
 
   type Foo struct {}
 
@@ -39,7 +39,7 @@ func (s *ProcessorSuite) TestTags() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/T-M-A/go-kallax"
 
 	type Foo struct {
 		kallax.Model
@@ -56,7 +56,7 @@ func (s *ProcessorSuite) TestRecursiveModel() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/T-M-A/go-kallax"
 
 	type Recur struct {
 		kallax.Model
@@ -77,7 +77,7 @@ func (s *ProcessorSuite) TestDeepRecursiveStruct() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/T-M-A/go-kallax"
 
 	type Recur struct {
 		kallax.Model
@@ -106,7 +106,7 @@ func (s *ProcessorSuite) TestIsEventPresent() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/T-M-A/go-kallax"
 
 	type Foo struct {
 		kallax.Model
@@ -145,7 +145,7 @@ func (s *ProcessorSuite) TestProcessField() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/T-M-A/go-kallax"
 	import "database/sql/driver"
 
 	type BasicAlias string
@@ -243,7 +243,7 @@ func (s *ProcessorSuite) TestCtor() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/T-M-A/go-kallax"
 
 	type Foo struct {
 		kallax.Model
@@ -266,7 +266,7 @@ func (s *ProcessorSuite) TestSQLTypeIsInterface() {
 	fixtureSrc := `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/T-M-A/go-kallax"
 	import "database/sql/driver"
 
 	type Foo struct {
@@ -295,7 +295,7 @@ func (s *ProcessorSuite) TestIsSQLType() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/T-M-A/go-kallax"
 
 	type SQLTypeFixture struct {
 		kallax.Model
@@ -337,7 +337,7 @@ func (s *ProcessorSuite) TestIsModel() {
 	src := `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/T-M-A/go-kallax"
 
 	type Bar struct {
 		kallax.Model
@@ -379,7 +379,7 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 	src := `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/T-M-A/go-kallax"
 
 	type Bar struct {
 		kallax.Model
@@ -441,7 +441,7 @@ func TestRemoveGoPath(t *testing.T) {
 	}{
 		{
 			`E:\workspace\gopath\src\gopkg.in\src-d\go-kallax.v1\tests\fixtures.AliasString`,
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"github.com/T-M-A/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				`E:\workspace\gopath`,
 			},
@@ -449,7 +449,7 @@ func TestRemoveGoPath(t *testing.T) {
 		},
 		{
 			"/home/workspace/gopath/src/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"github.com/T-M-A/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				"/home/foo/go",
 				"/home/workspace/gopath",
@@ -466,7 +466,7 @@ func TestRemoveGoPath(t *testing.T) {
 		},
 		{
 			"/home/workspace/gopath/src/foo/bar/vendor/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"github.com/T-M-A/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				"/home/foo/go",
 				"/home/workspace/gopath",
@@ -475,7 +475,7 @@ func TestRemoveGoPath(t *testing.T) {
 		},
 		{
 			"/home/vendor/workspace/gopath/src/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"github.com/T-M-A/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				"/home/foo/go",
 				"/home/vendor/workspace/gopath",
@@ -484,7 +484,7 @@ func TestRemoveGoPath(t *testing.T) {
 		},
 		{
 			"/home/vendor/workspace/gopath/src/vendor/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"github.com/T-M-A/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				"/home/foo/go",
 				"/home/vendor/workspace/gopath",

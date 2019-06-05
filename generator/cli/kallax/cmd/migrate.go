@@ -8,7 +8,7 @@ import (
 	_ "github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/source/file"
 
-	"gopkg.in/src-d/go-kallax.v1/generator"
+	"github.com/T-M-A/go-kallax/generator"
 	cli "gopkg.in/urfave/cli.v1"
 )
 

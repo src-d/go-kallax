@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/src-d/go-kallax.v1/types"
+	"github.com/T-M-A/go-kallax/types"
 )
 
 type OpsSuite struct {

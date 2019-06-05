@@ -1,6 +1,6 @@
 package tests
 
-import "gopkg.in/src-d/go-kallax.v1"
+import "github.com/T-M-A/go-kallax"
 
 type ResultSetFixture struct {
 	kallax.Model `table:"resultset"`

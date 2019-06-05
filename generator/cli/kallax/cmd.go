@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"gopkg.in/src-d/go-kallax.v1/generator/cli/kallax/cmd"
+	"github.com/T-M-A/go-kallax/generator/cli/kallax/cmd"
 
 	"gopkg.in/urfave/cli.v1"
 )

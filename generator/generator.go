@@ -1,6 +1,6 @@
 // Package generator implements the processor of source code and generator of
 // kallax models based on Go source code.
-package generator // import "gopkg.in/src-d/go-kallax.v1/generator"
+package generator // import "github.com/T-M-A/go-kallax/generator"
 
 import (
 	"bytes"

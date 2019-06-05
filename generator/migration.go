@@ -986,9 +986,9 @@ func (t *packageTransformer) transformRef(f *Field) (*Reference, error) {
 }
 
 var typeMappings = map[string]ColumnType{
-	"gopkg.in/src-d/go-kallax.v1.ULID":      UUIDColumn,
-	"gopkg.in/src-d/go-kallax.v1.UUID":      UUIDColumn,
-	"gopkg.in/src-d/go-kallax.v1.NumericID": BigIntColumn,
+	"github.com/T-M-A/go-kallax.ULID":      UUIDColumn,
+	"github.com/T-M-A/go-kallax.UUID":      UUIDColumn,
+	"github.com/T-M-A/go-kallax.NumericID": BigIntColumn,
 	"github.com/satori/go.uuid.UUID":        UUIDColumn,
 	"github.com/gofrs/uuid.UUID":            UUIDColumn,
 	"string":                                TextColumn,
