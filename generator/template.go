@@ -11,8 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	parseutil "gopkg.in/src-d/go-parse-utils.v1"
-
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
@@ -486,11 +485,15 @@ func printDocumentWithNumbers(code string) {
 const pkgPath = "gopkg.in/src-d/go-kallax.v1/generator"
 
 var pkgAbsPath = func() string {
-	path, err := parseutil.DefaultGoPath.Abs(pkgPath)
+	pkgs, err := packages.Load(&packages.Config{
+		Dir:  ".",
+		Mode: packages.NeedFiles,
+	}, pkgPath)
 	if err != nil {
 		panic(err)
 	}
-	return path
+
+	return filepath.Dir(pkgs[0].GoFiles[0])
 }()
 
 func loadTemplateText(filename string) string {
