@@ -10,9 +10,9 @@ import (
 	"net/url"
 	"time"
 
-	"gopkg.in/src-d/go-kallax.v1"
-	"gopkg.in/src-d/go-kallax.v1/tests/fixtures"
-	"gopkg.in/src-d/go-kallax.v1/types"
+	"github.com/zbyte/go-kallax"
+	"github.com/zbyte/go-kallax/tests/fixtures"
+	"github.com/zbyte/go-kallax/types"
 )
 
 var _ types.SQLType

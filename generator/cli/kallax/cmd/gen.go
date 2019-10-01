@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"gopkg.in/src-d/go-kallax.v1/generator"
+	"github.com/zbyte/go-kallax/generator"
 	cli "gopkg.in/urfave/cli.v1"
 	"os"
 )

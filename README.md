@@ -1,6 +1,6 @@
 <img src="https://cdn.rawgit.com/src-d/go-kallax/master/kallax.svg" width="400" />
 
-[![GoDoc](https://godoc.org/gopkg.in/src-d/go-kallax.v1?status.svg)](https://godoc.org/gopkg.in/src-d/go-kallax.v1) [![Build Status](https://travis-ci.org/src-d/go-kallax.svg?branch=master)](https://travis-ci.org/src-d/go-kallax) [![codecov](https://codecov.io/gh/src-d/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/src-d/go-kallax)](https://goreportcard.com/report/github.com/src-d/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GoDoc](https://godoc.org/github.com/zbyte/go-kallax?status.svg)](https://godoc.org/github.com/zbyte/go-kallax) [![Build Status](https://travis-ci.org/src-d/go-kallax.svg?branch=master)](https://travis-ci.org/src-d/go-kallax) [![codecov](https://codecov.io/gh/src-d/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/src-d/go-kallax)](https://goreportcard.com/report/github.com/src-d/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
 Kallax is a PostgreSQL typesafe ORM for the Go language.
@@ -46,7 +46,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
 The recommended way to install `kallax` is:
 
 ```
-go get -u gopkg.in/src-d/go-kallax.v1/...
+go get -u github.com/zbyte/go-kallax/...
 ```
 
 > *kallax* includes a binary tool used by [go generate](http://blog.golang.org/generate),
@@ -849,7 +849,7 @@ BenchmarkRawSQLQuery/query-4                  	    3000	    464498 ns/op	   3748
 BenchmarkGORMQuery/query-4                    	    1000	   1388406 ns/op	  427401 B/op	    7068 allocs/op
 
 PASS
-ok  	gopkg.in/src-d/go-kallax.v1/benchmarks	44.899s
+ok  	github.com/zbyte/go-kallax/benchmarks	44.899s
 ```
 
 As we can see on the benchmark, the performance loss is not very much compared to raw `database/sql`, while GORMs performance loss is very big and the memory consumption is way higher. SQLBoiler, on the other hand, has a lower memory footprint than kallax (in some cases), but a bigger performance loss (though not very significant), except for queries with relationships (that is a regression, though, and should be improved in the future).

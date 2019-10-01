@@ -25,8 +25,8 @@ before_script:
 install:
   - rm -rf $GOPATH/src/gopkg.in/src-d
   - mkdir -p $GOPATH/src/gopkg.in/src-d
-  - mv $PWD $GOPATH/src/gopkg.in/src-d/go-kallax.v1
-  - cd $GOPATH/src/gopkg.in/src-d/go-kallax.v1
+  - mv $PWD $GOPATH/src/github.com/zbyte/go-kallax
+  - cd $GOPATH/src/github.com/zbyte/go-kallax
   - go get -v -t ./...
 
 script:

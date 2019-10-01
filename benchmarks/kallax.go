@@ -8,8 +8,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"gopkg.in/src-d/go-kallax.v1"
-	"gopkg.in/src-d/go-kallax.v1/types"
+	"github.com/zbyte/go-kallax"
+	"github.com/zbyte/go-kallax/types"
 )
 
 var _ types.SQLType

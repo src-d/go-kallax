@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	kallax "gopkg.in/src-d/go-kallax.v1"
+	kallax "github.com/zbyte/go-kallax"
 )
 
 type JSONSuite struct {

@@ -13,7 +13,7 @@ import (
 
 const (
 	// BaseModel is the type name of the kallax base model.
-	BaseModel = "gopkg.in/src-d/go-kallax.v1.Model"
+	BaseModel = "github.com/zbyte/go-kallax.Model"
 	//URL is the type name of the net/url.URL.
 	URL = "url.URL"
 )

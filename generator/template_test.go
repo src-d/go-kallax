@@ -73,7 +73,7 @@ return (*int)(&r.BasicAlias), nil
 const baseTpl = `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/zbyte/go-kallax"
 	import "net/url"
 
 	type Rel struct {
@@ -152,7 +152,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 	s.processSource(`
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/zbyte/go-kallax"
 	import "net/url"
 
 	type Aliased string
@@ -211,7 +211,7 @@ func (s *TemplateSuite) TestGenModelColumns() {
 const jsonBaseTpl = `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/zbyte/go-kallax"
 	import "net/url"
 
 	type Rel struct {
@@ -350,7 +350,7 @@ func (s *TemplateSuite) TestGenTypeName() {
 	s.processSource(`
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/zbyte/go-kallax"
 	import "net/url"
 
 	type Foo struct {
@@ -385,7 +385,7 @@ func (s *TemplateSuite) TestIsPtrSlice() {
 	s.processSource(`
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/zbyte/go-kallax"
 	import "net/url"
 
 	type Foo struct {
@@ -424,7 +424,7 @@ func (s *TemplateSuite) TestGenTimeTruncations() {
 	s.processSource(`
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/zbyte/go-kallax"
 	import "time"
 
 	type Foo struct {
@@ -467,8 +467,8 @@ func (s *ProcessorSuite) TestFindableTypeName() {
 
 		import "time"
 		import "net/url"
-		import "gopkg.in/src-d/go-kallax.v1"
-		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
+		import "github.com/zbyte/go-kallax"
+		import "github.com/zbyte/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model
@@ -564,8 +564,8 @@ func (s *ProcessorSuite) TestLookupValid() {
 
 		import "time"
 		import "net/url"
-		import "gopkg.in/src-d/go-kallax.v1"
-		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
+		import "github.com/zbyte/go-kallax"
+		import "github.com/zbyte/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model
@@ -680,8 +680,8 @@ func (s *ProcessorSuite) TestShortName() {
 
 		import "time"
 		import "net/url"
-		import "gopkg.in/src-d/go-kallax.v1"
-		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
+		import "github.com/zbyte/go-kallax"
+		import "github.com/zbyte/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model

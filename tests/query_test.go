@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/src-d/go-kallax.v1"
+	"github.com/zbyte/go-kallax"
 )
 
 type QuerySuite struct {
