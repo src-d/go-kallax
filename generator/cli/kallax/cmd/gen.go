@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/zbyte/go-kallax/generator"
-	cli "gopkg.in/urfave/cli.v1"
+	cli "github.com/urfave/cli"
 	"os"
 )
 
