@@ -395,22 +395,10 @@ func (s *{{.StoreName}}) Find(q *{{.QueryName}}) (*{{.ResultSetName}}, error) {
 	return New{{.ResultSetName}}(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *{{.StoreName}}) MustFind(q *{{.QueryName}}) *{{.ResultSetName}} {
-	return New{{.ResultSetName}}(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *{{.StoreName}}) Count(q *{{.QueryName}}) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *{{.StoreName}}) MustCount(q *{{.QueryName}}) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -447,16 +435,6 @@ func (s *{{.StoreName}}) FindAll(q *{{.QueryName}}) ([]*{{.Name}}, error) {
         }
 
         return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *{{.StoreName}}) MustFindOne(q *{{.QueryName}}) *{{.Name}} {
-        record, err := s.FindOne(q)
-        if err != nil {
-                panic(err)
-        }
-        return record
 }
 
 // Reload refreshes the {{.Name}} with the data in the database and
