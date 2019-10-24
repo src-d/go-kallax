@@ -1,5 +1,5 @@
 
-// {{.QueryName}} is the object used to create queries for the {{.Name}} 
+// {{.QueryName}} is the object used to create queries for the {{.Name}}
 // entity.
 type {{.QueryName}} struct {
 	*kallax.BaseQuery
@@ -69,14 +69,14 @@ func (q *{{.QueryName}}) Where(cond kallax.Condition) *{{.QueryName}} {
 
 {{range .Relationships}}
 {{if not .IsOneToManyRelationship}}
-func (q *{{$.QueryName}}) With{{.Name}}() *{{$.QueryName}} {
-        q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}", kallax.OneToOne, nil)
-        return q
+func (q *{{$.QueryName}}) With{{.Name}}() (*{{$.QueryName}}, error) {
+        err := q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}", kallax.OneToOne, nil)
+        return q, err
 }
 {{else}}
-func (q *{{$.QueryName}}) With{{.Name}}(cond kallax.Condition) *{{$.QueryName}} {
-        q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}", kallax.OneToMany, cond)
-        return q
+func (q *{{$.QueryName}}) With{{.Name}}(cond kallax.Condition) (*{{$.QueryName}}, error) {
+        err := q.AddRelation(Schema.{{.TypeSchemaName}}.BaseSchema, "{{.Name}}", kallax.OneToMany, cond)
+        return q, err
 }
 {{end}}
 {{end}}
