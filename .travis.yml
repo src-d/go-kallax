@@ -1,8 +1,8 @@
 language: go
 
 go:
-  - 1.9.x
-  - 1.10.x
+  - 1.13.x
+  - 1.14.x
   - tip
 
 matrix:
@@ -11,7 +11,7 @@ matrix:
     fast_finish: true
 
 addons:
-  postgresql: "9.4"
+  postgresql: "9.6"
 
 env:
   - DBNAME=kallax_test DBUSER=postgres DBPASS='' GOPATH=/tmp/whatever:$GOPATH
