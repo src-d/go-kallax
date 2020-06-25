@@ -207,7 +207,7 @@ import (
 	"errors"
 	"strings"
 
-	kallax "github.com/zbyte/go-kallax"
+	kallax "github.com/networkteam/go-kallax"
 )
 
 type User struct {

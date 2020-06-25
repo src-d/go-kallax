@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/zbyte/go-kallax/types"
+	"github.com/networkteam/go-kallax/types"
 )
 
 // ResultSet is the common interface all result sets need to implement.

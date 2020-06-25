@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/networkteam/go-kallax/types"
 	"github.com/stretchr/testify/suite"
-	"github.com/zbyte/go-kallax/types"
 )
 
 type OpsSuite struct {

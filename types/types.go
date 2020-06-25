@@ -1,5 +1,5 @@
 // Package types provides implementation of some wrapper SQL types.
-package types // import "github.com/zbyte/go-kallax/types"
+package types // import "github.com/networkteam/go-kallax/types"
 
 import (
 	"database/sql"

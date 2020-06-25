@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	kallax "github.com/networkteam/go-kallax"
 	"github.com/stretchr/testify/suite"
-	kallax "github.com/zbyte/go-kallax"
 )
 
 func TestStoreSuite(t *testing.T) {

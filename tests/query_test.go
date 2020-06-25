@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/networkteam/go-kallax"
 	"github.com/stretchr/testify/suite"
-	"github.com/zbyte/go-kallax"
 )
 
 type QuerySuite struct {

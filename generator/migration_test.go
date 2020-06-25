@@ -574,7 +574,7 @@ const packageTransformerSourceFixture = `
 package foo
 
 import (
-	"github.com/zbyte/go-kallax"
+	"github.com/networkteam/go-kallax"
 	"net/url"
 	satori "github.com/satori/go.uuid"
 	gofrs "github.com/gofrs/uuid"

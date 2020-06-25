@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/zbyte/go-kallax/generator"
+	"github.com/networkteam/go-kallax/generator"
 	cli "github.com/urfave/cli"
 	"os"
 )

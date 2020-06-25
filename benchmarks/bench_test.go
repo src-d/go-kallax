@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/jinzhu/gorm"
+	"github.com/networkteam/go-kallax/benchmarks/models"
 	"github.com/vattle/sqlboiler/queries/qm"
 	null "gopkg.in/nullbio/null.v6"
-	"github.com/zbyte/go-kallax/benchmarks/models"
 )
 
 func envOrDefault(key string, def string) string {

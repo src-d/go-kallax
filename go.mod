@@ -1,4 +1,4 @@
-module github.com/zbyte/go-kallax
+module github.com/networkteam/go-kallax
 
 go 1.13
 

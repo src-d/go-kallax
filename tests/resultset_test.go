@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/networkteam/go-kallax"
 	"github.com/stretchr/testify/suite"
-	"github.com/zbyte/go-kallax"
 )
 
 type ResulsetSuite struct {

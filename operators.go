@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zbyte/go-kallax/types"
+	"github.com/networkteam/go-kallax/types"
 
 	"github.com/Masterminds/squirrel"
 )

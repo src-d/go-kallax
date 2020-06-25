@@ -1,6 +1,6 @@
 package benchmark
 
-import kallax "github.com/zbyte/go-kallax"
+import kallax "github.com/networkteam/go-kallax"
 
 type Person struct {
 	kallax.Model `table:"people"`
