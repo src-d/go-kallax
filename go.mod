@@ -3,7 +3,7 @@ module github.com/networkteam/go-kallax
 go 1.13
 
 require (
-	github.com/Masterminds/squirrel v1.1.0
+	github.com/Masterminds/squirrel v1.4.0
 	github.com/fatih/color v1.7.0
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/golang-migrate/migrate v3.5.4+incompatible
