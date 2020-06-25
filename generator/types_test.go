@@ -261,7 +261,7 @@ func newVariadic(bar string, foo ...string) *Variadic {
 
 func (s *ModelSuite) SetupSuite() {
 	pkgs, err := packages.Load(&packages.Config{
-		Mode: packages.NeedSyntax | packages.NeedTypes | packages.NeedImports,
+		Mode: packages.NeedTypes | packages.NeedImports,
 		Overlay: map[string][]byte{
 			"fixture/fixture.go": []byte(fixturesSource),
 		},

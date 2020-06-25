@@ -52,7 +52,7 @@ func inline(f *Field) *Field {
 
 func processorFixture(t *testing.T, source string) (*Processor, error) {
 	pkgs, err := packages.Load(&packages.Config{
-		Mode: packages.NeedSyntax | packages.NeedTypes | packages.NeedImports,
+		Mode: packages.NeedTypes | packages.NeedImports,
 		Overlay: map[string][]byte{
 			"fixture/fixture.go": []byte(source),
 		},
