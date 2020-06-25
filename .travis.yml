@@ -23,7 +23,7 @@ before_script:
   - psql -c 'create database kallax_test;' -U postgres
 
 script:
-  - make test
+  - GO111MODULE=off make test
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
