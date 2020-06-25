@@ -22,6 +22,9 @@ services:
 before_script:
   - psql -c 'create database kallax_test;' -U postgres
 
+install:
+  - go get -v -t ./...
+
 script:
   - GO111MODULE=off make test
 
