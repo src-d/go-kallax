@@ -1,16 +1,12 @@
 package generator
 
 import (
-	"go/ast"
-	"go/importer"
-	"go/parser"
-	"go/token"
-	"go/types"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/tools/go/packages"
 )
 
 type FieldSuite struct {
@@ -201,7 +197,7 @@ type ModelSuite struct {
 }
 
 const fixturesSource = `
-package fixtures
+package fixture
 
 import (
 	"errors"
@@ -264,15 +260,21 @@ func newVariadic(bar string, foo ...string) *Variadic {
 `
 
 func (s *ModelSuite) SetupSuite() {
-	fset := &token.FileSet{}
-	astFile, err := parser.ParseFile(fset, "fixture.go", fixturesSource, 0)
-	s.Nil(err)
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedSyntax | packages.NeedTypes | packages.NeedImports,
+		Overlay: map[string][]byte{
+			"fixture/fixture.go": []byte(fixturesSource),
+		},
+	}, "github.com/networkteam/go-kallax/generator/fixture")
+	s.NoError(err)
 
-	cfg := &types.Config{
-		Importer: importer.For("gc", nil),
-	}
-	p, err := cfg.Check("foo", fset, []*ast.File{astFile}, nil)
-	s.Nil(err)
+	packages.Visit(pkgs, nil, func(pkg *packages.Package) {
+		if len(pkg.Errors) > 0 {
+			s.NoError(pkg.Errors[0], "packages.Load had errors in package %s", pkg)
+		}
+	})
+
+	p := pkgs[0].Types
 
 	prc := NewProcessor("fixture", []string{"foo.go"})
 	prc.Package = p
