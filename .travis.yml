@@ -23,8 +23,8 @@ before_script:
   - psql -c 'create database kallax_test;' -U postgres
 
 install:
-  - rm -rf $GOPATH/src/gopkg.in/src-d
-  - mkdir -p $GOPATH/src/gopkg.in/src-d
+  - rm -rf $GOPATH/src/github.com/networkteam
+  - mkdir -p $GOPATH/src/github.com/networkteam
   - mv $PWD $GOPATH/src/github.com/networkteam/go-kallax
   - cd $GOPATH/src/github.com/networkteam/go-kallax
   - go get -v -t ./...
