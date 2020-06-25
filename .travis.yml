@@ -22,14 +22,6 @@ services:
 before_script:
   - psql -c 'create database kallax_test;' -U postgres
 
-install:
-  - rm -rf $GOPATH/src/github.com/networkteam
-  - mkdir -p $GOPATH/src/github.com/networkteam
-  - pwd
-  - mv . $GOPATH/src/github.com/networkteam/go-kallax
-  - cd $GOPATH/src/github.com/networkteam/go-kallax
-  - go get -v -t ./...
-
 script:
   - make test
 

@@ -12,6 +12,8 @@ require (
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/oklog/ulid v1.3.1
+	github.com/satori/go.uuid v1.2.0
+	github.com/stretchr/testify v1.2.2
 	github.com/urfave/cli v1.22.1
 	golang.org/x/tools v0.0.0-20191001184121-329c8d646ebe
 	gopkg.in/src-d/go-parse-utils.v1 v1.1.2
