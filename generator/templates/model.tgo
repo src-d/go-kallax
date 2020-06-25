@@ -118,11 +118,6 @@ func (s *{{.StoreName}}) DebugWith(logger kallax.LoggerFunc) *{{.StoreName}} {
         return &{{.StoreName}}{s.Store.DebugWith(logger)}
 }
 
-// DisableCacher turns off prepared statements, which can be useful in some scenarios.
-func (s *{{.StoreName}}) DisableCacher() *{{.StoreName}} {
-        return &{{.StoreName}}{s.Store.DisableCacher()}
-}
-
 {{if .HasNonInverses}}
 func (s *{{.StoreName}}) relationshipRecords(record *{{.Name}}) []modelSaveFunc {
         var result []modelSaveFunc

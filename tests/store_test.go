@@ -295,7 +295,7 @@ func (s *StoreSuite) TestDebug() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 
 	docInserted := NewStoreWithConstructFixture("bar")
-	s.Nil(store.DisableCacher().Insert(docInserted))
+	s.Nil(store.Insert(docInserted))
 
 	query := NewStoreWithConstructFixtureQuery()
 
@@ -320,7 +320,7 @@ func (s *StoreSuite) TestDebugWithoutCacher() {
 	store := NewStoreWithConstructFixtureStore(s.db)
 
 	docInserted := NewStoreWithConstructFixture("bar")
-	s.Nil(store.DisableCacher().Insert(docInserted))
+	s.Nil(store.Insert(docInserted))
 
 	query := NewStoreWithConstructFixtureQuery()
 
@@ -333,7 +333,7 @@ func (s *StoreSuite) TestDebugWithoutCacher() {
 	}
 
 	// No cacher -> debug
-	noCacherDebugStore := store.DisableCacher().Debug()
+	noCacherDebugStore := store.Debug()
 	docFound, err = noCacherDebugStore.FindOne(query)
 
 	s.resultOrError(docFound, err)
@@ -342,7 +342,7 @@ func (s *StoreSuite) TestDebugWithoutCacher() {
 	}
 
 	// Debug -> no cacher
-	docFound, err = store.Debug().DisableCacher().FindOne(query)
+	docFound, err = store.Debug().FindOne(query)
 
 	s.resultOrError(docFound, err)
 	if s.NotNil(docFound) {

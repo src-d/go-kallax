@@ -257,7 +257,7 @@ func (s *StoreSuite) TestDebugWith() {
 		queries = append(queries, q)
 	}
 	s.store.DebugWith(logger).RawQuery("SELECT 1 + 1")
-	s.store.DisableCacher().DebugWith(logger).RawExec("UPDATE foo SET bar = 1")
+	s.store.DebugWith(logger).RawExec("UPDATE foo SET bar = 1")
 
 	s.Regexp("kallax: Query: \\(\\d+\\.\\d+.+\\) SELECT 1 \\+ 1", queries[0])
 	s.Regexp("kallax: Exec: \\(\\d+\\.\\d+.+\\) UPDATE foo SET bar = 1", queries[1])

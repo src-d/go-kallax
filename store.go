@@ -128,7 +128,6 @@ func (r *txRunner) QueryRow(query string, args ...interface{}) squirrel.RowScann
 type Store struct {
 	db        squirrel.DBProxyContext
 	runner    squirrel.DBProxyContext
-	useCacher bool
 	logger    LoggerFunc
 }
 
@@ -136,17 +135,12 @@ type Store struct {
 func NewStore(db *sql.DB) *Store {
 	return (&Store{
 		db:        &dbRunner{db},
-		useCacher: true,
 	}).init()
 }
 
-// init initializes the store runner with debugging or caching, and returns itself for chainability
+// init initializes the store runner with debugging and returns itself for chainability
 func (s *Store) init() *Store {
 	s.runner = s.db
-
-	if s.useCacher {
-		s.runner = squirrel.NewStmtCacher(s.db)
-	}
 
 	if s.logger != nil {
 		s.runner = &proxyLogger{logger: s.logger, DBProxyContext: s.runner}
@@ -166,17 +160,7 @@ func (s *Store) Debug() *Store {
 func (s *Store) DebugWith(logger LoggerFunc) *Store {
 	return (&Store{
 		db:        s.db,
-		useCacher: s.useCacher,
 		logger:    logger,
-	}).init()
-}
-
-// DisableCacher returns a new store with prepared statements turned off, which can be useful in some scenarios.
-func (s *Store) DisableCacher() *Store {
-	return (&Store{
-		db:        s.db,
-		logger:    s.logger,
-		useCacher: false,
 	}).init()
 }
 
@@ -494,7 +478,6 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 	txStore := (&Store{
 		db:        &txRunner{tx},
 		logger:    s.logger,
-		useCacher: s.useCacher,
 	}).init()
 
 	if err := callback(txStore); err != nil {
