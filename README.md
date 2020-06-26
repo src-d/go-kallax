@@ -1,16 +1,21 @@
-<img src="https://cdn.rawgit.com/src-d/go-kallax/master/kallax.svg" width="400" />
+<img src="https://cdn.rawgit.com/networkteam/go-kallax/master/kallax.svg" width="400" />
 
-[![GoDoc](https://godoc.org/github.com/networkteam/go-kallax?status.svg)](https://godoc.org/github.com/networkteam/go-kallax) [![Build Status](https://travis-ci.org/src-d/go-kallax.svg?branch=master)](https://travis-ci.org/src-d/go-kallax) [![codecov](https://codecov.io/gh/src-d/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/src-d/go-kallax)](https://goreportcard.com/report/github.com/src-d/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GoDoc](https://godoc.org/github.com/networkteam/go-kallax?status.svg)](https://godoc.org/github.com/networkteam/go-kallax) [![Build Status](https://travis-ci.org/networkteam/go-kallax.svg?branch=master)](https://travis-ci.org/networkteam/go-kallax) [![codecov](https://codecov.io/gh/networkteam/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/networkteam/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/networkteam/go-kallax)](https://goreportcard.com/report/github.com/networkteam/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Kallax is a PostgreSQL typesafe ORM for the Go language.
 
-**This is a fork to fix some important issues since the original package is not actively maintained anymore.**
+**This repository is a fork of the original src-d/go-kallax to fix some important issues since the original package is not actively maintained anymore.**
 
 It aims to provide a way of programmatically write queries and interact with a PostgreSQL database without having to write a single line of SQL, use strings to refer to columns and use values of any type in queries.
 
 For that reason, the first priority of kallax is to provide type safety to the data access layer.
 Another of the goals of kallax is make sure all models are, first and foremost, Go structs without having to use database-specific types such as, for example, `sql.NullInt64`.
 Support for arrays of all basic Go types and all JSON and arrays operators is provided as well.
+
+## Changes to the original version
+
+- Full Go module support
+- Removed statement cacher for prepared statements to fix memory leaks (when creating lots of new Store instances)
 
 ## Contents
 
@@ -161,13 +166,13 @@ type Metadata struct {
 
 ### Primary keys
 
-Primary key types need to satisfy the [Identifier](https://godoc.org/github.com/src-d/go-kallax/#Identifier) interface. Even though they have to do that, the generator is smart enough to know when to wrap some types to make it easier on the user.
+Primary key types need to satisfy the [Identifier](https://godoc.org/github.com/networkteam/go-kallax/#Identifier) interface. Even though they have to do that, the generator is smart enough to know when to wrap some types to make it easier on the user.
 
 The following types can be used as primary key:
 
 - `int64`
 - [`uuid.UUID`](https://godoc.org/github.com/gofrs/uuid#UUID)
-- [`kallax.ULID`](https://godoc.org/github.com/src-d/go-kallax/#ULID): this is a type kallax provides that implements a lexically sortable UUID. You can store it as `uuid` like any other UUID, but internally it's an ULID and you will be able to sort lexically by it.
+- [`kallax.ULID`](https://godoc.org/github.com/networkteam/go-kallax/#ULID): this is a type kallax provides that implements a lexically sortable UUID. You can store it as `uuid` like any other UUID, but internally it's an ULID and you will be able to sort lexically by it.
 
 Due to how sql mapping works, pointers to `uuid.UUID` and `kallax.ULID` are not set to `nil` if they appear as `NULL` in the database, but to [`uuid.Nil`](https://godoc.org/github.com/satori/go.uuid#pkg-variables). Using pointers to UUIDs is discouraged for this reason.
 
@@ -224,14 +229,14 @@ Events can be defined for models and they will be invoked at certain times of th
 
 To implement these events, just implement the following interfaces. You can implement as many as you want:
 
-- [BeforeInserter](https://godoc.org/github.com/src-d/go-kallax#BeforeInserter)
-- [BeforeUpdater](https://godoc.org/github.com/src-d/go-kallax#BeforeUpdater)
-- [BeforeSaver](https://godoc.org/github.com/src-d/go-kallax#BeforeSaver)
-- [BeforeDeleter](https://godoc.org/github.com/src-d/go-kallax#BeforeDeleter)
-- [AfterInserter](https://godoc.org/github.com/src-d/go-kallax#AfterInserter)
-- [AfterUpdater](https://godoc.org/github.com/src-d/go-kallax#AfterUpdater)
-- [AfterSaver](https://godoc.org/github.com/src-d/go-kallax#AfterSaver)
-- [AfterDeleter](https://godoc.org/github.com/src-d/go-kallax#AfterDeleter)
+- [BeforeInserter](https://godoc.org/github.com/networkteam/go-kallax#BeforeInserter)
+- [BeforeUpdater](https://godoc.org/github.com/networkteam/go-kallax#BeforeUpdater)
+- [BeforeSaver](https://godoc.org/github.com/networkteam/go-kallax#BeforeSaver)
+- [BeforeDeleter](https://godoc.org/github.com/networkteam/go-kallax#BeforeDeleter)
+- [AfterInserter](https://godoc.org/github.com/networkteam/go-kallax#AfterInserter)
+- [AfterUpdater](https://godoc.org/github.com/networkteam/go-kallax#AfterUpdater)
+- [AfterSaver](https://godoc.org/github.com/networkteam/go-kallax#AfterSaver)
+- [AfterDeleter](https://godoc.org/github.com/networkteam/go-kallax#AfterDeleter)
 
 Example:
 
@@ -254,7 +259,7 @@ Kallax generates a bunch of code for every single model you have and saves it to
 
 For every model you have, kallax will generate the following for you:
 
-- Internal methods for your model to make it work with kallax and satisfy the [Record](https://godoc.org/github.com/src-d/go-kallax#Record) interface.
+- Internal methods for your model to make it work with kallax and satisfy the [Record](https://godoc.org/github.com/networkteam/go-kallax#Record) interface.
 - A store named `{TypeName}Store`: the store is the way to access the data. A store of a given type is the way to access and manipulate data of that type. You can get an instance of the type store with `New{TypeName}Store(*sql.DB)`.
 - A query named `{TypeName}Query`: the query is the way you will be able to build programmatically the queries to perform on the store. A store only will accept queries of its own type. You can create a new query with `New{TypeName}Query()`.
   The query will contain methods for adding criteria to your query for every field of your struct, called `FindBy`s. The query object is not immutable, that is, every condition added to it, changes the query. If you want to reuse part of a query, you can call the `Copy()` method of a query, which will return a query identical to the one used to call the method.
@@ -589,7 +594,7 @@ Reload will not reload any relationships, just the model itself. After a `Reload
 
 ### Querying JSON
 
-You can query arbitrary JSON using the JSON operators defined in the [kallax](https://godoc.org/github.com/src-d/go-kallax) package. The schema of the JSON (if it's a struct, obviously for maps it is not) is also generated.
+You can query arbitrary JSON using the JSON operators defined in the [kallax](https://godoc.org/github.com/networkteam/go-kallax) package. The schema of the JSON (if it's a struct, obviously for maps it is not) is also generated.
 
 ```go
 q := NewPostQuery().Where(kallax.JSONContainsAnyKey(
@@ -823,48 +828,6 @@ func myLogger(message string, args ...interface{}) {
 
 store.DebugWith(myLogger).Find(myQuery)
 ```
-
-## Benchmarks
-
-Here are some benchmarks against [GORM](https://github.com/jinzhu/gorm), [SQLBoiler](https://github.com/vattle/sqlboiler) and `database/sql`. In the future we might add benchmarks for some more complex cases and other available ORMs.
-
-```
-BenchmarkKallaxUpdate-4                       	     300	   4179176 ns/op	     656 B/op	      25 allocs/op
-BenchmarkKallaxUpdateWithRelationships-4      	     200	   5662703 ns/op	    6642 B/op	     175 allocs/op
-
-BenchmarkKallaxInsertWithRelationships-4      	     200	   5648433 ns/op	   10221 B/op	     218 allocs/op
-BenchmarkSQLBoilerInsertWithRelationships-4   	     XXX	   XXXXXXX ns/op	    XXXX B/op	     XXX allocs/op
-BenchmarkRawSQLInsertWithRelationships-4      	     200	   5427503 ns/op	    4516 B/op	     127 allocs/op
-BenchmarkGORMInsertWithRelationships-4        	     200	   6196277 ns/op	   35080 B/op	     610 allocs/op
-
-BenchmarkKallaxInsert-4                       	     300	   3916239 ns/op	    1218 B/op	      29 allocs/op
-BenchmarkSQLBoilerInsert-4                    	     300	   4356432 ns/op	    1151 B/op	      35 allocs/op
-BenchmarkRawSQLInsert-4                       	     300	   4065924 ns/op	    1052 B/op	      27 allocs/op
-BenchmarkGORMInsert-4                         	     300	   4398799 ns/op	    4678 B/op	     107 allocs/op
-
-BenchmarkKallaxQueryRelationships/query-4     	     500	   2900095 ns/op	  269157 B/op	    6200 allocs/op
-BenchmarkSQLBoilerQueryRelationships/query-4  	    1000	   2082963 ns/op	  125587 B/op	    5098 allocs/op
-BenchmarkRawSQLQueryRelationships/query-4     	      20	  59400759 ns/op	  294176 B/op	   11424 allocs/op
-BenchmarkGORMQueryRelationships/query-4       	     300	   4758555 ns/op	 1069118 B/op	   20833 allocs/op
-
-BenchmarkKallaxQuery/query-4                  	    3000	    546742 ns/op	   50673 B/op	    1590 allocs/op
-BenchmarkSQLBoilerQuery/query-4               	    2000	    677839 ns/op	   54082 B/op	    2436 allocs/op
-BenchmarkRawSQLQuery/query-4                  	    3000	    464498 ns/op	   37480 B/op	    1525 allocs/op
-BenchmarkGORMQuery/query-4                    	    1000	   1388406 ns/op	  427401 B/op	    7068 allocs/op
-
-PASS
-ok  	github.com/networkteam/go-kallax/benchmarks	44.899s
-```
-
-As we can see on the benchmark, the performance loss is not very much compared to raw `database/sql`, while GORMs performance loss is very big and the memory consumption is way higher. SQLBoiler, on the other hand, has a lower memory footprint than kallax (in some cases), but a bigger performance loss (though not very significant), except for queries with relationships (that is a regression, though, and should be improved in the future).
-
-Source code of the benchmarks can be found on the [benchmarks](https://github.com/src-d/go-kallax/tree/master/benchmarks) folder.
-
-**Notes:**
-
-- Benchmark runs are out of date as of 2018-05-28 (result of PR #269), some results are pending a re-run and will be updated soon.
-- Benchmarks were run on a 2015 MacBook Pro with i5 and 8GB of RAM and 128GB SSD hard drive running fedora 25.
-- Benchmark of `database/sql` for querying with relationships is implemented with a very naive 1+n solution. That's why the result is that bad.
 
 ## Acknowledgements
 
