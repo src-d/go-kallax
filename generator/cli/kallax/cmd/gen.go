@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"gopkg.in/src-d/go-kallax.v1/generator"
-	cli "gopkg.in/urfave/cli.v1"
 	"os"
+
+	cli "github.com/urfave/cli/v2"
+	"gopkg.in/src-d/go-kallax.v1/generator"
 )
 
 var Generate = cli.Command{
