@@ -26,8 +26,8 @@ func newApp() *cli.App {
 	app.Flags = cmd.Generate.Flags
 	app.Action = cmd.Generate.Action
 	app.Commands = cli.Commands{
-		cmd.Generate,
-		cmd.Migrate,
+		&cmd.Generate,
+		&cmd.Migrate,
 	}
 
 	return app

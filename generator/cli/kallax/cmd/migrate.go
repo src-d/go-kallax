@@ -17,16 +17,16 @@ var Migrate = cli.Command{
 	Usage:  "Generate migrations for current kallax models",
 	Action: migrateAction,
 	Flags: []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "out, o",
 			Usage: "Output directory of migrations",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "name, n",
 			Usage: "Descriptive name for the migration",
 			Value: "migration",
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "input, i",
 			Usage: "List of directories to scan models from. You can use this flag as many times as you want.",
 		},
@@ -38,36 +38,36 @@ var Migrate = cli.Command{
 }
 
 var migrationFlags = []cli.Flag{
-	cli.StringFlag{
+	&cli.StringFlag{
 		Name:  "dir, d",
 		Value: "./migrations",
 		Usage: "Directory where your migrations are stored",
 	},
-	cli.StringFlag{
+	&cli.StringFlag{
 		Name:  "dsn",
 		Usage: "PostgreSQL data source name. Example: `user:pass@localhost:5432/database?sslmode=enable`",
 	},
-	cli.UintFlag{
+	&cli.UintFlag{
 		Name:  "steps, n",
 		Usage: "Number of migrations to run",
 	},
-	cli.UintFlag{
+	&cli.UintFlag{
 		Name:  "version, v",
 		Usage: "Migrate to a specific version. If `steps` and this flag are given, this will be used.",
 	},
 }
 
-var Up = cli.Command{
+var Up = &cli.Command{
 	Name:   "up",
 	Usage:  "Executes the migrations from the current version until the specified version.",
 	Action: runMigrationAction(upAction),
-	Flags: append(migrationFlags, cli.BoolFlag{
+	Flags: append(migrationFlags, &cli.BoolFlag{
 		Name:  "all",
 		Usage: "If this flag is used, the database will be migrated all the way up.",
 	}),
 }
 
-var Down = cli.Command{
+var Down = &cli.Command{
 	Name:   "down",
 	Usage:  "Downgrades the database a certain number of migrations or until a certain version.",
 	Action: runMigrationAction(downAction),
