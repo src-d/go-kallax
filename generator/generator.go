@@ -13,8 +13,6 @@ import (
 	"runtime/debug"
 	"strings"
 	"time"
-
-	"github.com/fatih/color"
 )
 
 // Generator is in charge of generating files for packages.
@@ -115,15 +113,7 @@ func (g *MigrationGenerator) printMigrationInfo(migration *Migration) {
 
 	fmt.Println("There are changes since last migration.\n\nThese are the proposed changes:")
 	for _, change := range migration.Up {
-		c := color.FgGreen
-		switch change.(type) {
-		case *DropColumn, *DropTable:
-			c = color.FgRed
-		case *ManualChange:
-			c = color.FgYellow
-		}
-		color := color.New(c, color.Bold)
-		color.Printf(" => ")
+		fmt.Printf(" => ")
 		fmt.Println(change.String())
 	}
 }

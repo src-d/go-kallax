@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/src-d/go-kallax.v1/generator/cli/kallax/cmd"
 
-	"gopkg.in/urfave/cli.v1"
+	"github.com/urfave/cli/v2"
 )
 
 const version = "1.3.5"
