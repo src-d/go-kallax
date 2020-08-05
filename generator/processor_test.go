@@ -315,13 +315,13 @@ func (s *ProcessorSuite) TestIsSQLType() {
 }
 
 func (s *ProcessorSuite) processorFixture(source string) *Processor {
-	prc, err := processorFixture(source)
+	prc, err := processorFixture(nil, source)
 	s.Require().NoError(err)
 	return prc
 }
 
 func (s *ProcessorSuite) processFixture(source string) *Package {
-	pkg, err := processFixture(source)
+	pkg, err := processFixture(nil, source)
 	s.Require().NoError(err)
 	return pkg
 }
@@ -440,7 +440,7 @@ func TestRemoveGoPath(t *testing.T) {
 		sep    rune
 	}{
 		{
-			`E:\workspace\gopath\src\gopkg.in\src-d\go-kallax.v1\tests\fixtures.AliasString`,
+			`E:\workspace\gopath\src\gopkg.in/src-d\go-kallax.v1\tests\fixtures.AliasString`,
 			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
 			[]string{
 				`E:\workspace\gopath`,

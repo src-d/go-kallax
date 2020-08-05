@@ -1,0 +1,28 @@
+on: pull_request
+name: on pull request
+jobs:
+  pull_request_chk:
+    name: pull request checker
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: testing
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.14.6'
+      - run: make test
+        env:
+          DBHOST: localhost
+          DBUSER: postgres
+          DBNAME: postgres

@@ -1,11 +1,9 @@
 package tests
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/src-d/go-kallax.v1"
 )
 
 type ResulsetSuite struct {
@@ -28,7 +26,8 @@ func (s *ResulsetSuite) TestResultSetAll() {
 	s.Nil(store.Insert(NewResultSetFixture("foo")))
 
 	s.NotPanics(func() {
-		rs := store.MustFind(NewResultSetFixtureQuery())
+		rs, err := store.Find(NewResultSetFixtureQuery())
+		s.Nil(err)
 		docs, err := rs.All()
 		s.Nil(err)
 		s.Len(docs, 2)
@@ -40,7 +39,8 @@ func (s *ResulsetSuite) TestResultSetOne() {
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 
 	s.NotPanics(func() {
-		rs := store.MustFind(NewResultSetFixtureQuery())
+		rs, err := store.Find(NewResultSetFixtureQuery())
+		s.Nil(err)
 		doc, err := rs.One()
 		s.Nil(err)
 		s.Equal("bar", doc.Foo)
@@ -51,7 +51,8 @@ func (s *ResulsetSuite) TestResultSetNextEmpty() {
 	store := NewResultSetFixtureStore(s.db)
 
 	s.NotPanics(func() {
-		rs := store.MustFind(NewResultSetFixtureQuery())
+		rs, err := store.Find(NewResultSetFixtureQuery())
+		s.Nil(err)
 		returned := rs.Next()
 		s.False(returned)
 
@@ -66,7 +67,8 @@ func (s *ResulsetSuite) TestResultSetNext() {
 	s.Nil(store.Insert(NewResultSetFixture("bar")))
 
 	s.NotPanics(func() {
-		rs := store.MustFind(NewResultSetFixtureQuery())
+		rs, err := store.Find(NewResultSetFixtureQuery())
+		s.Nil(err)
 		returned := rs.Next()
 		s.True(returned)
 
@@ -83,60 +85,6 @@ func (s *ResulsetSuite) TestResultSetNext() {
 	})
 }
 
-func (s *ResulsetSuite) TestResultSetForEach() {
-	store := NewResultSetFixtureStore(s.db)
-	s.Nil(store.Insert(NewResultSetFixture("bar")))
-	s.Nil(store.Insert(NewResultSetFixture("foo")))
-
-	s.NotPanics(func() {
-		count := 0
-		rs := store.MustFind(NewResultSetFixtureQuery())
-		err := rs.ForEach(func(*ResultSetFixture) error {
-			count++
-			return nil
-		})
-
-		s.Nil(err)
-		s.Equal(2, count)
-	})
-}
-
-func (s *ResulsetSuite) TestResultSetForEachStop() {
-	store := NewResultSetFixtureStore(s.db)
-	s.Nil(store.Insert(NewResultSetFixture("bar")))
-	s.Nil(store.Insert(NewResultSetFixture("foo")))
-
-	s.NotPanics(func() {
-		count := 0
-		rs := store.MustFind(NewResultSetFixtureQuery())
-		err := rs.ForEach(func(*ResultSetFixture) error {
-			count++
-			return kallax.ErrStop
-		})
-
-		s.Nil(err)
-		s.Equal(1, count)
-	})
-}
-
-func (s *ResulsetSuite) TestResultSetForEachError() {
-	store := NewResultSetFixtureStore(s.db)
-	s.Nil(store.Insert(NewResultSetFixture("bar")))
-	s.Nil(store.Insert(NewResultSetFixture("foo")))
-
-	fail := errors.New("kallax: foo")
-
-	s.NotPanics(func() {
-		rs := store.MustFind(NewResultSetFixtureQuery())
-		defer rs.Close()
-		err := rs.ForEach(func(*ResultSetFixture) error {
-			return fail
-		})
-
-		s.Equal(fail, err)
-	})
-}
-
 func (s *ResulsetSuite) TestForEachAndCount() {
 	store := NewResultSetFixtureStore(s.db)
 
@@ -146,15 +94,8 @@ func (s *ResulsetSuite) TestForEachAndCount() {
 	s.Nil(store.Insert(docInserted2))
 
 	query := NewResultSetFixtureQuery()
-	rs, err := store.Find(query)
+	_, err := store.FindAll(query)
 	s.Nil(err)
-	manualCount := 0
-	rs.ForEach(func(doc *ResultSetFixture) error {
-		manualCount++
-		s.NotNil(doc)
-		return nil
-	})
-	s.Equal(2, manualCount)
 
 	queriedCount, err := store.Count(query)
 	s.NoError(err)

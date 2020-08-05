@@ -176,8 +176,10 @@ func (s *StoreSuite) TestStoreInsertUpdateMustFind() {
 	doc := NewStoreWithConstructFixture("foo")
 	err := store.Insert(doc)
 	s.Nil(err)
-	s.NotPanics(func() {
-		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+	s.NotPanics(func(){
+		v, err := store.FindOne(NewStoreWithConstructFixtureQuery())
+		s.NoError(err)
+		s.Equal("foo", v.Foo)
 	})
 
 	doc.Foo = "bar"
@@ -185,7 +187,9 @@ func (s *StoreSuite) TestStoreInsertUpdateMustFind() {
 	s.Nil(err)
 	s.True(updatedRows > 0)
 	s.NotPanics(func() {
-		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+		v, err := store.FindOne(NewStoreWithConstructFixtureQuery())
+		s.NoError(err)
+		s.Equal("bar", v.Foo)
 	})
 }
 
@@ -198,7 +202,9 @@ func (s *StoreSuite) TestStoreSave() {
 	s.False(updated)
 	s.True(doc.IsPersisted())
 	s.NotPanics(func() {
-		s.Equal("foo", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+		v, err := store.FindOne(NewStoreWithConstructFixtureQuery())
+		s.NoError(err)
+		s.Equal("foo", v.Foo)
 	})
 
 	doc.Foo = "bar"
@@ -206,7 +212,9 @@ func (s *StoreSuite) TestStoreSave() {
 	s.Nil(err)
 	s.True(updated)
 	s.NotPanics(func() {
-		s.Equal("bar", store.MustFindOne(NewStoreWithConstructFixtureQuery()).Foo)
+		v, err := store.FindOne(NewStoreWithConstructFixtureQuery())
+		s.NoError(err)
+		s.Equal("bar", v.Foo)
 	})
 }
 
@@ -374,7 +382,8 @@ func (s *StoreSuite) TestFindAliasSlice() {
 func (s *StoreSuite) assertMustFindByFoo(st *StoreFixtureStore, foo string) {
 	s.NotPanics(func() {
 		q := NewStoreFixtureQuery().Where(kallax.Eq(Schema.StoreFixture.Foo, foo))
-		r := st.MustFindOne(q)
+		r, err := st.FindOne(q)
+		s.NoError(err)
 		s.Equal(foo, r.Foo)
 	})
 }
@@ -409,8 +418,9 @@ func (s *StoreSuite) TestInsert_RelWithNoInverse() {
 
 	s.NoError(store.Insert(p))
 	s.NotEqual(0, p.ID)
-
-	p, err := store.FindOne(NewParentQuery().WithChildren(nil))
+	q, err := NewParentQuery().WithChildren(nil)
+	s.NoError(err)
+	p, err = store.FindOne(q)
 	s.NoError(err)
 	s.Len(p.Children, 3)
 	for _, c := range p.Children {
@@ -431,8 +441,9 @@ func (s *StoreSuite) TestInsert_RelWithNoInverseNoPtr() {
 
 	s.NoError(store.Insert(p))
 	s.NotEqual(0, p.ID)
-
-	p, err := store.FindOne(NewParentNoPtrQuery().WithChildren(nil))
+	q, err := NewParentNoPtrQuery().WithChildren(nil)
+	s.NoError(err)
+	p, err = store.FindOne(q)
 	s.NoError(err)
 	s.Len(p.Children, 3)
 	for _, c := range p.Children {
@@ -447,13 +458,14 @@ func (s *StoreSuite) TestRecursiveInsert() {
 	NewC("baz", b)
 
 	s.NoError(store.Insert(a))
-
-	retrievedA, err := store.FindOne(NewAQuery().FindByID(a.ID).WithB())
+	q, _ := NewAQuery().FindByID(a.ID).WithB()
+	retrievedA, err := store.FindOne(q)
 	s.NoError(err)
 	s.NotNil(retrievedA.B)
 
 	bstore := NewBStore(s.db).Debug()
-	retrievedB, err := bstore.FindOne(NewBQuery().FindByID(b.ID).WithC())
+	qc, _ := NewBQuery().FindByID(b.ID).WithC()
+	retrievedB, err := bstore.FindOne(qc)
 	s.NoError(err)
 	s.NotNil(retrievedB.C)
 }
@@ -465,13 +477,14 @@ func (s *StoreSuite) TestRecursiveInsert_Reverse() {
 	c := NewC("baz", b)
 
 	s.NoError(store.Insert(c))
-
-	retrievedC, err := store.FindOne(NewCQuery().FindByID(c.ID).WithB())
+	q, _ := NewCQuery().FindByID(c.ID).WithB()
+	retrievedC, err := store.FindOne(q)
 	s.NoError(err)
 	s.NotNil(retrievedC.B)
 
 	bstore := NewBStore(s.db).Debug()
-	retrievedB, err := bstore.FindOne(NewBQuery().FindByID(b.ID).WithA())
+	qc, _ := NewBQuery().FindByID(b.ID).WithA()
+	retrievedB, err := bstore.FindOne(qc)
 	s.NoError(err)
 	s.NotNil(retrievedB.A)
 }
@@ -490,13 +503,14 @@ func (s *StoreSuite) TestRecursiveUpdate() {
 
 	_, err := store.Update(a)
 	s.NoError(err)
-
-	retrievedA, err := store.FindOne(NewAQuery().FindByID(a.ID).WithB())
+	q, _ := NewAQuery().FindByID(a.ID).WithB()
+	retrievedA, err := store.FindOne(q)
 	s.NoError(err)
 	s.Equal(a.Name, retrievedA.Name)
 
 	bstore := NewBStore(s.db).Debug()
-	retrievedB, err := bstore.FindOne(NewBQuery().FindByID(b.ID).WithC())
+	qc, _ := NewBQuery().FindByID(b.ID).WithC()
+	retrievedB, err := bstore.FindOne(qc)
 	s.NoError(err)
 	s.Equal(b.Name, retrievedB.Name)
 	s.Equal(c.Name, retrievedB.C.Name)
@@ -518,12 +532,14 @@ func (s *StoreSuite) TestRecursiveUpdate_Reverse() {
 	s.NoError(err)
 
 	astore := NewAStore(s.db).Debug()
-	retrievedA, err := astore.FindOne(NewAQuery().FindByID(a.ID).WithB())
+	q, _ := NewAQuery().FindByID(a.ID).WithB()
+	retrievedA, err := astore.FindOne(q)
 	s.NoError(err)
 	s.Equal(a.Name, retrievedA.Name)
 
 	bstore := NewBStore(s.db).Debug()
-	retrievedB, err := bstore.FindOne(NewBQuery().FindByID(b.ID).WithC())
+	qc, _ := NewBQuery().FindByID(b.ID).WithC()
+	retrievedB, err := bstore.FindOne(qc)
 	s.NoError(err)
 	s.Equal(b.Name, retrievedB.Name)
 	s.Equal(c.Name, retrievedB.C.Name)
@@ -544,8 +560,8 @@ func (s *StoreSuite) TestInsertEmptyVirtualColumns() {
 	aOnly.Name = "foo1"
 	_, err = store.Save(aOnly)
 	s.NoError(err)
-
-	retrievedA, err := store.FindOne(NewAQuery().FindByID(a.ID).WithB())
+	q, _ := NewAQuery().FindByID(a.ID).WithB()
+	retrievedA, err := store.FindOne(q)
 	s.NoError(err)
 	s.NotNil(retrievedA.B)
 }

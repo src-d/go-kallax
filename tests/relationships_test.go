@@ -140,8 +140,9 @@ func (s *RelationshipsSuite) TestSaveRelations() {
 	store := NewCarStore(s.db).Debug()
 	_, err := store.Save(car)
 	s.NoError(err)
-
-	car, err = store.FindOne(NewCarQuery().FindByID(car.ID).WithBrand())
+	q, err := NewCarQuery().FindByID(car.ID).WithBrand()
+	s.NoError(err)
+	car, err = store.FindOne(q)
 	s.NoError(err)
 	s.NotNil(car)
 	s.NotNil(car.Brand)
@@ -153,8 +154,9 @@ func (s *RelationshipsSuite) TestSaveRelations() {
 	s.NoError(err)
 	s.NotNil(p.Car)
 	s.NotNil(p.Car.Brand)
-
-	car, err = store.FindOne(NewCarQuery().FindByID(car.ID).WithBrand())
+	q, err = NewCarQuery().FindByID(car.ID).WithBrand()
+	s.NoError(err)
+	car, err = store.FindOne(q)
 	s.NoError(err)
 	s.NotNil(car)
 	s.NotNil(car.Brand)
@@ -209,9 +211,10 @@ func (s *RelationshipsSuite) assertPerson(name string, pers *Person, car *Car, p
 
 func (s *RelationshipsSuite) getPerson() *Person {
 	require := s.Require()
-	q := NewPersonQuery().
-		WithCar().
-		WithPets(nil)
+	q, err := NewPersonQuery().WithCar()
+	require.NoError(err)
+	q, err = q.WithPets(nil)
+	require.NoError(err)
 	pers, err := NewPersonStore(s.db).FindOne(q)
 	require.NoError(err)
 	require.NotNil(pers)
