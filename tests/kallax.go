@@ -233,22 +233,10 @@ func (s *AStore) Find(q *AQuery) (*AResultSet, error) {
 	return NewAResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *AStore) MustFind(q *AQuery) *AResultSet {
-	return NewAResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *AStore) Count(q *AQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *AStore) MustCount(q *AQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -285,16 +273,6 @@ func (s *AStore) FindAll(q *AQuery) ([]*A, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *AStore) MustFindOne(q *AQuery) *A {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the A with the data in the database and
@@ -416,9 +394,9 @@ func (q *AQuery) Where(cond kallax.Condition) *AQuery {
 	return q
 }
 
-func (q *AQuery) WithB() *AQuery {
-	q.AddRelation(Schema.B.BaseSchema, "B", kallax.OneToOne, nil)
-	return q
+func (q *AQuery) WithB() (*AQuery, error) {
+	err := q.AddRelation(Schema.B.BaseSchema, "B", kallax.OneToOne, nil)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -812,22 +790,10 @@ func (s *BStore) Find(q *BQuery) (*BResultSet, error) {
 	return NewBResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *BStore) MustFind(q *BQuery) *BResultSet {
-	return NewBResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *BStore) Count(q *BQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *BStore) MustCount(q *BQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -864,16 +830,6 @@ func (s *BStore) FindAll(q *BQuery) ([]*B, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *BStore) MustFindOne(q *BQuery) *B {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the B with the data in the database and
@@ -995,14 +951,14 @@ func (q *BQuery) Where(cond kallax.Condition) *BQuery {
 	return q
 }
 
-func (q *BQuery) WithA() *BQuery {
-	q.AddRelation(Schema.A.BaseSchema, "A", kallax.OneToOne, nil)
-	return q
+func (q *BQuery) WithA() (*BQuery, error) {
+	err := q.AddRelation(Schema.A.BaseSchema, "A", kallax.OneToOne, nil)
+	return q, err
 }
 
-func (q *BQuery) WithC() *BQuery {
-	q.AddRelation(Schema.C.BaseSchema, "C", kallax.OneToOne, nil)
-	return q
+func (q *BQuery) WithC() (*BQuery, error) {
+	err := q.AddRelation(Schema.C.BaseSchema, "C", kallax.OneToOne, nil)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -1277,22 +1233,10 @@ func (s *BrandStore) Find(q *BrandQuery) (*BrandResultSet, error) {
 	return NewBrandResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *BrandStore) MustFind(q *BrandQuery) *BrandResultSet {
-	return NewBrandResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *BrandStore) Count(q *BrandQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *BrandStore) MustCount(q *BrandQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -1329,16 +1273,6 @@ func (s *BrandStore) FindAll(q *BrandQuery) ([]*Brand, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *BrandStore) MustFindOne(q *BrandQuery) *Brand {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the Brand with the data in the database and
@@ -1777,22 +1711,10 @@ func (s *CStore) Find(q *CQuery) (*CResultSet, error) {
 	return NewCResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *CStore) MustFind(q *CQuery) *CResultSet {
-	return NewCResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *CStore) Count(q *CQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *CStore) MustCount(q *CQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -1829,16 +1751,6 @@ func (s *CStore) FindAll(q *CQuery) ([]*C, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *CStore) MustFindOne(q *CQuery) *C {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the C with the data in the database and
@@ -1929,9 +1841,9 @@ func (q *CQuery) Where(cond kallax.Condition) *CQuery {
 	return q
 }
 
-func (q *CQuery) WithB() *CQuery {
-	q.AddRelation(Schema.B.BaseSchema, "B", kallax.OneToOne, nil)
-	return q
+func (q *CQuery) WithB() (*CQuery, error) {
+	err := q.AddRelation(Schema.B.BaseSchema, "B", kallax.OneToOne, nil)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -2366,22 +2278,10 @@ func (s *CarStore) Find(q *CarQuery) (*CarResultSet, error) {
 	return NewCarResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *CarStore) MustFind(q *CarQuery) *CarResultSet {
-	return NewCarResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *CarStore) Count(q *CarQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *CarStore) MustCount(q *CarQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -2418,16 +2318,6 @@ func (s *CarStore) FindAll(q *CarQuery) ([]*Car, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *CarStore) MustFindOne(q *CarQuery) *Car {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the Car with the data in the database and
@@ -2518,14 +2408,14 @@ func (q *CarQuery) Where(cond kallax.Condition) *CarQuery {
 	return q
 }
 
-func (q *CarQuery) WithOwner() *CarQuery {
-	q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
-	return q
+func (q *CarQuery) WithOwner() (*CarQuery, error) {
+	err := q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
+	return q, err
 }
 
-func (q *CarQuery) WithBrand() *CarQuery {
-	q.AddRelation(Schema.Brand.BaseSchema, "Brand", kallax.OneToOne, nil)
-	return q
+func (q *CarQuery) WithBrand() (*CarQuery, error) {
+	err := q.AddRelation(Schema.Brand.BaseSchema, "Brand", kallax.OneToOne, nil)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -2814,22 +2704,10 @@ func (s *ChildStore) Find(q *ChildQuery) (*ChildResultSet, error) {
 	return NewChildResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *ChildStore) MustFind(q *ChildQuery) *ChildResultSet {
-	return NewChildResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *ChildStore) Count(q *ChildQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *ChildStore) MustCount(q *ChildQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -2866,16 +2744,6 @@ func (s *ChildStore) FindAll(q *ChildQuery) ([]*Child, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *ChildStore) MustFindOne(q *ChildQuery) *Child {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the Child with the data in the database and
@@ -3290,22 +3158,10 @@ func (s *EventsAllFixtureStore) Find(q *EventsAllFixtureQuery) (*EventsAllFixtur
 	return NewEventsAllFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *EventsAllFixtureStore) MustFind(q *EventsAllFixtureQuery) *EventsAllFixtureResultSet {
-	return NewEventsAllFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *EventsAllFixtureStore) Count(q *EventsAllFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *EventsAllFixtureStore) MustCount(q *EventsAllFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -3342,16 +3198,6 @@ func (s *EventsAllFixtureStore) FindAll(q *EventsAllFixtureQuery) ([]*EventsAllF
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *EventsAllFixtureStore) MustFindOne(q *EventsAllFixtureQuery) *EventsAllFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the EventsAllFixture with the data in the database and
@@ -3744,22 +3590,10 @@ func (s *EventsFixtureStore) Find(q *EventsFixtureQuery) (*EventsFixtureResultSe
 	return NewEventsFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *EventsFixtureStore) MustFind(q *EventsFixtureQuery) *EventsFixtureResultSet {
-	return NewEventsFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *EventsFixtureStore) Count(q *EventsFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *EventsFixtureStore) MustCount(q *EventsFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -3796,16 +3630,6 @@ func (s *EventsFixtureStore) FindAll(q *EventsFixtureQuery) ([]*EventsFixture, e
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *EventsFixtureStore) MustFindOne(q *EventsFixtureQuery) *EventsFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the EventsFixture with the data in the database and
@@ -4198,22 +4022,10 @@ func (s *EventsSaveFixtureStore) Find(q *EventsSaveFixtureQuery) (*EventsSaveFix
 	return NewEventsSaveFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *EventsSaveFixtureStore) MustFind(q *EventsSaveFixtureQuery) *EventsSaveFixtureResultSet {
-	return NewEventsSaveFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *EventsSaveFixtureStore) Count(q *EventsSaveFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *EventsSaveFixtureStore) MustCount(q *EventsSaveFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -4250,16 +4062,6 @@ func (s *EventsSaveFixtureStore) FindAll(q *EventsSaveFixtureQuery) ([]*EventsSa
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *EventsSaveFixtureStore) MustFindOne(q *EventsSaveFixtureQuery) *EventsSaveFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the EventsSaveFixture with the data in the database and
@@ -4628,22 +4430,10 @@ func (s *JSONModelStore) Find(q *JSONModelQuery) (*JSONModelResultSet, error) {
 	return NewJSONModelResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *JSONModelStore) MustFind(q *JSONModelQuery) *JSONModelResultSet {
-	return NewJSONModelResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *JSONModelStore) Count(q *JSONModelQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *JSONModelStore) MustCount(q *JSONModelQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -4680,16 +4470,6 @@ func (s *JSONModelStore) FindAll(q *JSONModelQuery) ([]*JSONModel, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *JSONModelStore) MustFindOne(q *JSONModelQuery) *JSONModel {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the JSONModel with the data in the database and
@@ -5060,22 +4840,10 @@ func (s *MultiKeySortFixtureStore) Find(q *MultiKeySortFixtureQuery) (*MultiKeyS
 	return NewMultiKeySortFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *MultiKeySortFixtureStore) MustFind(q *MultiKeySortFixtureQuery) *MultiKeySortFixtureResultSet {
-	return NewMultiKeySortFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *MultiKeySortFixtureStore) Count(q *MultiKeySortFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *MultiKeySortFixtureStore) MustCount(q *MultiKeySortFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -5112,16 +4880,6 @@ func (s *MultiKeySortFixtureStore) FindAll(q *MultiKeySortFixtureQuery) ([]*Mult
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *MultiKeySortFixtureStore) MustFindOne(q *MultiKeySortFixtureQuery) *MultiKeySortFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the MultiKeySortFixture with the data in the database and
@@ -5521,22 +5279,10 @@ func (s *NullableStore) Find(q *NullableQuery) (*NullableResultSet, error) {
 	return NewNullableResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *NullableStore) MustFind(q *NullableQuery) *NullableResultSet {
-	return NewNullableResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *NullableStore) Count(q *NullableQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *NullableStore) MustCount(q *NullableQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -5573,16 +5319,6 @@ func (s *NullableStore) FindAll(q *NullableQuery) ([]*Nullable, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *NullableStore) MustFindOne(q *NullableQuery) *Nullable {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the Nullable with the data in the database and
@@ -6027,22 +5763,10 @@ func (s *ParentStore) Find(q *ParentQuery) (*ParentResultSet, error) {
 	return NewParentResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *ParentStore) MustFind(q *ParentQuery) *ParentResultSet {
-	return NewParentResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *ParentStore) Count(q *ParentQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *ParentStore) MustCount(q *ParentQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -6079,16 +5803,6 @@ func (s *ParentStore) FindAll(q *ParentQuery) ([]*Parent, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *ParentStore) MustFindOne(q *ParentQuery) *Parent {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the Parent with the data in the database and
@@ -6271,9 +5985,9 @@ func (q *ParentQuery) Where(cond kallax.Condition) *ParentQuery {
 	return q
 }
 
-func (q *ParentQuery) WithChildren(cond kallax.Condition) *ParentQuery {
-	q.AddRelation(Schema.Child.BaseSchema, "Children", kallax.OneToMany, cond)
-	return q
+func (q *ParentQuery) WithChildren(cond kallax.Condition) (*ParentQuery, error) {
+	err := q.AddRelation(Schema.Child.BaseSchema, "Children", kallax.OneToMany, cond)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -6624,22 +6338,10 @@ func (s *ParentNoPtrStore) Find(q *ParentNoPtrQuery) (*ParentNoPtrResultSet, err
 	return NewParentNoPtrResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *ParentNoPtrStore) MustFind(q *ParentNoPtrQuery) *ParentNoPtrResultSet {
-	return NewParentNoPtrResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *ParentNoPtrStore) Count(q *ParentNoPtrQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *ParentNoPtrStore) MustCount(q *ParentNoPtrQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -6676,16 +6378,6 @@ func (s *ParentNoPtrStore) FindAll(q *ParentNoPtrQuery) ([]*ParentNoPtr, error) 
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *ParentNoPtrStore) MustFindOne(q *ParentNoPtrQuery) *ParentNoPtr {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the ParentNoPtr with the data in the database and
@@ -6868,9 +6560,9 @@ func (q *ParentNoPtrQuery) Where(cond kallax.Condition) *ParentNoPtrQuery {
 	return q
 }
 
-func (q *ParentNoPtrQuery) WithChildren(cond kallax.Condition) *ParentNoPtrQuery {
-	q.AddRelation(Schema.Child.BaseSchema, "Children", kallax.OneToMany, cond)
-	return q
+func (q *ParentNoPtrQuery) WithChildren(cond kallax.Condition) (*ParentNoPtrQuery, error) {
+	err := q.AddRelation(Schema.Child.BaseSchema, "Children", kallax.OneToMany, cond)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -7295,22 +6987,10 @@ func (s *PersonStore) Find(q *PersonQuery) (*PersonResultSet, error) {
 	return NewPersonResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *PersonStore) MustFind(q *PersonQuery) *PersonResultSet {
-	return NewPersonResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *PersonStore) Count(q *PersonQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *PersonStore) MustCount(q *PersonQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -7347,16 +7027,6 @@ func (s *PersonStore) FindAll(q *PersonQuery) ([]*Person, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *PersonStore) MustFindOne(q *PersonQuery) *Person {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the Person with the data in the database and
@@ -7570,14 +7240,14 @@ func (q *PersonQuery) Where(cond kallax.Condition) *PersonQuery {
 	return q
 }
 
-func (q *PersonQuery) WithPets(cond kallax.Condition) *PersonQuery {
-	q.AddRelation(Schema.Pet.BaseSchema, "Pets", kallax.OneToMany, cond)
-	return q
+func (q *PersonQuery) WithPets(cond kallax.Condition) (*PersonQuery, error) {
+	err := q.AddRelation(Schema.Pet.BaseSchema, "Pets", kallax.OneToMany, cond)
+	return q, err
 }
 
-func (q *PersonQuery) WithCar() *PersonQuery {
-	q.AddRelation(Schema.Car.BaseSchema, "Car", kallax.OneToOne, nil)
-	return q
+func (q *PersonQuery) WithCar() (*PersonQuery, error) {
+	err := q.AddRelation(Schema.Car.BaseSchema, "Car", kallax.OneToOne, nil)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -7985,22 +7655,10 @@ func (s *PetStore) Find(q *PetQuery) (*PetResultSet, error) {
 	return NewPetResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *PetStore) MustFind(q *PetQuery) *PetResultSet {
-	return NewPetResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *PetStore) Count(q *PetQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *PetStore) MustCount(q *PetQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -8037,16 +7695,6 @@ func (s *PetStore) FindAll(q *PetQuery) ([]*Pet, error) {
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *PetStore) MustFindOne(q *PetQuery) *Pet {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the Pet with the data in the database and
@@ -8137,9 +7785,9 @@ func (q *PetQuery) Where(cond kallax.Condition) *PetQuery {
 	return q
 }
 
-func (q *PetQuery) WithOwner() *PetQuery {
-	q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
-	return q
+func (q *PetQuery) WithOwner() (*PetQuery, error) {
+	err := q.AddRelation(Schema.Person.BaseSchema, "Owner", kallax.OneToOne, nil)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -8685,22 +8333,10 @@ func (s *QueryFixtureStore) Find(q *QueryFixtureQuery) (*QueryFixtureResultSet, 
 	return NewQueryFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *QueryFixtureStore) MustFind(q *QueryFixtureQuery) *QueryFixtureResultSet {
-	return NewQueryFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *QueryFixtureStore) Count(q *QueryFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *QueryFixtureStore) MustCount(q *QueryFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -8737,16 +8373,6 @@ func (s *QueryFixtureStore) FindAll(q *QueryFixtureQuery) ([]*QueryFixture, erro
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *QueryFixtureStore) MustFindOne(q *QueryFixtureQuery) *QueryFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the QueryFixture with the data in the database and
@@ -8960,19 +8586,19 @@ func (q *QueryFixtureQuery) Where(cond kallax.Condition) *QueryFixtureQuery {
 	return q
 }
 
-func (q *QueryFixtureQuery) WithRelation() *QueryFixtureQuery {
-	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "Relation", kallax.OneToOne, nil)
-	return q
+func (q *QueryFixtureQuery) WithRelation() (*QueryFixtureQuery, error) {
+	err := q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "Relation", kallax.OneToOne, nil)
+	return q, err
 }
 
-func (q *QueryFixtureQuery) WithInverse() *QueryFixtureQuery {
-	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "Inverse", kallax.OneToOne, nil)
-	return q
+func (q *QueryFixtureQuery) WithInverse() (*QueryFixtureQuery, error) {
+	err := q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "Inverse", kallax.OneToOne, nil)
+	return q, err
 }
 
-func (q *QueryFixtureQuery) WithNRelation(cond kallax.Condition) *QueryFixtureQuery {
-	q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "NRelation", kallax.OneToMany, cond)
-	return q
+func (q *QueryFixtureQuery) WithNRelation(cond kallax.Condition) (*QueryFixtureQuery, error) {
+	err := q.AddRelation(Schema.QueryRelationFixture.BaseSchema, "NRelation", kallax.OneToMany, cond)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -9505,22 +9131,10 @@ func (s *QueryRelationFixtureStore) Find(q *QueryRelationFixtureQuery) (*QueryRe
 	return NewQueryRelationFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *QueryRelationFixtureStore) MustFind(q *QueryRelationFixtureQuery) *QueryRelationFixtureResultSet {
-	return NewQueryRelationFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *QueryRelationFixtureStore) Count(q *QueryRelationFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *QueryRelationFixtureStore) MustCount(q *QueryRelationFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -9557,16 +9171,6 @@ func (s *QueryRelationFixtureStore) FindAll(q *QueryRelationFixtureQuery) ([]*Qu
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *QueryRelationFixtureStore) MustFindOne(q *QueryRelationFixtureQuery) *QueryRelationFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the QueryRelationFixture with the data in the database and
@@ -9657,9 +9261,9 @@ func (q *QueryRelationFixtureQuery) Where(cond kallax.Condition) *QueryRelationF
 	return q
 }
 
-func (q *QueryRelationFixtureQuery) WithOwner() *QueryRelationFixtureQuery {
-	q.AddRelation(Schema.QueryFixture.BaseSchema, "Owner", kallax.OneToOne, nil)
-	return q
+func (q *QueryRelationFixtureQuery) WithOwner() (*QueryRelationFixtureQuery, error) {
+	err := q.AddRelation(Schema.QueryFixture.BaseSchema, "Owner", kallax.OneToOne, nil)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -9934,22 +9538,10 @@ func (s *ResultSetFixtureStore) Find(q *ResultSetFixtureQuery) (*ResultSetFixtur
 	return NewResultSetFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *ResultSetFixtureStore) MustFind(q *ResultSetFixtureQuery) *ResultSetFixtureResultSet {
-	return NewResultSetFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *ResultSetFixtureStore) Count(q *ResultSetFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *ResultSetFixtureStore) MustCount(q *ResultSetFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -9986,16 +9578,6 @@ func (s *ResultSetFixtureStore) FindAll(q *ResultSetFixtureQuery) ([]*ResultSetF
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *ResultSetFixtureStore) MustFindOne(q *ResultSetFixtureQuery) *ResultSetFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the ResultSetFixture with the data in the database and
@@ -10497,22 +10079,10 @@ func (s *SchemaFixtureStore) Find(q *SchemaFixtureQuery) (*SchemaFixtureResultSe
 	return NewSchemaFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *SchemaFixtureStore) MustFind(q *SchemaFixtureQuery) *SchemaFixtureResultSet {
-	return NewSchemaFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *SchemaFixtureStore) Count(q *SchemaFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *SchemaFixtureStore) MustCount(q *SchemaFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -10549,16 +10119,6 @@ func (s *SchemaFixtureStore) FindAll(q *SchemaFixtureQuery) ([]*SchemaFixture, e
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *SchemaFixtureStore) MustFindOne(q *SchemaFixtureQuery) *SchemaFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the SchemaFixture with the data in the database and
@@ -10680,14 +10240,14 @@ func (q *SchemaFixtureQuery) Where(cond kallax.Condition) *SchemaFixtureQuery {
 	return q
 }
 
-func (q *SchemaFixtureQuery) WithNested() *SchemaFixtureQuery {
-	q.AddRelation(Schema.SchemaFixture.BaseSchema, "Nested", kallax.OneToOne, nil)
-	return q
+func (q *SchemaFixtureQuery) WithNested() (*SchemaFixtureQuery, error) {
+	err := q.AddRelation(Schema.SchemaFixture.BaseSchema, "Nested", kallax.OneToOne, nil)
+	return q, err
 }
 
-func (q *SchemaFixtureQuery) WithInverse() *SchemaFixtureQuery {
-	q.AddRelation(Schema.SchemaRelationshipFixture.BaseSchema, "Inverse", kallax.OneToOne, nil)
-	return q
+func (q *SchemaFixtureQuery) WithInverse() (*SchemaFixtureQuery, error) {
+	err := q.AddRelation(Schema.SchemaRelationshipFixture.BaseSchema, "Inverse", kallax.OneToOne, nil)
+	return q, err
 }
 
 // FindByID adds a new filter to the query that will require that
@@ -10970,22 +10530,10 @@ func (s *SchemaRelationshipFixtureStore) Find(q *SchemaRelationshipFixtureQuery)
 	return NewSchemaRelationshipFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *SchemaRelationshipFixtureStore) MustFind(q *SchemaRelationshipFixtureQuery) *SchemaRelationshipFixtureResultSet {
-	return NewSchemaRelationshipFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *SchemaRelationshipFixtureStore) Count(q *SchemaRelationshipFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *SchemaRelationshipFixtureStore) MustCount(q *SchemaRelationshipFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -11022,16 +10570,6 @@ func (s *SchemaRelationshipFixtureStore) FindAll(q *SchemaRelationshipFixtureQue
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *SchemaRelationshipFixtureStore) MustFindOne(q *SchemaRelationshipFixtureQuery) *SchemaRelationshipFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the SchemaRelationshipFixture with the data in the database and
@@ -11390,22 +10928,10 @@ func (s *StoreFixtureStore) Find(q *StoreFixtureQuery) (*StoreFixtureResultSet, 
 	return NewStoreFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *StoreFixtureStore) MustFind(q *StoreFixtureQuery) *StoreFixtureResultSet {
-	return NewStoreFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *StoreFixtureStore) Count(q *StoreFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *StoreFixtureStore) MustCount(q *StoreFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -11442,16 +10968,6 @@ func (s *StoreFixtureStore) FindAll(q *StoreFixtureQuery) ([]*StoreFixture, erro
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *StoreFixtureStore) MustFindOne(q *StoreFixtureQuery) *StoreFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the StoreFixture with the data in the database and
@@ -11836,22 +11352,10 @@ func (s *StoreWithConstructFixtureStore) Find(q *StoreWithConstructFixtureQuery)
 	return NewStoreWithConstructFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *StoreWithConstructFixtureStore) MustFind(q *StoreWithConstructFixtureQuery) *StoreWithConstructFixtureResultSet {
-	return NewStoreWithConstructFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *StoreWithConstructFixtureStore) Count(q *StoreWithConstructFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *StoreWithConstructFixtureStore) MustCount(q *StoreWithConstructFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -11888,16 +11392,6 @@ func (s *StoreWithConstructFixtureStore) FindAll(q *StoreWithConstructFixtureQue
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *StoreWithConstructFixtureStore) MustFindOne(q *StoreWithConstructFixtureQuery) *StoreWithConstructFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the StoreWithConstructFixture with the data in the database and
@@ -12258,22 +11752,10 @@ func (s *StoreWithNewFixtureStore) Find(q *StoreWithNewFixtureQuery) (*StoreWith
 	return NewStoreWithNewFixtureResultSet(rs), nil
 }
 
-// MustFind returns the set of results for the given query, but panics if there
-// is any error.
-func (s *StoreWithNewFixtureStore) MustFind(q *StoreWithNewFixtureQuery) *StoreWithNewFixtureResultSet {
-	return NewStoreWithNewFixtureResultSet(s.Store.MustFind(q))
-}
-
 // Count returns the number of rows that would be retrieved with the given
 // query.
 func (s *StoreWithNewFixtureStore) Count(q *StoreWithNewFixtureQuery) (int64, error) {
 	return s.Store.Count(q)
-}
-
-// MustCount returns the number of rows that would be retrieved with the given
-// query, but panics if there is an error.
-func (s *StoreWithNewFixtureStore) MustCount(q *StoreWithNewFixtureQuery) int64 {
-	return s.Store.MustCount(q)
 }
 
 // FindOne returns the first row returned by the given query.
@@ -12310,16 +11792,6 @@ func (s *StoreWithNewFixtureStore) FindAll(q *StoreWithNewFixtureQuery) ([]*Stor
 	}
 
 	return rs.All()
-}
-
-// MustFindOne returns the first row retrieved by the given query. It panics
-// if there is an error or if there are no rows.
-func (s *StoreWithNewFixtureStore) MustFindOne(q *StoreWithNewFixtureQuery) *StoreWithNewFixture {
-	record, err := s.FindOne(q)
-	if err != nil {
-		panic(err)
-	}
-	return record
 }
 
 // Reload refreshes the StoreWithNewFixture with the data in the database and

@@ -571,7 +571,7 @@ type PackageTransformerSuite struct {
 }
 
 const packageTransformerSourceFixture = `
-package foo
+package fixture
 
 import (
 	"gopkg.in/src-d/go-kallax.v1"
@@ -626,7 +626,7 @@ type UUIDTable struct {
 func (s *PackageTransformerSuite) SetupTest() {
 	s.t = newPackageTransformer()
 	var err error
-	s.pkg, err = processFixture(packageTransformerSourceFixture)
+	s.pkg, err = processFixture(s.T(), packageTransformerSourceFixture)
 	s.Require().NoError(err)
 }
 

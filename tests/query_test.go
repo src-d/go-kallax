@@ -126,15 +126,16 @@ func (s *QuerySuite) TestQuery() {
 	query.Where(kallax.Eq(Schema.QueryFixture.ID, doc.ID))
 
 	s.NotPanics(func() {
-		s.Equal("bar", store.MustFindOne(query).Foo)
+		v, err := store.FindOne(query)
+		s.NoError(err)
+		s.Equal("bar",v.Foo)
 	})
 
 	notID := kallax.NewULID()
 	queryErr := NewQueryFixtureQuery()
 	queryErr.Where(kallax.Eq(Schema.QueryFixture.ID, notID))
-	s.Panics(func() {
-		s.Equal("bar", store.MustFindOne(queryErr).Foo)
-	})
+	_, err := store.FindOne(queryErr)
+	s.Error(err)
 }
 
 func (s *QuerySuite) TestFindById() {
@@ -147,7 +148,9 @@ func (s *QuerySuite) TestFindById() {
 	query := NewQueryFixtureQuery()
 	query.FindByID(doc.ID)
 	s.NotPanics(func() {
-		s.Equal(docName, store.MustFindOne(query).Foo)
+		v, err := store.FindOne(query)
+		s.NoError(err)
+		s.Equal(docName, v.Foo)
 	})
 
 	queryManyId := NewQueryFixtureQuery()
@@ -159,35 +162,40 @@ func (s *QuerySuite) TestFindById() {
 	notID := kallax.NewULID()
 	queryErr := NewQueryFixtureQuery()
 	queryErr.FindByID(notID)
-	s.Panics(func() {
-		store.MustFindOne(queryErr)
-	})
+
+	_, err = store.FindOne(queryErr)
+	s.Error(err)
+
 }
 
 func (s *QuerySuite) TestFindBy() {
 	store := NewQueryFixtureStore(s.db)
-	s.NotPanics(func() {
-		s.True(store.MustFindOne(NewQueryFixtureQuery().FindByStringProperty("StringProperty1")).Eq(queryFixtures[1]))
-	})
-	s.Panics(func() {
-		store.MustFindOne(NewQueryFixtureQuery().FindByStringProperty("NOT_FOUND"))
-	})
+
+	v, err := store.FindOne(NewQueryFixtureQuery().FindByStringProperty("StringProperty1"))
+	s.NoError(err)
+	s.True(v.Eq(queryFixtures[1]))
+
+
+	_, err = store.FindOne(NewQueryFixtureQuery().FindByStringProperty("NOT_FOUND"))
+	s.Error(err)
+
+	v, err = store.FindOne(NewQueryFixtureQuery().FindByBoolean(false))
+	s.NoError(err)
+	s.True(v.Eq(queryFixtures[1]))
+
+	count, err := store.Count(NewQueryFixtureQuery().FindByBoolean(true))
+	s.Equal(int64(2), count)
+	s.Nil(err)
+
 
 	s.NotPanics(func() {
-		s.True(store.MustFindOne(NewQueryFixtureQuery().FindByBoolean(false)).Eq(queryFixtures[1]))
-	})
-	s.NotPanics(func() {
-		count, err := store.Count(NewQueryFixtureQuery().FindByBoolean(true))
-		s.Equal(int64(2), count)
-		s.Nil(err)
+		v, err := store.FindOne(NewQueryFixtureQuery().FindByInteger(kallax.Eq, 2))
+		s.NoError(err)
+		s.True(v.Eq(queryFixtures[2]))
 	})
 
-	s.NotPanics(func() {
-		s.True(store.MustFindOne(NewQueryFixtureQuery().FindByInteger(kallax.Eq, 2)).Eq(queryFixtures[2]))
-	})
-	s.Panics(func() {
-		store.MustFindOne(NewQueryFixtureQuery().FindByInteger(kallax.Eq, 99))
-	})
+	_, err = store.FindOne(NewQueryFixtureQuery().FindByInteger(kallax.Eq, 99))
+	s.Error(err)
 
 	s.NotPanics(func() {
 		count, err := store.Count(NewQueryFixtureQuery().FindByInteger(kallax.GtOrEq, 1))
