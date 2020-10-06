@@ -164,6 +164,11 @@ func (s *Store) DebugWith(logger LoggerFunc) *Store {
 	}).init()
 }
 
+// Runner gives access to the current runner (*sql.DB or *sql.TX when in a transaction)
+func (s *Store) Runner() squirrel.DBProxyContext {
+	return s.runner
+}
+
 // Insert insert the given record in the table, returns error if no-new
 // record is given. The record id is set if it's empty.
 func (s *Store) Insert(schema Schema, record Record) error {
