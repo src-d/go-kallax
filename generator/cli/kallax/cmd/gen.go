@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"os"
+
 	"gopkg.in/src-d/go-kallax.v1/generator"
 	cli "gopkg.in/urfave/cli.v1"
-	"os"
 )
 
 var Generate = cli.Command{
@@ -14,17 +15,17 @@ var Generate = cli.Command{
 	Usage:  "Generate kallax models",
 	Action: generateAction,
 	Flags: []cli.Flag{
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "input",
 			Value: ".",
 			Usage: "Input package directory",
 		},
-		cli.StringFlag{
+		&cli.StringFlag{
 			Name:  "output",
 			Value: "kallax.go",
 			Usage: "Output file name",
 		},
-		cli.StringSliceFlag{
+		&cli.StringSliceFlag{
 			Name:  "exclude, e",
 			Usage: "List of excluded files from the package when generating the code for your models. Use this to exclude files in your package that uses the generated code. You can use this flag as many times as you want.",
 		},
