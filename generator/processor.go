@@ -2,13 +2,13 @@ package generator
 
 import (
 	"fmt"
+	"go/build"
 	"go/types"
 	"path/filepath"
 	"reflect"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
-	parseutil "gopkg.in/src-d/go-parse-utils.v1"
 )
 
 const (
@@ -17,6 +17,10 @@ const (
 	//URL is the type name of the net/url.URL.
 	URL = "url.URL"
 )
+
+type goPath []string
+
+var defaultGoPath = goPath(filepath.SplitList(build.Default.GOPATH))
 
 // Processor is in charge of processing the package in a patch and
 // scan models from it.
@@ -442,7 +446,7 @@ func removeGoPath(path string) string {
 	}
 
 	path = toSlash(path)
-	for _, p := range parseutil.DefaultGoPath {
+	for _, p := range defaultGoPath {
 		p = toSlash(p + "/src/")
 		if strings.HasPrefix(path, p) {
 			// Directories named "vendor" are only vendor directories

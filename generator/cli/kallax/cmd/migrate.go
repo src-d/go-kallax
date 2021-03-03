@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/golang-migrate/migrate"
-	_ "github.com/golang-migrate/migrate/database/postgres"
-	_ "github.com/golang-migrate/migrate/source/file"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/urfave/cli"
 
 	"github.com/networkteam/go-kallax/generator"
-	cli "github.com/urfave/cli"
 )
 
 var Migrate = cli.Command{
@@ -104,7 +104,7 @@ func downAction(m *migrate.Migrate, steps, version uint, all bool) error {
 			return fmt.Errorf("kallax: unable to execute %d migration(s) down: %s", steps, err)
 		}
 	} else {
-		return fmt.Errorf("kallax: no `version` or `steps` provided. You need to specify one of them.")
+		return fmt.Errorf("kallax: no `version` or `steps` provided, you need to specify one of them")
 	}
 	reportMigrationSuccess(m)
 	return nil

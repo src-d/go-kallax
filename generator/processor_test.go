@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"gopkg.in/src-d/go-parse-utils.v1"
-
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -426,10 +424,10 @@ func TestProcessor(t *testing.T) {
 }
 
 func TestRemoveGoPath(t *testing.T) {
-	oldGoPath := parseutil.DefaultGoPath
+	oldGoPath := defaultGoPath
 	oldSep := separator
 	defer func() {
-		parseutil.DefaultGoPath = oldGoPath
+		defaultGoPath = oldGoPath
 		separator = oldSep
 	}()
 
@@ -494,7 +492,7 @@ func TestRemoveGoPath(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		parseutil.DefaultGoPath = parseutil.GoPath(c.gopath)
+		defaultGoPath = c.gopath
 		separator = c.sep
 		require.Equal(t, c.result, removeGoPath(c.typ), c.typ)
 	}
