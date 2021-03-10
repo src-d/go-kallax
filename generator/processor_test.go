@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"gopkg.in/src-d/go-parse-utils.v1"
-
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,7 +17,7 @@ func (s *ProcessorSuite) TestInlineStruct() {
 	fixtureSrc := `
   package fixture
 
-  import  "gopkg.in/src-d/go-kallax.v1"
+  import  "github.com/networkteam/go-kallax"
 
   type Foo struct {}
 
@@ -39,7 +37,7 @@ func (s *ProcessorSuite) TestTags() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/networkteam/go-kallax"
 
 	type Foo struct {
 		kallax.Model
@@ -56,7 +54,7 @@ func (s *ProcessorSuite) TestRecursiveModel() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/networkteam/go-kallax"
 
 	type Recur struct {
 		kallax.Model
@@ -77,7 +75,7 @@ func (s *ProcessorSuite) TestDeepRecursiveStruct() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/networkteam/go-kallax"
 
 	type Recur struct {
 		kallax.Model
@@ -106,7 +104,7 @@ func (s *ProcessorSuite) TestIsEventPresent() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/networkteam/go-kallax"
 
 	type Foo struct {
 		kallax.Model
@@ -145,7 +143,7 @@ func (s *ProcessorSuite) TestProcessField() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/networkteam/go-kallax"
 	import "database/sql/driver"
 
 	type BasicAlias string
@@ -243,7 +241,7 @@ func (s *ProcessorSuite) TestCtor() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/networkteam/go-kallax"
 
 	type Foo struct {
 		kallax.Model
@@ -266,7 +264,7 @@ func (s *ProcessorSuite) TestSQLTypeIsInterface() {
 	fixtureSrc := `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 	import "database/sql/driver"
 
 	type Foo struct {
@@ -295,7 +293,7 @@ func (s *ProcessorSuite) TestIsSQLType() {
 	fixtureSrc := `
 	package fixture
 
-	import 	"gopkg.in/src-d/go-kallax.v1"
+	import 	"github.com/networkteam/go-kallax"
 
 	type SQLTypeFixture struct {
 		kallax.Model
@@ -315,13 +313,13 @@ func (s *ProcessorSuite) TestIsSQLType() {
 }
 
 func (s *ProcessorSuite) processorFixture(source string) *Processor {
-	prc, err := processorFixture(source)
+	prc, err := processorFixture(nil, source)
 	s.Require().NoError(err)
 	return prc
 }
 
 func (s *ProcessorSuite) processFixture(source string) *Package {
-	pkg, err := processFixture(source)
+	pkg, err := processFixture(nil, source)
 	s.Require().NoError(err)
 	return pkg
 }
@@ -337,7 +335,7 @@ func (s *ProcessorSuite) TestIsModel() {
 	src := `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 
 	type Bar struct {
 		kallax.Model
@@ -379,7 +377,7 @@ func (s *ProcessorSuite) TestIsEmbedded() {
 	src := `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 
 	type Bar struct {
 		kallax.Model
@@ -426,10 +424,10 @@ func TestProcessor(t *testing.T) {
 }
 
 func TestRemoveGoPath(t *testing.T) {
-	oldGoPath := parseutil.DefaultGoPath
+	oldGoPath := defaultGoPath
 	oldSep := separator
 	defer func() {
-		parseutil.DefaultGoPath = oldGoPath
+		defaultGoPath = oldGoPath
 		separator = oldSep
 	}()
 
@@ -440,16 +438,16 @@ func TestRemoveGoPath(t *testing.T) {
 		sep    rune
 	}{
 		{
-			`E:\workspace\gopath\src\gopkg.in\src-d\go-kallax.v1\tests\fixtures.AliasString`,
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			`E:\workspace\gopath\src\github.com\networkteam\go-kallax\tests\fixtures.AliasString`,
+			"github.com/networkteam/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				`E:\workspace\gopath`,
 			},
 			'\\',
 		},
 		{
-			"/home/workspace/gopath/src/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"/home/workspace/gopath/src/github.com/networkteam/go-kallax/tests/fixtures.AliasString",
+			"github.com/networkteam/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				"/home/foo/go",
 				"/home/workspace/gopath",
@@ -465,8 +463,8 @@ func TestRemoveGoPath(t *testing.T) {
 			'/',
 		},
 		{
-			"/home/workspace/gopath/src/foo/bar/vendor/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"/home/workspace/gopath/src/foo/bar/vendor/github.com/networkteam/go-kallax/tests/fixtures.AliasString",
+			"github.com/networkteam/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				"/home/foo/go",
 				"/home/workspace/gopath",
@@ -474,8 +472,8 @@ func TestRemoveGoPath(t *testing.T) {
 			'/',
 		},
 		{
-			"/home/vendor/workspace/gopath/src/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"/home/vendor/workspace/gopath/src/github.com/networkteam/go-kallax/tests/fixtures.AliasString",
+			"github.com/networkteam/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				"/home/foo/go",
 				"/home/vendor/workspace/gopath",
@@ -483,8 +481,8 @@ func TestRemoveGoPath(t *testing.T) {
 			'/',
 		},
 		{
-			"/home/vendor/workspace/gopath/src/vendor/gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
-			"gopkg.in/src-d/go-kallax.v1/tests/fixtures.AliasString",
+			"/home/vendor/workspace/gopath/src/vendor/github.com/networkteam/go-kallax/tests/fixtures.AliasString",
+			"github.com/networkteam/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				"/home/foo/go",
 				"/home/vendor/workspace/gopath",
@@ -494,7 +492,7 @@ func TestRemoveGoPath(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		parseutil.DefaultGoPath = parseutil.GoPath(c.gopath)
+		defaultGoPath = c.gopath
 		separator = c.sep
 		require.Equal(t, c.result, removeGoPath(c.typ), c.typ)
 	}

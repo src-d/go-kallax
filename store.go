@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/lann/builder"
@@ -71,24 +72,32 @@ type proxyLogger struct {
 }
 
 func (p *proxyLogger) Exec(query string, args ...interface{}) (sql.Result, error) {
-	p.logger(fmt.Sprintf("kallax: Exec: %s", query), args...)
-	return p.DBProxyContext.Exec(query, args...)
+	start := time.Now()
+	result, err := p.DBProxyContext.Exec(query, args...)
+	p.logger(fmt.Sprintf("kallax: Exec: (%v) %s", time.Since(start), query), args...)
+	return result, err
 }
 
 func (p *proxyLogger) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	p.logger(fmt.Sprintf("kallax: Query: %s", query), args...)
-	return p.DBProxyContext.Query(query, args...)
+	start := time.Now()
+	rows, err := p.DBProxyContext.Query(query, args...)
+	p.logger(fmt.Sprintf("kallax: Query: (%v) %s", time.Since(start), query), args...)
+	return rows, err
 }
 
 func (p *proxyLogger) QueryRow(query string, args ...interface{}) squirrel.RowScanner {
-	p.logger(fmt.Sprintf("kallax: QueryRow: %s", query), args...)
-	return p.DBProxyContext.QueryRow(query, args...)
+	start := time.Now()
+	rowScanner := p.DBProxyContext.QueryRow(query, args...)
+	p.logger(fmt.Sprintf("kallax: QueryRow: (%v) %s", time.Since(start), query), args...)
+	return rowScanner
 }
 
 func (p *proxyLogger) Prepare(query string) (*sql.Stmt, error) {
 	//If chained runner is a proxy, run Prepare(). Otherwise, noop.
-	p.logger(fmt.Sprintf("kallax: Prepare: %s", query))
-	return p.DBProxyContext.Prepare(query)
+	start := time.Now()
+	statement, err := p.DBProxyContext.Prepare(query)
+	p.logger(fmt.Sprintf("kallax: Prepare: (%v) %s", time.Since(start), query))
+	return statement, err
 }
 
 // PrepareContext will not be logged
@@ -119,7 +128,6 @@ func (r *txRunner) QueryRow(query string, args ...interface{}) squirrel.RowScann
 type Store struct {
 	db        squirrel.DBProxyContext
 	runner    squirrel.DBProxyContext
-	useCacher bool
 	logger    LoggerFunc
 }
 
@@ -127,17 +135,12 @@ type Store struct {
 func NewStore(db *sql.DB) *Store {
 	return (&Store{
 		db:        &dbRunner{db},
-		useCacher: true,
 	}).init()
 }
 
-// init initializes the store runner with debugging or caching, and returns itself for chainability
+// init initializes the store runner with debugging and returns itself for chainability
 func (s *Store) init() *Store {
 	s.runner = s.db
-
-	if s.useCacher {
-		s.runner = squirrel.NewStmtCacher(s.db)
-	}
 
 	if s.logger != nil {
 		s.runner = &proxyLogger{logger: s.logger, DBProxyContext: s.runner}
@@ -157,18 +160,13 @@ func (s *Store) Debug() *Store {
 func (s *Store) DebugWith(logger LoggerFunc) *Store {
 	return (&Store{
 		db:        s.db,
-		useCacher: s.useCacher,
 		logger:    logger,
 	}).init()
 }
 
-// DisableCacher returns a new store with prepared statements turned off, which can be useful in some scenarios.
-func (s *Store) DisableCacher() *Store {
-	return (&Store{
-		db:        s.db,
-		logger:    s.logger,
-		useCacher: false,
-	}).init()
+// Runner gives access to the current runner (*sql.DB or *sql.TX when in a transaction)
+func (s *Store) Runner() squirrel.DBProxyContext {
+	return s.runner
 }
 
 // Insert insert the given record in the table, returns error if no-new
@@ -430,6 +428,7 @@ func (s *Store) Reload(schema Schema, record Record) error {
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
 	rs := NewResultSet(rows, false, nil, columns...)
 	if !rs.Next() {
@@ -484,7 +483,6 @@ func (s *Store) Transaction(callback func(*Store) error) error {
 	txStore := (&Store{
 		db:        &txRunner{tx},
 		logger:    s.logger,
-		useCacher: s.useCacher,
 	}).init()
 
 	if err := callback(txStore); err != nil {

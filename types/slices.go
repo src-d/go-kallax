@@ -653,7 +653,20 @@ type ByteArray []uint8
 func (a *ByteArray) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case []byte:
-		*(*[]byte)(a) = src
+		dst := *(*[]byte)(a)
+
+		if a == nil || cap(dst) < len(src) {
+			// nil, or shorter destination than source. Create a new slice.
+			dst = make([]byte, len(src))
+		} else {
+			// Resize slice, but retain capacity
+			dst = dst[0:len(src)]
+		}
+
+		// Copy, do not retain reference to reference types.
+		copy(dst, src)
+
+		*(*[]byte)(a) = dst
 		return nil
 	case string:
 		*(*[]byte)(a) = []byte(src)

@@ -1,13 +1,12 @@
 package generator
 
 import (
-	"go/ast"
-	"go/parser"
 	"go/token"
 	"go/types"
 	"reflect"
+	"testing"
 
-	parseutil "gopkg.in/src-d/go-parse-utils.v1"
+	"golang.org/x/tools/go/packages"
 )
 
 func mkField(name, typ, tag string, fields ...*Field) *Field {
@@ -51,28 +50,32 @@ func inline(f *Field) *Field {
 	return f
 }
 
-func processorFixture(source string) (*Processor, error) {
-	fset := &token.FileSet{}
-	astFile, err := parser.ParseFile(fset, "fixture.go", source, 0)
+func processorFixture(t *testing.T, source string) (*Processor, error) {
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedTypes | packages.NeedImports,
+		Overlay: map[string][]byte{
+			"fixture/fixture.go": []byte(source),
+		},
+	}, "github.com/networkteam/go-kallax/generator/fixture")
 	if err != nil {
 		return nil, err
 	}
 
-	cfg := &types.Config{
-		Importer: parseutil.NewImporter(),
-	}
-	p, err := cfg.Check("foo", fset, []*ast.File{astFile}, nil)
-	if err != nil {
-		return nil, err
-	}
+	packages.Visit(pkgs, nil, func(pkg *packages.Package) {
+		if len(pkg.Errors) > 0 {
+			t.Fatalf("packages.Load had error in package %s: %v", pkg, pkg.Errors[0])
+		}
+	})
+
+	p := pkgs[0].Types
 
 	prc := NewProcessor("fixture", []string{"foo.go"})
 	prc.Package = p
 	return prc, nil
 }
 
-func processFixture(source string) (*Package, error) {
-	prc, err := processorFixture(source)
+func processFixture(t *testing.T, source string) (*Package, error) {
+	prc, err := processorFixture(t, source)
 	if err != nil {
 		return nil, err
 	}

@@ -107,13 +107,13 @@ var reservedKeywords = map[string]struct{}{
 // special types that are not analyzed because SQL already knows
 // how to handle them
 var specialTypes = map[string]string{
-	"gopkg.in/src-d/go-kallax.v1.UUID":      "kallax.UUID",
-	"gopkg.in/src-d/go-kallax.v1.ULID":      "kallax.ULID",
-	"gopkg.in/src-d/go-kallax.v1.NumericID": "kallax.NumericID",
-	"github.com/satori/go.uuid.UUID":        "kallax.UUID",
-	"github.com/gofrs/uuid.UUID":            "kallax.UUID",
-	"net/url.URL":                           "url.URL",
-	"time.Time":                             "time.Time",
+	"github.com/networkteam/go-kallax.UUID":      "kallax.UUID",
+	"github.com/networkteam/go-kallax.ULID":      "kallax.ULID",
+	"github.com/networkteam/go-kallax.NumericID": "kallax.NumericID",
+	"github.com/satori/go.uuid.UUID":             "kallax.UUID",
+	"github.com/gofrs/uuid.UUID":                 "kallax.UUID",
+	"net/url.URL":                                "url.URL",
+	"time.Time":                                  "time.Time",
 }
 
 // mappings defines the mapping between specific types and their counterpart
@@ -276,7 +276,7 @@ func (m *Model) String() string {
 		events = append(events, string(e))
 	}
 
-	return fmt.Sprintf("%q [%d Field(s)] [Events: %s]", m.Name, len(m.Fields), events)
+	return fmt.Sprintf("%q [%d Field(s)] [Events: %s]", m.Name, len(m.Fields)-1, events)
 }
 
 type occurrences map[string]uint
@@ -981,12 +981,12 @@ func (f *Field) SQLType() string {
 }
 
 var identifierTypes = map[string]string{
-	"gopkg.in/src-d/go-kallax.v1.UUID":      "kallax.UUID",
-	"gopkg.in/src-d/go-kallax.v1.ULID":      "kallax.ULID",
-	"gopkg.in/src-d/go-kallax.v1.NumericID": "kallax.NumericID",
-	"github.com/satori/go.uuid.UUID":        "kallax.UUID",
-	"github.com/gofrs/uuid.UUID":            "kallax.UUID",
-	"int64": "kallax.NumericID",
+	"github.com/networkteam/go-kallax.UUID":      "kallax.UUID",
+	"github.com/networkteam/go-kallax.ULID":      "kallax.ULID",
+	"github.com/networkteam/go-kallax.NumericID": "kallax.NumericID",
+	"github.com/satori/go.uuid.UUID":             "kallax.UUID",
+	"github.com/gofrs/uuid.UUID":                 "kallax.UUID",
+	"int64":                                      "kallax.NumericID",
 }
 
 func identifierType(f *Field) string {

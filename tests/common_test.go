@@ -22,6 +22,10 @@ type BaseTestSuite struct {
 	db      *sql.DB
 	schemas []string
 	tables  []string
+
+	// the count of opened connections.
+	// this will be set in the SetupTest function.
+	openConnectionsBeforeTest int
 }
 
 func NewBaseSuite(schemas []string, tables ...string) BaseTestSuite {
@@ -41,6 +45,11 @@ func (s *BaseTestSuite) SetupSuite() {
 		panic(fmt.Sprintf("It was unable to connect to the DB.\n%s\n", err))
 	}
 
+	// set all connections will be closed immediately.
+	// this is required to check connections are leaked or not.
+	// because database/sql keep connection in the pool by default.
+	db.SetMaxIdleConns(0)
+
 	s.db = db
 }
 
@@ -49,6 +58,9 @@ func (s *BaseTestSuite) TearDownSuite() {
 }
 
 func (s *BaseTestSuite) SetupTest() {
+	// save current open connection count for detecting that connection was leaked while a test.
+	s.openConnectionsBeforeTest = s.db.Stats().OpenConnections
+
 	if len(s.tables) == 0 {
 		return
 	}
@@ -57,6 +69,12 @@ func (s *BaseTestSuite) SetupTest() {
 }
 
 func (s *BaseTestSuite) TearDownTest() {
+	openConnections := s.db.Stats().OpenConnections
+	leakedConnections := openConnections - s.openConnectionsBeforeTest
+	if leakedConnections > 0 {
+		s.Fail(fmt.Sprintf("%d database connections were leaked", leakedConnections))
+	}
+
 	if len(s.tables) == 0 {
 		return
 	}
@@ -107,6 +125,24 @@ func (s *BaseTestSuite) resultOrError(res interface{}, err error) bool {
 
 	if err != nil && res != nil {
 		s.Fail("FindOne should return only an error or a document, but it was returned both")
+		return false
+	}
+
+	return true
+}
+
+func (s *BaseTestSuite) resultsOrError(res interface{}, err error) bool {
+	if reflect.ValueOf(res).Kind() != reflect.Slice {
+		panic("resultsOrError expects res is a slice")
+	}
+
+	if err == nil && res == nil {
+		s.Fail("FindAll should return an error or a documents, but nothing was returned")
+		return false
+	}
+
+	if err != nil && res != nil {
+		s.Fail("FindAll should return only an error or a documents, but it was returned both")
 		return false
 	}
 

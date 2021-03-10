@@ -3,15 +3,12 @@ package generator
 import (
 	"bytes"
 	"fmt"
-	"go/ast"
-	"go/importer"
-	"go/parser"
-	"go/token"
 	"go/types"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/tools/go/packages"
 )
 
 type TemplateSuite struct {
@@ -28,15 +25,21 @@ func (s *TemplateSuite) SetupTest() {
 }
 
 func (s *TemplateSuite) processSource(source string) {
-	fset := &token.FileSet{}
-	astFile, err := parser.ParseFile(fset, "fixture.go", source, 0)
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedTypes | packages.NeedImports,
+		Overlay: map[string][]byte{
+			"fixture/fixture.go": []byte(source),
+		},
+	}, "github.com/networkteam/go-kallax/generator/fixture")
 	s.NoError(err)
 
-	cfg := &types.Config{
-		Importer: importer.For("gc", nil),
-	}
-	p, err := cfg.Check("foo", fset, []*ast.File{astFile}, nil)
-	s.NoError(err)
+	packages.Visit(pkgs, nil, func(pkg *packages.Package) {
+		if len(pkg.Errors) > 0 {
+			s.NoError(pkg.Errors[0], "packages.Load had errors in package %s", pkg)
+		}
+	})
+
+	p := pkgs[0].Types
 
 	prc := NewProcessor("fixture", []string{"foo.go"})
 	prc.Package = p
@@ -73,7 +76,7 @@ return (*int)(&r.BasicAlias), nil
 const baseTpl = `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 	import "net/url"
 
 	type Rel struct {
@@ -152,7 +155,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 	s.processSource(`
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 	import "net/url"
 
 	type Aliased string
@@ -211,7 +214,7 @@ func (s *TemplateSuite) TestGenModelColumns() {
 const jsonBaseTpl = `
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 	import "net/url"
 
 	type Rel struct {
@@ -350,7 +353,7 @@ func (s *TemplateSuite) TestGenTypeName() {
 	s.processSource(`
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 	import "net/url"
 
 	type Foo struct {
@@ -385,7 +388,7 @@ func (s *TemplateSuite) TestIsPtrSlice() {
 	s.processSource(`
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 	import "net/url"
 
 	type Foo struct {
@@ -424,7 +427,7 @@ func (s *TemplateSuite) TestGenTimeTruncations() {
 	s.processSource(`
 	package fixture
 
-	import "gopkg.in/src-d/go-kallax.v1"
+	import "github.com/networkteam/go-kallax"
 	import "time"
 
 	type Foo struct {
@@ -463,12 +466,12 @@ const (
 
 func (s *ProcessorSuite) TestFindableTypeName() {
 	fixtureSrc := `
-		package foo
+		package fixture
 
 		import "time"
 		import "net/url"
-		import "gopkg.in/src-d/go-kallax.v1"
-		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
+		import "github.com/networkteam/go-kallax"
+		import "github.com/networkteam/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model
@@ -560,12 +563,12 @@ func (s *ProcessorSuite) assertFindableTypeName(f *Field) {
 
 func (s *ProcessorSuite) TestLookupValid() {
 	fixtureSrc := `
-		package foo
+		package fixture
 
 		import "time"
 		import "net/url"
-		import "gopkg.in/src-d/go-kallax.v1"
-		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
+		import "github.com/networkteam/go-kallax"
+		import "github.com/networkteam/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model
@@ -676,12 +679,12 @@ func (s *ProcessorSuite) assertTypeOfFindBy(f *Field) {
 
 func (s *ProcessorSuite) TestShortName() {
 	fixtureSrc := `
-		package foo
+		package fixture
 
 		import "time"
 		import "net/url"
-		import "gopkg.in/src-d/go-kallax.v1"
-		import "gopkg.in/src-d/go-kallax.v1/tests/fixtures"
+		import "github.com/networkteam/go-kallax"
+		import "github.com/networkteam/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model

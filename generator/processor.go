@@ -2,24 +2,25 @@ package generator
 
 import (
 	"fmt"
-	"go/ast"
 	"go/build"
-	"go/parser"
-	"go/token"
 	"go/types"
 	"path/filepath"
 	"reflect"
 	"strings"
 
-	parseutil "gopkg.in/src-d/go-parse-utils.v1"
+	"golang.org/x/tools/go/packages"
 )
 
 const (
 	// BaseModel is the type name of the kallax base model.
-	BaseModel = "gopkg.in/src-d/go-kallax.v1.Model"
+	BaseModel = "github.com/networkteam/go-kallax.Model"
 	//URL is the type name of the net/url.URL.
 	URL = "url.URL"
 )
+
+type goPath []string
+
+var defaultGoPath = goPath(filepath.SplitList(build.Default.GOPATH))
 
 // Processor is in charge of processing the package in a patch and
 // scan models from it.
@@ -59,68 +60,16 @@ func (p *Processor) write(msg string, args ...interface{}) {
 
 // Do performs all the processing and returns the scanned package.
 func (p *Processor) Do() (*Package, error) {
-	files, err := p.getSourceFiles()
+	pkgs, err := packages.Load(&packages.Config{
+		Dir:  ".",
+		Mode: packages.NeedImports | packages.NeedTypes | packages.NeedDeps,
+	}, p.Path)
 	if err != nil {
 		return nil, err
 	}
-
-	p.Package, err = p.parseSourceFiles(files)
-	if err != nil {
-		return nil, err
-	}
+	p.Package = pkgs[0].Types
 
 	return p.processPackage()
-}
-
-func (p *Processor) getSourceFiles() ([]string, error) {
-	pkg, err := build.Default.ImportDir(p.Path, 0)
-	if err != nil {
-		return nil, fmt.Errorf("kallax: cannot process directory %s: %s", p.Path, err)
-	}
-
-	var files []string
-	files = append(files, pkg.GoFiles...)
-	files = append(files, pkg.CgoFiles...)
-
-	if len(files) == 0 {
-		return nil, fmt.Errorf("kallax: %s: no buildable Go files", p.Path)
-	}
-
-	return joinDirectory(p.Path, p.removeIgnoredFiles(files)), nil
-}
-
-func (p *Processor) removeIgnoredFiles(filenames []string) []string {
-	var output []string
-	for _, filename := range filenames {
-		if _, ok := p.Ignore[filename]; ok {
-			continue
-		}
-
-		output = append(output, filename)
-	}
-
-	return output
-}
-
-func (p *Processor) parseSourceFiles(filenames []string) (*types.Package, error) {
-	var files []*ast.File
-	fs := token.NewFileSet()
-	for _, filename := range filenames {
-		file, err := parser.ParseFile(fs, filename, nil, 0)
-		if err != nil {
-			return nil, fmt.Errorf("kallax: parsing package: %s: %s", filename, err)
-		}
-
-		files = append(files, file)
-	}
-
-	config := types.Config{
-		FakeImportC: true,
-		Error:       func(error) {},
-		Importer:    parseutil.NewImporter(),
-	}
-
-	return config.Check(p.Path, fs, files, new(types.Info))
 }
 
 func (p *Processor) processPackage() (*Package, error) {
@@ -465,15 +414,6 @@ func (p *Processor) processBaseField(m *Model, f *Field) {
 	}
 }
 
-func joinDirectory(directory string, files []string) []string {
-	result := make([]string, len(files))
-	for i, file := range files {
-		result[i] = filepath.Join(directory, file)
-	}
-
-	return result
-}
-
 func typeName(typ types.Type) string {
 	return removeGoPath(typ.String())
 }
@@ -506,7 +446,7 @@ func removeGoPath(path string) string {
 	}
 
 	path = toSlash(path)
-	for _, p := range parseutil.DefaultGoPath {
+	for _, p := range defaultGoPath {
 		p = toSlash(p + "/src/")
 		if strings.HasPrefix(path, p) {
 			// Directories named "vendor" are only vendor directories

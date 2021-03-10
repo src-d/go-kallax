@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/networkteam/go-kallax"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/src-d/go-kallax.v1"
 )
 
 type ResulsetSuite struct {
@@ -128,6 +128,7 @@ func (s *ResulsetSuite) TestResultSetForEachError() {
 
 	s.NotPanics(func() {
 		rs := store.MustFind(NewResultSetFixtureQuery())
+		defer rs.Close()
 		err := rs.ForEach(func(*ResultSetFixture) error {
 			return fail
 		})

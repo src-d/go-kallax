@@ -259,13 +259,8 @@ func (s *StoreSuite) TestDebugWith() {
 	s.store.DebugWith(logger).RawQuery("SELECT 1 + 1")
 	s.store.DebugWith(logger).RawExec("UPDATE foo SET bar = 1")
 
-	s.Equal(
-		queries,
-		[]string{
-			"kallax: Query: SELECT 1 + 1",
-			"kallax: Exec: UPDATE foo SET bar = 1",
-		},
-	)
+	s.Regexp("kallax: Query: \\(\\d+\\.\\d+.+\\) SELECT 1 \\+ 1", queries[0])
+	s.Regexp("kallax: Exec: \\(\\d+\\.\\d+.+\\) UPDATE foo SET bar = 1", queries[1])
 }
 
 func (s *StoreSuite) assertFound(rs ResultSet, expected ...string) {

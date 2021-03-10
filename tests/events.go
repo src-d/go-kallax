@@ -1,6 +1,6 @@
 package tests
 
-import "gopkg.in/src-d/go-kallax.v1"
+import "github.com/networkteam/go-kallax"
 
 type EventsFixture struct {
 	kallax.Model   `table:"event"`
