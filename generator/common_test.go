@@ -56,7 +56,7 @@ func processorFixture(t *testing.T, source string) (*Processor, error) {
 		Overlay: map[string][]byte{
 			"fixture/fixture.go": []byte(source),
 		},
-	}, "github.com/networkteam/go-kallax/generator/fixture")
+	}, "github.com/loyalguru/go-kallax/generator/fixture")
 	if err != nil {
 		return nil, err
 	}

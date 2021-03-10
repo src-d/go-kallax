@@ -1,6 +1,6 @@
 package tests
 
-import "github.com/networkteam/go-kallax"
+import "github.com/loyalguru/go-kallax"
 
 type SchemaFixture struct {
 	kallax.Model `table:"schema"`

@@ -1,6 +1,6 @@
 <img src="https://cdn.rawgit.com/networkteam/go-kallax/master/kallax.svg" width="400" />
 
-[![GoDoc](https://godoc.org/github.com/networkteam/go-kallax?status.svg)](https://godoc.org/github.com/networkteam/go-kallax) [![Build Status](https://travis-ci.org/networkteam/go-kallax.svg?branch=master)](https://travis-ci.org/networkteam/go-kallax) [![codecov](https://codecov.io/gh/networkteam/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/networkteam/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/networkteam/go-kallax)](https://goreportcard.com/report/github.com/networkteam/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GoDoc](https://godoc.org/github.com/loyalguru/go-kallax?status.svg)](https://godoc.org/github.com/loyalguru/go-kallax) [![Build Status](https://travis-ci.org/networkteam/go-kallax.svg?branch=master)](https://travis-ci.org/networkteam/go-kallax) [![codecov](https://codecov.io/gh/networkteam/go-kallax/branch/master/graph/badge.svg)](https://codecov.io/gh/networkteam/go-kallax) [![Go Report Card](https://goreportcard.com/badge/github.com/loyalguru/go-kallax)](https://goreportcard.com/report/github.com/loyalguru/go-kallax) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Kallax is a PostgreSQL typesafe ORM for the Go language.
 
@@ -52,7 +52,7 @@ Support for arrays of all basic Go types and all JSON and arrays operators is pr
 The recommended way to install `kallax` is:
 
 ```
-go get -u github.com/networkteam/go-kallax/...
+go get -u github.com/loyalguru/go-kallax/...
 ```
 
 > _kallax_ includes a binary tool used by [go generate](http://blog.golang.org/generate),
@@ -166,13 +166,13 @@ type Metadata struct {
 
 ### Primary keys
 
-Primary key types need to satisfy the [Identifier](https://godoc.org/github.com/networkteam/go-kallax/#Identifier) interface. Even though they have to do that, the generator is smart enough to know when to wrap some types to make it easier on the user.
+Primary key types need to satisfy the [Identifier](https://godoc.org/github.com/loyalguru/go-kallax/#Identifier) interface. Even though they have to do that, the generator is smart enough to know when to wrap some types to make it easier on the user.
 
 The following types can be used as primary key:
 
 - `int64`
 - [`uuid.UUID`](https://godoc.org/github.com/gofrs/uuid#UUID)
-- [`kallax.ULID`](https://godoc.org/github.com/networkteam/go-kallax/#ULID): this is a type kallax provides that implements a lexically sortable UUID. You can store it as `uuid` like any other UUID, but internally it's an ULID and you will be able to sort lexically by it.
+- [`kallax.ULID`](https://godoc.org/github.com/loyalguru/go-kallax/#ULID): this is a type kallax provides that implements a lexically sortable UUID. You can store it as `uuid` like any other UUID, but internally it's an ULID and you will be able to sort lexically by it.
 
 Due to how sql mapping works, pointers to `uuid.UUID` and `kallax.ULID` are not set to `nil` if they appear as `NULL` in the database, but to [`uuid.Nil`](https://godoc.org/github.com/satori/go.uuid#pkg-variables). Using pointers to UUIDs is discouraged for this reason.
 
@@ -229,14 +229,14 @@ Events can be defined for models and they will be invoked at certain times of th
 
 To implement these events, just implement the following interfaces. You can implement as many as you want:
 
-- [BeforeInserter](https://godoc.org/github.com/networkteam/go-kallax#BeforeInserter)
-- [BeforeUpdater](https://godoc.org/github.com/networkteam/go-kallax#BeforeUpdater)
-- [BeforeSaver](https://godoc.org/github.com/networkteam/go-kallax#BeforeSaver)
-- [BeforeDeleter](https://godoc.org/github.com/networkteam/go-kallax#BeforeDeleter)
-- [AfterInserter](https://godoc.org/github.com/networkteam/go-kallax#AfterInserter)
-- [AfterUpdater](https://godoc.org/github.com/networkteam/go-kallax#AfterUpdater)
-- [AfterSaver](https://godoc.org/github.com/networkteam/go-kallax#AfterSaver)
-- [AfterDeleter](https://godoc.org/github.com/networkteam/go-kallax#AfterDeleter)
+- [BeforeInserter](https://godoc.org/github.com/loyalguru/go-kallax#BeforeInserter)
+- [BeforeUpdater](https://godoc.org/github.com/loyalguru/go-kallax#BeforeUpdater)
+- [BeforeSaver](https://godoc.org/github.com/loyalguru/go-kallax#BeforeSaver)
+- [BeforeDeleter](https://godoc.org/github.com/loyalguru/go-kallax#BeforeDeleter)
+- [AfterInserter](https://godoc.org/github.com/loyalguru/go-kallax#AfterInserter)
+- [AfterUpdater](https://godoc.org/github.com/loyalguru/go-kallax#AfterUpdater)
+- [AfterSaver](https://godoc.org/github.com/loyalguru/go-kallax#AfterSaver)
+- [AfterDeleter](https://godoc.org/github.com/loyalguru/go-kallax#AfterDeleter)
 
 Example:
 
@@ -259,7 +259,7 @@ Kallax generates a bunch of code for every single model you have and saves it to
 
 For every model you have, kallax will generate the following for you:
 
-- Internal methods for your model to make it work with kallax and satisfy the [Record](https://godoc.org/github.com/networkteam/go-kallax#Record) interface.
+- Internal methods for your model to make it work with kallax and satisfy the [Record](https://godoc.org/github.com/loyalguru/go-kallax#Record) interface.
 - A store named `{TypeName}Store`: the store is the way to access the data. A store of a given type is the way to access and manipulate data of that type. You can get an instance of the type store with `New{TypeName}Store(*sql.DB)`.
 - A query named `{TypeName}Query`: the query is the way you will be able to build programmatically the queries to perform on the store. A store only will accept queries of its own type. You can create a new query with `New{TypeName}Query()`.
   The query will contain methods for adding criteria to your query for every field of your struct, called `FindBy`s. The query object is not immutable, that is, every condition added to it, changes the query. If you want to reuse part of a query, you can call the `Copy()` method of a query, which will return a query identical to the one used to call the method.
@@ -594,7 +594,7 @@ Reload will not reload any relationships, just the model itself. After a `Reload
 
 ### Querying JSON
 
-You can query arbitrary JSON using the JSON operators defined in the [kallax](https://godoc.org/github.com/networkteam/go-kallax) package. The schema of the JSON (if it's a struct, obviously for maps it is not) is also generated.
+You can query arbitrary JSON using the JSON operators defined in the [kallax](https://godoc.org/github.com/loyalguru/go-kallax) package. The schema of the JSON (if it's a struct, obviously for maps it is not) is also generated.
 
 ```go
 q := NewPostQuery().Where(kallax.JSONContainsAnyKey(

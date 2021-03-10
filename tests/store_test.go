@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	kallax "github.com/networkteam/go-kallax"
+	kallax "github.com/loyalguru/go-kallax"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -30,7 +30,7 @@ func (s *TemplateSuite) processSource(source string) {
 		Overlay: map[string][]byte{
 			"fixture/fixture.go": []byte(source),
 		},
-	}, "github.com/networkteam/go-kallax/generator/fixture")
+	}, "github.com/loyalguru/go-kallax/generator/fixture")
 	s.NoError(err)
 
 	packages.Visit(pkgs, nil, func(pkg *packages.Package) {
@@ -76,7 +76,7 @@ return (*int)(&r.BasicAlias), nil
 const baseTpl = `
 	package fixture
 
-	import "github.com/networkteam/go-kallax"
+	import "github.com/loyalguru/go-kallax"
 	import "net/url"
 
 	type Rel struct {
@@ -155,7 +155,7 @@ func (s *TemplateSuite) TestGenColumnValues() {
 	s.processSource(`
 	package fixture
 
-	import "github.com/networkteam/go-kallax"
+	import "github.com/loyalguru/go-kallax"
 	import "net/url"
 
 	type Aliased string
@@ -214,7 +214,7 @@ func (s *TemplateSuite) TestGenModelColumns() {
 const jsonBaseTpl = `
 	package fixture
 
-	import "github.com/networkteam/go-kallax"
+	import "github.com/loyalguru/go-kallax"
 	import "net/url"
 
 	type Rel struct {
@@ -353,7 +353,7 @@ func (s *TemplateSuite) TestGenTypeName() {
 	s.processSource(`
 	package fixture
 
-	import "github.com/networkteam/go-kallax"
+	import "github.com/loyalguru/go-kallax"
 	import "net/url"
 
 	type Foo struct {
@@ -388,7 +388,7 @@ func (s *TemplateSuite) TestIsPtrSlice() {
 	s.processSource(`
 	package fixture
 
-	import "github.com/networkteam/go-kallax"
+	import "github.com/loyalguru/go-kallax"
 	import "net/url"
 
 	type Foo struct {
@@ -427,7 +427,7 @@ func (s *TemplateSuite) TestGenTimeTruncations() {
 	s.processSource(`
 	package fixture
 
-	import "github.com/networkteam/go-kallax"
+	import "github.com/loyalguru/go-kallax"
 	import "time"
 
 	type Foo struct {
@@ -470,8 +470,8 @@ func (s *ProcessorSuite) TestFindableTypeName() {
 
 		import "time"
 		import "net/url"
-		import "github.com/networkteam/go-kallax"
-		import "github.com/networkteam/go-kallax/tests/fixtures"
+		import "github.com/loyalguru/go-kallax"
+		import "github.com/loyalguru/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model
@@ -567,8 +567,8 @@ func (s *ProcessorSuite) TestLookupValid() {
 
 		import "time"
 		import "net/url"
-		import "github.com/networkteam/go-kallax"
-		import "github.com/networkteam/go-kallax/tests/fixtures"
+		import "github.com/loyalguru/go-kallax"
+		import "github.com/loyalguru/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model
@@ -683,8 +683,8 @@ func (s *ProcessorSuite) TestShortName() {
 
 		import "time"
 		import "net/url"
-		import "github.com/networkteam/go-kallax"
-		import "github.com/networkteam/go-kallax/tests/fixtures"
+		import "github.com/loyalguru/go-kallax"
+		import "github.com/loyalguru/go-kallax/tests/fixtures"
 
 		type mainFixture struct {
 			kallax.Model

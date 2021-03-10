@@ -203,7 +203,7 @@ import (
 	"errors"
 	"strings"
 
-	kallax "github.com/networkteam/go-kallax"
+	kallax "github.com/loyalguru/go-kallax"
 )
 
 type User struct {
@@ -265,7 +265,7 @@ func (s *ModelSuite) SetupSuite() {
 		Overlay: map[string][]byte{
 			"fixture/fixture.go": []byte(fixturesSource),
 		},
-	}, "github.com/networkteam/go-kallax/generator/fixture")
+	}, "github.com/loyalguru/go-kallax/generator/fixture")
 	s.NoError(err)
 
 	packages.Visit(pkgs, nil, func(pkg *packages.Package) {

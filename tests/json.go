@@ -1,6 +1,6 @@
 package tests
 
-import kallax "github.com/networkteam/go-kallax"
+import kallax "github.com/loyalguru/go-kallax"
 
 type JSONModel struct {
 	kallax.Model `table:"jsons"`

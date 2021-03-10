@@ -3,7 +3,7 @@ package tests
 import (
 	"time"
 
-	"github.com/networkteam/go-kallax"
+	"github.com/loyalguru/go-kallax"
 )
 
 type A struct {

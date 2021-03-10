@@ -9,7 +9,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/urfave/cli"
 
-	"github.com/networkteam/go-kallax/generator"
+	"github.com/loyalguru/go-kallax/generator"
 )
 
 var Migrate = cli.Command{

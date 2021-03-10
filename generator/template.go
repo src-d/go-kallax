@@ -482,7 +482,7 @@ func printDocumentWithNumbers(code string) {
 	}
 }
 
-const pkgPath = "github.com/networkteam/go-kallax/generator"
+const pkgPath = "github.com/loyalguru/go-kallax/generator"
 
 var pkgAbsPath = func() string {
 	pkgs, err := packages.Load(&packages.Config{

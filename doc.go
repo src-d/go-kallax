@@ -10,4 +10,4 @@
 // for example, `sql.NullInt64`.
 // Support for arrays of all basic Go types and all JSON and arrays operators is
 // provided as well.
-package kallax // import "github.com/networkteam/go-kallax"
+package kallax // import "github.com/loyalguru/go-kallax"

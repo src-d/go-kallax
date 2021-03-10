@@ -13,7 +13,7 @@ import (
 
 const (
 	// BaseModel is the type name of the kallax base model.
-	BaseModel = "github.com/networkteam/go-kallax.Model"
+	BaseModel = "github.com/loyalguru/go-kallax.Model"
 	//URL is the type name of the net/url.URL.
 	URL = "url.URL"
 )

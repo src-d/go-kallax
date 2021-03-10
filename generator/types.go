@@ -107,9 +107,9 @@ var reservedKeywords = map[string]struct{}{
 // special types that are not analyzed because SQL already knows
 // how to handle them
 var specialTypes = map[string]string{
-	"github.com/networkteam/go-kallax.UUID":      "kallax.UUID",
-	"github.com/networkteam/go-kallax.ULID":      "kallax.ULID",
-	"github.com/networkteam/go-kallax.NumericID": "kallax.NumericID",
+	"github.com/loyalguru/go-kallax.UUID":      "kallax.UUID",
+	"github.com/loyalguru/go-kallax.ULID":      "kallax.ULID",
+	"github.com/loyalguru/go-kallax.NumericID": "kallax.NumericID",
 	"github.com/satori/go.uuid.UUID":             "kallax.UUID",
 	"github.com/gofrs/uuid.UUID":                 "kallax.UUID",
 	"net/url.URL":                                "url.URL",
@@ -981,9 +981,9 @@ func (f *Field) SQLType() string {
 }
 
 var identifierTypes = map[string]string{
-	"github.com/networkteam/go-kallax.UUID":      "kallax.UUID",
-	"github.com/networkteam/go-kallax.ULID":      "kallax.ULID",
-	"github.com/networkteam/go-kallax.NumericID": "kallax.NumericID",
+	"github.com/loyalguru/go-kallax.UUID":      "kallax.UUID",
+	"github.com/loyalguru/go-kallax.ULID":      "kallax.ULID",
+	"github.com/loyalguru/go-kallax.NumericID": "kallax.NumericID",
 	"github.com/satori/go.uuid.UUID":             "kallax.UUID",
 	"github.com/gofrs/uuid.UUID":                 "kallax.UUID",
 	"int64":                                      "kallax.NumericID",
