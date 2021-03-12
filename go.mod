@@ -17,4 +17,4 @@ require (
 	golang.org/x/tools v0.1.0
 )
 
-replace github.com/golang-migrate/migrate/v4 => github.com/networkteam/migrate/v4 v4.15.0
+//replace github.com/golang-migrate/migrate/v4 => github.com/networkteam/migrate/v4 v4.15.0
