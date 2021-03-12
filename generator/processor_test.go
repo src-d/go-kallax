@@ -438,7 +438,7 @@ func TestRemoveGoPath(t *testing.T) {
 		sep    rune
 	}{
 		{
-			`E:\workspace\gopath\src\github.com\networkteam\go-kallax\tests\fixtures.AliasString`,
+			`E:\workspace\gopath\src\github.com\loyalguru\go-kallax\tests\fixtures.AliasString`,
 			"github.com/loyalguru/go-kallax/tests/fixtures.AliasString",
 			[]string{
 				`E:\workspace\gopath`,
